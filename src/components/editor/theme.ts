@@ -101,39 +101,40 @@ const tedDarkHighlightStyle = HighlightStyle.define([
   // Comments
   {
     tag: [t.comment, t.lineComment, t.blockComment, t.docComment],
-    color: "#6a9955",
+    color: "#606060",
     fontStyle: "italic",
   },
-  // Keywords (import, from, function, return, export, default, const, let)
+  // Keywords
   {
     tag: [t.keyword, t.controlKeyword, t.operatorKeyword, t.moduleKeyword],
-    color: "#c586c0",
+    color: "#a0a0a0",
+    fontWeight: "600",
   },
   // Storage / modifiers
-  { tag: [t.modifier, t.definitionKeyword], color: "#569cd6" },
+  { tag: [t.modifier, t.definitionKeyword], color: "#b0b0b0" },
   // Strings
-  { tag: [t.string, t.special(t.string), t.character], color: "#ce9178" },
+  { tag: [t.string, t.special(t.string), t.character], color: "#909090" },
   // Numbers & units
-  { tag: [t.number, t.integer, t.float], color: "#b5cea8" },
-  { tag: t.unit, color: "#b5cea8" },
+  { tag: [t.number, t.integer, t.float], color: "#b0b0b0" },
+  { tag: t.unit, color: "#b0b0b0" },
   // CSS color literals
-  { tag: t.color, color: "#ce9178" },
+  { tag: t.color, color: "#909090" },
   // Constants / keyword values
-  { tag: [t.bool, t.null, t.atom], color: "#569cd6" },
+  { tag: [t.bool, t.null, t.atom], color: "#b0b0b0" },
   // Types
-  { tag: [t.typeName, t.namespace], color: "#4ec9b0" },
+  { tag: [t.typeName, t.namespace], color: "#d0d0d0" },
   // CSS class selectors
-  { tag: t.className, color: "#d7ba7d" },
+  { tag: t.className, color: "#d0d0d0" },
   // Property names
-  { tag: t.propertyName, color: "#9cdcfe" },
+  { tag: t.propertyName, color: "#c0c0c0" },
   // Variables
-  { tag: t.variableName, color: "#9cdcfe" },
+  { tag: t.variableName, color: "#d4d4d4" },
   // Predefined variables
-  { tag: t.special(t.variableName), color: "#4fc1ff" },
+  { tag: t.special(t.variableName), color: "#d4d4d4" },
   // Functions
   {
     tag: [t.function(t.variableName), t.function(t.propertyName)],
-    color: "#dcdcaa",
+    color: "#e0e0e0",
   },
   // Operators
   {
@@ -144,27 +145,27 @@ const tedDarkHighlightStyle = HighlightStyle.define([
       t.logicOperator,
       t.compareOperator,
     ],
-    color: "#d4d4d4",
+    color: "#a0a0a0",
   },
   // Tags (JSX/HTML)
-  { tag: t.tagName, color: "#4ec9b0" },
+  { tag: t.tagName, color: "#d0d0d0" },
   // Tag attributes
-  { tag: t.attributeName, color: "#9cdcfe" },
+  { tag: t.attributeName, color: "#b0b0b0" },
   // Label names (CSS ID selectors)
-  { tag: t.labelName, color: "#d7ba7d" },
+  { tag: t.labelName, color: "#d0d0d0" },
   // Pseudo-class names
-  { tag: t.constant(t.className), color: "#d7ba7d" },
+  { tag: t.constant(t.className), color: "#d0d0d0" },
   // Brackets
   {
     tag: [t.bracket, t.paren, t.brace, t.squareBracket],
-    color: "#ffd700",
+    color: "#808080",
   },
   // Angle brackets (JSX < > />)
   { tag: t.angleBracket, color: "#808080" },
   // Separators, punctuation (semicolons, commas, colons)
   { tag: [t.separator, t.punctuation], color: "#808080" },
   // Regex
-  { tag: t.regexp, color: "#d16969" },
+  { tag: t.regexp, color: "#909090" },
   // Default identifier
   { tag: t.name, color: "#d4d4d4" },
 ]);

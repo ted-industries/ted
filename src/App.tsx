@@ -7,6 +7,7 @@ import Editor from "./components/editor/Editor";
 import Titlebar from "./components/titlebar/Titlebar";
 import CommandPalette from "./components/palette/CommandPalette";
 import Welcome from "./components/welcome/Welcome";
+import SettingsPopup from "./components/settings/SettingsPopup";
 import { editorStore, useEditorStore } from "./store/editor-store";
 import "./App.css";
 
@@ -109,6 +110,10 @@ function App() {
         e.preventDefault();
         editorStore.toggleCommandPalette();
       }
+      if (e.ctrlKey && e.key === ",") {
+        e.preventDefault();
+        editorStore.toggleSettings();
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -140,6 +145,7 @@ function App() {
         </div>
       </div>
       <CommandPalette />
+      <SettingsPopup />
     </div>
   );
 }

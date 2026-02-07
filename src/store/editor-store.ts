@@ -24,6 +24,13 @@ interface EditorStoreState {
   explorerPath: string | null;
   explorerCollapsed: boolean;
   commandPaletteOpen: boolean;
+  settingsOpen: boolean;
+  settings: {
+    sidebarWidth: number;
+    fontSize: number;
+    lineNumbers: boolean;
+    volume: number;
+  };
   logs: ActionLog[];
 }
 
@@ -35,6 +42,13 @@ let state: EditorStoreState = {
   explorerPath: null,
   explorerCollapsed: false,
   commandPaletteOpen: false,
+  settingsOpen: false,
+  settings: {
+    sidebarWidth: 240,
+    fontSize: 15,
+    lineNumbers: true,
+    volume: 50,
+  },
   logs: [],
 };
 
@@ -179,6 +193,19 @@ export const editorStore = {
 
   toggleCommandPalette() {
     dispatch("TOGGLE_COMMAND_PALETTE", { commandPaletteOpen: !state.commandPaletteOpen });
+  },
+
+  setSettingsOpen(open: boolean) {
+    dispatch("SET_SETTINGS_OPEN", { settingsOpen: open });
+  },
+
+  toggleSettings() {
+    dispatch("TOGGLE_SETTINGS", { settingsOpen: !state.settingsOpen });
+  },
+
+  updateSettings(update: Partial<EditorStoreState["settings"]>) {
+    const settings = { ...state.settings, ...update };
+    dispatch("UPDATE_SETTINGS", { settings }, { update });
   },
 };
 

@@ -51,10 +51,14 @@ function buildExtensions(
   langExt: Extension | null,
   saveFile: (path: string, content: string) => void,
   autoSaveTimerRef: React.RefObject<ReturnType<typeof setTimeout> | null>,
+  settings: { fontSize: number; lineNumbers: boolean },
 ): Extension[] {
   const exts: Extension[] = [
     tedDark,
-    lineNumbers(),
+    EditorView.theme({
+      "&": { fontSize: `${settings.fontSize}px` },
+    }),
+    settings.lineNumbers ? lineNumbers() : [],
     highlightActiveLine(),
     highlightActiveLineGutter(),
     bracketMatching(),
@@ -117,6 +121,7 @@ export default function Editor() {
 
   const activeTabPath = useEditorStore((s) => s.activeTabPath);
   const tabs = useEditorStore((s) => s.tabs);
+  const settings = useEditorStore((s) => s.settings);
   const activeTab = tabs.find((t) => t.path === activeTabPath) ?? null;
 
   const saveFile = useCallback((path: string, content: string) => {
@@ -163,6 +168,7 @@ export default function Editor() {
       langExt,
       saveFile,
       autoSaveTimerRef,
+      settings,
     );
 
     const state = EditorState.create({
@@ -188,7 +194,7 @@ export default function Editor() {
         autoSaveTimerRef.current = null;
       }
     };
-  }, [activeTabPath, saveFile]);
+  }, [activeTabPath, saveFile, settings]);
 
   const hasActiveTab = activeTab !== null;
 

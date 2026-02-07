@@ -1,4 +1,4 @@
-import { RiFileAddLine, RiFolderOpenLine, RiCommandLine } from "@remixicon/react";
+import { RiFileAddLine, RiFolderOpenLine, RiCommandLine, RiSettings4Line } from "@remixicon/react";
 import { editorStore } from "../../store/editor-store";
 import "./Welcome.css";
 
@@ -13,6 +13,9 @@ export default function Welcome() {
                 break;
             case "command-palette":
                 editorStore.toggleCommandPalette();
+                break;
+            case "settings":
+                editorStore.toggleSettings();
                 break;
         }
     };
@@ -56,6 +59,21 @@ export default function Welcome() {
                                 <span>Open Command Palette</span>
                             </div>
                             <span className="action-shortcut">Ctrl-Shift-P</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="welcome-section">
+                    <div className="section-title">
+                        <span>CONFIGURE</span>
+                        <div className="section-line"></div>
+                    </div>
+                    <div className="action-list">
+                        <div className="action-item" onClick={() => handleAction("settings")}>
+                            <div className="action-left">
+                                <RiSettings4Line size={16} />
+                                <span>Open Settings</span>
+                            </div>
+                            <span className="action-shortcut">Ctrl-,</span>
                         </div>
                     </div>
                 </div>

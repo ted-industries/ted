@@ -43,10 +43,6 @@ export default function TapeSpinner({
     targetOffsetRef.current = off;
   }, []);
 
-  // Animate to new activeIndex when changed externally
-  useEffect(() => {
-    targetOffsetRef.current = getOffsetForIndex(activeIndex);
-  }, [activeIndex, getOffsetForIndex]);
 
   const snapToNearest = useCallback(() => {
     const vp = viewportRef.current;
@@ -108,6 +104,12 @@ export default function TapeSpinner({
       setIsSpinning(false);
     }, 600);
   }, []);
+
+  // Animate to new activeIndex when changed externally
+  useEffect(() => {
+    targetOffsetRef.current = getOffsetForIndex(activeIndex);
+    markSpinning();
+  }, [activeIndex, getOffsetForIndex, markSpinning]);
 
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {

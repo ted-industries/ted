@@ -14,8 +14,14 @@ export default function TabBar() {
     }
   }, []);
 
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (e.deltaY !== 0) {
+      e.currentTarget.scrollLeft += e.deltaY;
+    }
+  }, []);
+
   return (
-    <div className="tab-bar">
+    <div className="tab-bar" onWheel={handleWheel}>
       {tabs.map((tab) => {
         const isActive = tab.path === activeTabPath;
         return (

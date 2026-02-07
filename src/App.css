@@ -13,10 +13,17 @@ body,
 
 .app-layout {
     display: flex;
+    flex-direction: column;
     height: 100vh;
     width: 100vw;
     background-color: #1a1a1a;
     color: #d4d4d4;
+    overflow: hidden;
+}
+
+.app-content {
+    display: flex;
+    flex: 1;
     overflow: hidden;
 }
 

@@ -4,6 +4,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import Sidebar from "./components/sidebar/Sidebar";
 import TabBar from "./components/tabs/TabBar";
 import Editor from "./components/editor/Editor";
+import Titlebar from "./components/titlebar/Titlebar";
 import { editorStore, useEditorStore } from "./store/editor-store";
 import "./App.css";
 
@@ -73,18 +74,21 @@ function App() {
 
   return (
     <div className="app-layout">
-      {!explorerCollapsed && (
-        <>
-          <div className="app-sidebar" style={{ width: `${sidebarWidth}px` }}>
-            <Sidebar />
+      <Titlebar />
+      <div className="app-content">
+        {!explorerCollapsed && (
+          <>
+            <div className="app-sidebar" style={{ width: `${sidebarWidth}px` }}>
+              <Sidebar />
+            </div>
+            <div className="app-resize-handle" />
+          </>
+        )}
+        <div className="app-main">
+          <TabBar />
+          <div className="app-editor">
+            <Editor />
           </div>
-          <div className="app-resize-handle" />
-        </>
-      )}
-      <div className="app-main">
-        <TabBar />
-        <div className="app-editor">
-          <Editor />
         </div>
       </div>
     </div>

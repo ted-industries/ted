@@ -1,0 +1,102 @@
+import { invoke } from "@tauri-apps/api/core";
+
+export type TelemetryEventType =
+    | "app_start"
+    | "file_open"
+    | "file_save"
+    | "file_close"
+    | "tab_switch"
+    | "typing"
+    | "cursor_move"
+    | "selection_change"
+    | "undo"
+    | "redo"
+    | "command_executed"
+    | "terminal_spawn"
+    | "terminal_command";
+
+export interface TelemetryEvent {
+    type: TelemetryEventType;
+    payload?: any;
+    timestamp: number;
+    isoTimestamp: string;
+    sessionId: string;
+    userId: string;
+}
+
+class TelemetryService {
+    private buffer: TelemetryEvent[] = [];
+    private flushInterval: NodeJS.Timeout | null = null;
+    private readonly FLUSH_DELAY = 5000;
+    private readonly MAX_BUFFER_SIZE = 50;
+    private sessionId: string;
+    private userId: string;
+
+    constructor() {
+        this.sessionId = crypto.randomUUID();
+        this.userId = this.getUserId();
+        this.startFlushTimer();
+        this.log("app_start", { platform: navigator.platform });
+    }
+
+    private getUserId(): string {
+        let id = localStorage.getItem("ted_telemetry_user_id");
+        if (!id) {
+            id = crypto.randomUUID();
+            localStorage.setItem("ted_telemetry_user_id", id);
+        }
+        return id;
+    }
+
+    public log(type: TelemetryEventType, payload?: any) {
+        const event: TelemetryEvent = {
+            type,
+            payload,
+            timestamp: Date.now(),
+            isoTimestamp: new Date().toISOString(),
+            sessionId: this.sessionId,
+            userId: this.userId,
+        };
+
+        this.buffer.push(event);
+
+        if (this.buffer.length >= this.MAX_BUFFER_SIZE) {
+            this.flush();
+        }
+    }
+
+    private startFlushTimer() {
+        if (this.flushInterval) return;
+        this.flushInterval = setInterval(() => {
+            this.flush();
+        }, this.FLUSH_DELAY);
+    }
+
+    private async flush() {
+        if (this.buffer.length === 0) return;
+
+        const eventsToSend = [...this.buffer];
+        this.buffer = [];
+
+        // Send individually for now as our rust command accepts single strings
+        // In future we could bulk send
+        for (const event of eventsToSend) {
+            try {
+                await invoke("log_telemetry_event", { event: JSON.stringify(event) });
+            } catch (err) {
+                console.error("Failed to log telemetry event:", err);
+                // Recover failed events? For now, just drop to avoid loops
+            }
+        }
+    }
+
+    public dispose() {
+        if (this.flushInterval) {
+            clearInterval(this.flushInterval);
+            this.flushInterval = null;
+        }
+        this.flush(); // Flush remaining
+    }
+}
+
+export const telemetry = new TelemetryService();

@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { telemetry } from "../services/telemetry-service";
 
 export interface TabState {
   path: string;
@@ -189,6 +190,8 @@ export const editorStore = {
       tabs: [...state.tabs, tab],
       activeTabPath: path,
     }, { path, name });
+
+    telemetry.log("file_open", { path, name });
   },
 
   closeTab(path: string) {
@@ -200,10 +203,12 @@ export const editorStore = {
       activeTabPath = newIdx >= 0 ? tabs[newIdx].path : null;
     }
     dispatch("CLOSE_TAB", { tabs, activeTabPath }, { path });
+    telemetry.log("file_close", { path });
   },
 
   setActiveTab(path: string) {
     dispatch("SET_ACTIVE_TAB", { activeTabPath: path });
+    telemetry.log("tab_switch", { path });
   },
 
   updateTabContent(path: string, content: string) {

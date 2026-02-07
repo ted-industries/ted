@@ -27,6 +27,7 @@ import { RiArrowDownSLine, RiArrowRightSLine } from "@remixicon/react";
 import { tedDark } from "./theme";
 import { editorStore, useEditorStore } from "../../store/editor-store";
 import { getLanguageExtension } from "../../utils/languages";
+import { behaviorTracking } from "./extensions/behavior-tracking";
 import "../../styles/editor.css";
 
 const chevronDownSvg = renderToStaticMarkup(
@@ -113,6 +114,7 @@ function buildExtensions(
         }, 1500);
       }
     }),
+    behaviorTracking,
   ];
 
   if (langExt) {

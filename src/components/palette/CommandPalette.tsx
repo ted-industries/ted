@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from "react";
-import { editorStore, useEditorStore } from "../../store/editor-store";
+import { useRef, useMemo, useState, useEffect } from "react";
+import { useEditorStore, editorStore } from "../../store/editor-store";
+import { telemetry } from "../../services/telemetry-service";
 import "./CommandPalette.css";
 
 interface Command {
@@ -137,8 +138,10 @@ export default function CommandPalette() {
                 setSelectedIndex((i) => (filteredCommands.length > 0 ? (i - 1 + filteredCommands.length) % filteredCommands.length : 0));
             } else if (e.key === "Enter") {
                 e.preventDefault();
-                if (filteredCommands[selectedIndex]) {
-                    filteredCommands[selectedIndex].action();
+                const cmd = filteredCommands[selectedIndex];
+                if (cmd) {
+                    telemetry.log("command_executed", { id: cmd.id, label: cmd.label });
+                    cmd.action();
                     editorStore.setCommandPaletteOpen(false);
                 }
             }

@@ -37,6 +37,30 @@ pub struct FileEntry {
 }
 
 #[tauri::command]
+fn log_telemetry_event(handle: tauri::AppHandle, event: String) -> Result<(), String> {
+    use std::io::Write;
+    use tauri::path::BaseDirectory;
+
+    let log_path = handle
+        .path()
+        .resolve("telemetry.jsonl", BaseDirectory::AppConfig)
+        .map_err(|e| e.to_string())?;
+
+    if let Some(parent) = log_path.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+
+    let mut file = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&log_path)
+        .map_err(|e| e.to_string())?;
+
+    writeln!(file, "{}", event).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
 fn read_file(path: String) -> Result<String, String> {
     let meta = fs::metadata(&path).map_err(|e| e.to_string())?;
     if meta.len() > 10 * 1024 * 1024 {
@@ -137,6 +161,7 @@ pub fn run() {
             terminal::spawn_terminal,
             terminal::write_to_terminal,
             terminal::resize_terminal,
+            log_telemetry_event,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

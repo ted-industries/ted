@@ -1,7 +1,26 @@
-# Tauri + React + Typescript
+# ted
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+a minimal code editor *for agents* — coming soon
 
-## Recommended IDE Setup
+---
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+### planned
+
+- [ ] syntax highlighting
+- [x] multiple tabs
+- [x] file tree explorer
+- [ ] command palette
+- [ ] integrated terminal
+- [ ] git integration
+
+---
+
+### setup
+
+```bash
+# install dependencies
+bun install
+
+# start dev server
+bun tauri dev
+```

@@ -21,7 +21,7 @@ const tedDarkTheme = EditorView.theme(
       padding: "0 0 0 4px",
     },
     ".cm-cursor, .cm-dropCursor": {
-      borderLeftColor: "#d4d4d4",
+      borderLeftColor: "#aeafad",
       borderLeftWidth: "2px",
     },
     ".cm-content ::selection": {
@@ -70,7 +70,6 @@ const tedDarkTheme = EditorView.theme(
       fontFamily:
         "'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace",
     },
-    // Fold gutter
     ".cm-foldGutter": {
       width: "16px",
     },
@@ -89,7 +88,6 @@ const tedDarkTheme = EditorView.theme(
     ".cm-foldGutter .cm-gutterElement:hover": {
       opacity: "1",
     },
-    // Focus outline removal
     "&.cm-focused": {
       outline: "none",
     },
@@ -98,7 +96,6 @@ const tedDarkTheme = EditorView.theme(
 );
 
 const tedDarkHighlightStyle = HighlightStyle.define([
-  // Comments
   {
     tag: [t.comment, t.lineComment, t.blockComment, t.docComment],
     color: "#606060",
@@ -107,34 +104,34 @@ const tedDarkHighlightStyle = HighlightStyle.define([
   // Keywords
   {
     tag: [t.keyword, t.controlKeyword, t.operatorKeyword, t.moduleKeyword],
-    color: "#a0a0a0",
+    color: "#c678dd",
     fontWeight: "600",
   },
   // Storage / modifiers
-  { tag: [t.modifier, t.definitionKeyword], color: "#b0b0b0" },
+  { tag: [t.modifier, t.definitionKeyword], color: "#c678dd" },
   // Strings
-  { tag: [t.string, t.special(t.string), t.character], color: "#909090" },
+  { tag: [t.string, t.special(t.string), t.character], color: "#98c379" },
   // Numbers & units
-  { tag: [t.number, t.integer, t.float], color: "#b0b0b0" },
-  { tag: t.unit, color: "#b0b0b0" },
+  { tag: [t.number, t.integer, t.float], color: "#d19a66" },
+  { tag: t.unit, color: "#d19a66" },
   // CSS color literals
-  { tag: t.color, color: "#909090" },
+  { tag: t.color, color: "#d19a66" },
   // Constants / keyword values
-  { tag: [t.bool, t.null, t.atom], color: "#b0b0b0" },
+  { tag: [t.bool, t.null, t.atom], color: "#d19a66" },
   // Types
-  { tag: [t.typeName, t.namespace], color: "#d0d0d0" },
+  { tag: [t.typeName, t.namespace], color: "#e5c07b" },
   // CSS class selectors
-  { tag: t.className, color: "#d0d0d0" },
+  { tag: t.className, color: "#e5c07b" },
   // Property names
-  { tag: t.propertyName, color: "#c0c0c0" },
+  { tag: t.propertyName, color: "#d19a66" },
   // Variables
-  { tag: t.variableName, color: "#d4d4d4" },
+  { tag: t.variableName, color: "#e06c75" },
   // Predefined variables
-  { tag: t.special(t.variableName), color: "#d4d4d4" },
+  { tag: t.special(t.variableName), color: "#e06c75" },
   // Functions
   {
     tag: [t.function(t.variableName), t.function(t.propertyName)],
-    color: "#e0e0e0",
+    color: "#61afef",
   },
   // Operators
   {
@@ -145,27 +142,27 @@ const tedDarkHighlightStyle = HighlightStyle.define([
       t.logicOperator,
       t.compareOperator,
     ],
-    color: "#a0a0a0",
+    color: "#56b6c2",
   },
   // Tags (JSX/HTML)
-  { tag: t.tagName, color: "#d0d0d0" },
+  { tag: t.tagName, color: "#e06c75" },
   // Tag attributes
-  { tag: t.attributeName, color: "#b0b0b0" },
+  { tag: t.attributeName, color: "#d19a66" },
   // Label names (CSS ID selectors)
-  { tag: t.labelName, color: "#d0d0d0" },
+  { tag: t.labelName, color: "#e06c75" },
   // Pseudo-class names
-  { tag: t.constant(t.className), color: "#d0d0d0" },
+  { tag: t.constant(t.className), color: "#d19a66" },
   // Brackets
   {
     tag: [t.bracket, t.paren, t.brace, t.squareBracket],
-    color: "#808080",
+    color: "#abb2bf",
   },
   // Angle brackets (JSX < > />)
-  { tag: t.angleBracket, color: "#808080" },
+  { tag: t.angleBracket, color: "#abb2bf" },
   // Separators, punctuation (semicolons, commas, colons)
-  { tag: [t.separator, t.punctuation], color: "#808080" },
+  { tag: [t.separator, t.punctuation], color: "#abb2bf" },
   // Regex
-  { tag: t.regexp, color: "#909090" },
+  { tag: t.regexp, color: "#98c379" },
   // Default identifier
   { tag: t.name, color: "#d4d4d4" },
 ]);

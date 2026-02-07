@@ -1,4 +1,6 @@
 import { useRef, useEffect } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { createElement } from "react";
 import { EditorState } from "@codemirror/state";
 import {
   EditorView,
@@ -6,9 +8,8 @@ import {
   lineNumbers,
   highlightActiveLine,
   highlightActiveLineGutter,
-  drawSelection,
 } from "@codemirror/view";
-import { css } from "@codemirror/lang-css";
+import { javascript } from "@codemirror/lang-javascript";
 import {
   foldGutter,
   foldKeymap,
@@ -23,7 +24,24 @@ import {
   closeBrackets,
   closeBracketsKeymap,
 } from "@codemirror/autocomplete";
+import { RiArrowDownSLine, RiArrowRightSLine } from "@remixicon/react";
 import { tedDark } from "./theme";
+import "../../styles/editor.css";
+
+const chevronDownSvg = renderToStaticMarkup(
+  createElement(RiArrowDownSLine, { size: 16 }),
+);
+const chevronRightSvg = renderToStaticMarkup(
+  createElement(RiArrowRightSLine, { size: 16 }),
+);
+
+function makeFoldMarker(open: boolean) {
+  const el = document.createElement("span");
+  el.style.cssText =
+    "display:flex;align-items:center;justify-content:center;width:16px;height:16px;color:#858585;";
+  el.innerHTML = open ? chevronDownSvg : chevronRightSvg;
+  return el;
+}
 
 export default function Editor() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -33,34 +51,29 @@ export default function Editor() {
     if (!containerRef.current) return;
 
     const state = EditorState.create({
-      doc: `.editor-wrapper {
-    height: 100vh;
-    width: 100vw;
-    padding: 8px;
-    box-sizing: border-box;
-    background-color: #111111;
+      doc: `import Editor from "./components/editor/Editor";
+import "./App.css";
+
+function App() {
+  return <Editor />;
 }
 
-.editor-wrapper .cm-editor {
-    height: 100%;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.cm-editor.cm-focused {
-    outline: none;
-}
-
-.cm-scroller {`,
+export default App;
+`,
       extensions: [
-        css(),
+        javascript({ typescript: true, jsx: true }),
         tedDark,
         lineNumbers(),
         highlightActiveLine(),
         highlightActiveLineGutter(),
-        drawSelection(),
         bracketMatching(),
-        foldGutter(),
+        foldGutter({
+          openText: "\u00A0",
+          closedText: "\u00A0",
+          markerDOM(open) {
+            return makeFoldMarker(open);
+          },
+        }),
         history(),
         indentOnInput(),
         closeBrackets(),

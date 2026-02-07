@@ -1,0 +1,33 @@
+.editor-wrapper {
+    height: 100vh;
+    width: 100vw;
+    box-sizing: border-box;
+    background-color: #1a1a1a;
+}
+
+.editor-wrapper .cm-editor {
+    height: 100%;
+}
+
+/* Scrollbars */
+.cm-scroller::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.cm-scroller::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.cm-scroller::-webkit-scrollbar-thumb {
+    background: #ffffff15;
+    border-radius: 4px;
+}
+
+.cm-scroller::-webkit-scrollbar-thumb:hover {
+    background: #ffffff25;
+}
+
+.cm-scroller::-webkit-scrollbar-corner {
+    background: transparent;
+}

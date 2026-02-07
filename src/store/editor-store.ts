@@ -102,6 +102,13 @@ export const editorStore = {
     }
   },
 
+  newFile() {
+    const untitledCount = state.tabs.filter((t) => t.name.startsWith("Untitled")).length;
+    const name = `Untitled-${untitledCount + 1}`;
+    const path = `untitled://${name}`;
+    this.openTab(path, name, "");
+  },
+
   openTab(path: string, name: string, content: string) {
     const existing = state.tabs.find((t) => t.path === path);
     if (existing) {

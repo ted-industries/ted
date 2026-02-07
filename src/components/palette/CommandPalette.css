@@ -32,7 +32,7 @@
     background: transparent;
     border: none;
     outline: none;
-    color: #fff;
+    color: #e0e0e0;
     font-family: inherit;
     font-size: 14px;
 }
@@ -63,7 +63,7 @@
 }
 
 .palette-item.selected .palette-item-label {
-    color: #fff;
+    color: #e0e0e0;
 }
 
 .palette-item-shortcut {

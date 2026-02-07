@@ -6,11 +6,13 @@ import TabBar from "./components/tabs/TabBar";
 import Editor from "./components/editor/Editor";
 import Titlebar from "./components/titlebar/Titlebar";
 import CommandPalette from "./components/palette/CommandPalette";
+import Welcome from "./components/welcome/Welcome";
 import { editorStore, useEditorStore } from "./store/editor-store";
 import "./App.css";
 
 function App() {
   const explorerCollapsed = useEditorStore((s) => s.explorerCollapsed);
+  const activeTabPath = useEditorStore((s) => s.activeTabPath);
   const [sidebarWidth, setSidebarWidth] = useState(240);
   const isDraggingRef = useRef(false);
 
@@ -87,6 +89,10 @@ function App() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === "n") {
+        e.preventDefault();
+        editorStore.newFile();
+      }
       if (e.ctrlKey && e.key === "o") {
         e.preventDefault();
         handleOpenFile();
@@ -121,10 +127,16 @@ function App() {
           </>
         )}
         <div className="app-main">
-          <TabBar />
-          <div className="app-editor">
-            <Editor />
-          </div>
+          {activeTabPath ? (
+            <>
+              <TabBar />
+              <div className="app-editor">
+                <Editor />
+              </div>
+            </>
+          ) : (
+            <Welcome />
+          )}
         </div>
       </div>
       <CommandPalette />

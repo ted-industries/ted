@@ -52,10 +52,10 @@
 
 .titlebar-button:hover {
   background-color: #323232;
-  color: #ffffff;
+  color: #e0e0e0;
 }
 
 .titlebar-button-close:hover {
-  background-color: #e81123 !important;
-  color: #ffffff !important;
+  background-color: #444444 !important;
+  color: #e0e0e0 !important;
 }

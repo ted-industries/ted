@@ -1,0 +1,110 @@
+.welcome-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #1a1a1a;
+    color: #d4d4d4;
+    height: 100%;
+}
+
+.welcome-content {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    padding-bottom: 10vh;
+}
+
+.welcome-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding-left: 4px;
+}
+
+.welcome-logo img {
+    width: 56px;
+    height: 56px;
+    opacity: 0.8;
+}
+
+.welcome-title-group h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 500;
+    color: #e0e0e0;
+    letter-spacing: -0.01em;
+}
+
+.welcome-title-group p {
+    margin: 4px 0 0 0;
+    font-size: 14px;
+    color: #666;
+    font-style: italic;
+}
+
+.welcome-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #555;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+}
+
+.section-line {
+    flex: 1;
+    height: 1px;
+    background-color: #252525;
+}
+
+.action-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.action-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.1s, color 0.1s;
+    margin-left: -12px;
+    margin-right: -12px;
+}
+
+.action-item:hover {
+    background-color: #252525;
+}
+
+.action-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #999;
+}
+
+.action-item:hover .action-left {
+    color: #e0e0e0;
+}
+
+.action-left span {
+    font-size: 13px;
+}
+
+.action-shortcut {
+    font-size: 11px;
+    color: #555;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}

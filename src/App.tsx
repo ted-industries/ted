@@ -1,16 +1,8 @@
-import Editor from "@monaco-editor/react";
+import Editor from "./components/editor/Editor";
 import "./App.css";
 
 function App() {
-  return (
-    <div className="editor-container">
-      <Editor
-        defaultLanguage="typescript"
-        defaultValue="// Welcome to ted"
-        theme="vs-dark"
-      />
-    </div>
-  );
+  return <Editor />;
 }
 
 export default App;

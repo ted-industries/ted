@@ -5,6 +5,7 @@ import Sidebar from "./components/sidebar/Sidebar";
 import TabBar from "./components/tabs/TabBar";
 import Editor from "./components/editor/Editor";
 import Titlebar from "./components/titlebar/Titlebar";
+import CommandPalette from "./components/palette/CommandPalette";
 import { editorStore, useEditorStore } from "./store/editor-store";
 import "./App.css";
 
@@ -57,6 +58,33 @@ function App() {
     };
   }, [handleMouseDown, handleMouseUp, handleMouseMove]);
 
+  const handleSaveFile = useCallback(async () => {
+    const s = editorStore.getState();
+    const activeTab = s.tabs.find((t) => t.path === s.activeTabPath);
+    if (!activeTab) return;
+
+    try {
+      await invoke("write_file", {
+        path: activeTab.path,
+        content: activeTab.content,
+      });
+      editorStore.markTabSaved(activeTab.path, activeTab.content);
+    } catch (err) {
+      console.error("Failed to save file:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    const onOpenFile = () => handleOpenFile();
+    const onSaveFile = () => handleSaveFile();
+    window.addEventListener("ted:open-file", onOpenFile);
+    window.addEventListener("ted:save-file", onSaveFile);
+    return () => {
+      window.removeEventListener("ted:open-file", onOpenFile);
+      window.removeEventListener("ted:save-file", onSaveFile);
+    };
+  }, [handleOpenFile, handleSaveFile]);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === "o") {
@@ -67,10 +95,18 @@ function App() {
         e.preventDefault();
         editorStore.toggleExplorer();
       }
+      if (e.ctrlKey && e.key === "s") {
+        e.preventDefault();
+        handleSaveFile();
+      }
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "p") {
+        e.preventDefault();
+        editorStore.toggleCommandPalette();
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [handleOpenFile]);
+  }, [handleOpenFile, handleSaveFile]);
 
   return (
     <div className="app-layout">
@@ -91,6 +127,7 @@ function App() {
           </div>
         </div>
       </div>
+      <CommandPalette />
     </div>
   );
 }

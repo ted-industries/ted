@@ -16,6 +16,7 @@ interface EditorStoreState {
   activeTabPath: string | null;
   explorerPath: string | null;
   explorerCollapsed: boolean;
+  commandPaletteOpen: boolean;
 }
 
 type Listener = () => void;
@@ -25,6 +26,7 @@ let state: EditorStoreState = {
   activeTabPath: null,
   explorerPath: null,
   explorerCollapsed: false,
+  commandPaletteOpen: false,
 };
 
 const listeners = new Set<Listener>();
@@ -116,6 +118,12 @@ export const editorStore = {
 
   toggleExplorer() {
     setState({ explorerCollapsed: !state.explorerCollapsed });
+  },
+  setCommandPaletteOpen(open: boolean) {
+    setState({ commandPaletteOpen: open });
+  },
+  toggleCommandPalette() {
+    setState({ commandPaletteOpen: !state.commandPaletteOpen });
   },
 };
 

@@ -1,0 +1,80 @@
+.command-palette-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: transparent;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    padding-top: 20vh;
+}
+
+.command-palette {
+    width: 600px;
+    max-width: 90vw;
+    background-color: #1a1a1a;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    border: 1px solid #252525;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: 60vh;
+}
+
+.palette-input-container {
+    padding: 12px;
+    border-bottom: 1px solid #252525;
+    background-color: #202020;
+}
+
+.palette-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.palette-list {
+    padding: 4px;
+    overflow-y: auto;
+    background-color: #1a1a1a;
+}
+
+.palette-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.palette-item.selected {
+    background-color: #3e3e3e;
+}
+
+.palette-item-label {
+    font-size: 13px;
+    color: #ccc;
+}
+
+.palette-item.selected .palette-item-label {
+    color: #fff;
+}
+
+.palette-item-shortcut {
+    font-size: 11px;
+    color: #666;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.palette-no-results {
+    padding: 24px;
+    text-align: center;
+    color: #666;
+    font-size: 13px;
+}

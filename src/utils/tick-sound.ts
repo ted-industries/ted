@@ -9,19 +9,46 @@ function getAudioContext(): AudioContext {
 
 export function playTick() {
   const ctx = getAudioContext();
-  const oscillator = ctx.createOscillator();
-  const gain = ctx.createGain();
+  const t = ctx.currentTime;
 
-  oscillator.connect(gain);
-  gain.connect(ctx.destination);
+  // Noise pop — short filtered burst
+  const len = Math.floor(ctx.sampleRate * 0.012);
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+  }
+  const noise = ctx.createBufferSource();
+  noise.buffer = buf;
 
-  oscillator.type = "sine";
-  oscillator.frequency.setValueAtTime(1800, ctx.currentTime);
-  oscillator.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.03);
+  const filter = ctx.createBiquadFilter();
+  filter.type = "bandpass";
+  filter.frequency.value = 1200;
+  filter.Q.value = 0.8;
 
-  gain.gain.setValueAtTime(0.06, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+  const noiseGain = ctx.createGain();
+  noiseGain.gain.setValueAtTime(0.09, t);
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.012);
 
-  oscillator.start(ctx.currentTime);
-  oscillator.stop(ctx.currentTime + 0.04);
+  noise.connect(filter);
+  filter.connect(noiseGain);
+  noiseGain.connect(ctx.destination);
+
+  // Thump — very short sine punch
+  const osc = ctx.createOscillator();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(220, t);
+  osc.frequency.exponentialRampToValueAtTime(60, t + 0.02);
+
+  const oscGain = ctx.createGain();
+  oscGain.gain.setValueAtTime(0.1, t);
+  oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.025);
+
+  osc.connect(oscGain);
+  oscGain.connect(ctx.destination);
+
+  noise.start(t);
+  noise.stop(t + 0.012);
+  osc.start(t);
+  osc.stop(t + 0.025);
 }

@@ -16,6 +16,7 @@ export default function TapeSpinner({
 }: TapeSpinnerProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [isHovering, setIsHovering] = useState(false);
+  const [isSpinning, setIsSpinning] = useState(false);
   const [offset, setOffset] = useState(0);
   const itemWidth = 120;
   const lastTickIndexRef = useRef(activeIndex);
@@ -23,10 +24,8 @@ export default function TapeSpinner({
   const velocityRef = useRef(0);
   const targetOffsetRef = useRef(0);
   const currentOffsetRef = useRef(0);
+  const spinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Center of an item = index * itemWidth + itemWidth/2
-  // We want that to align with viewport center
-  // So track translateX = viewportCenter - (index * itemWidth + itemWidth/2)
   const getOffsetForIndex = useCallback(
     (index: number) => {
       const vp = viewportRef.current;
@@ -36,7 +35,7 @@ export default function TapeSpinner({
     [itemWidth],
   );
 
-  // Initialize position once mounted
+  // Initialize
   useEffect(() => {
     const off = getOffsetForIndex(activeIndex);
     setOffset(off);
@@ -44,7 +43,7 @@ export default function TapeSpinner({
     targetOffsetRef.current = off;
   }, []);
 
-  // When activeIndex changes externally, animate to it
+  // Animate to new activeIndex when changed externally
   useEffect(() => {
     targetOffsetRef.current = getOffsetForIndex(activeIndex);
   }, [activeIndex, getOffsetForIndex]);
@@ -52,7 +51,6 @@ export default function TapeSpinner({
   const snapToNearest = useCallback(() => {
     const vp = viewportRef.current;
     const viewportCenter = vp ? vp.offsetWidth / 2 : 100;
-    // Which index is currently closest to center?
     const rawIndex = Math.round(
       (viewportCenter - currentOffsetRef.current - itemWidth / 2) / itemWidth,
     );
@@ -79,7 +77,7 @@ export default function TapeSpinner({
     [itemWidth],
   );
 
-  // Animation loop
+  // Animation loop — also detects when settled to clear spinning state
   useEffect(() => {
     let running = true;
     const animate = () => {
@@ -102,17 +100,27 @@ export default function TapeSpinner({
     };
   }, [checkTick]);
 
+  // Mark spinning, auto-clear after settling
+  const markSpinning = useCallback(() => {
+    setIsSpinning(true);
+    if (spinTimeoutRef.current) clearTimeout(spinTimeoutRef.current);
+    spinTimeoutRef.current = setTimeout(() => {
+      setIsSpinning(false);
+    }, 600);
+  }, []);
+
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       e.preventDefault();
       e.stopPropagation();
+
+      markSpinning();
 
       const delta = e.deltaY || e.deltaX;
       velocityRef.current += delta * 0.6;
       currentOffsetRef.current -= velocityRef.current;
       velocityRef.current *= 0.3;
 
-      // Rubber-band bounds
       const maxOffset = getOffsetForIndex(0);
       const minOffset = getOffsetForIndex(items.length - 1);
       const rubber = 30;
@@ -126,28 +134,32 @@ export default function TapeSpinner({
       setOffset(currentOffsetRef.current);
       snapToNearest();
     },
-    [items.length, getOffsetForIndex, checkTick, snapToNearest],
+    [items.length, getOffsetForIndex, checkTick, snapToNearest, markSpinning],
   );
 
   const goLeft = useCallback(() => {
     const newIndex = Math.max(0, activeIndex - 1);
     if (newIndex !== activeIndex) {
+      markSpinning();
       onChange(newIndex);
       playTick();
     }
-  }, [activeIndex, onChange]);
+  }, [activeIndex, onChange, markSpinning]);
 
   const goRight = useCallback(() => {
     const newIndex = Math.min(items.length - 1, activeIndex + 1);
     if (newIndex !== activeIndex) {
+      markSpinning();
       onChange(newIndex);
       playTick();
     }
-  }, [activeIndex, items.length, onChange]);
+  }, [activeIndex, items.length, onChange, markSpinning]);
+
+  const active = isSpinning || isHovering;
 
   return (
     <div
-      className={`tape-spinner${isHovering ? " tape-spinner-hover" : ""}`}
+      className={`tape-spinner${active ? " tape-spinner-active" : ""}`}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
@@ -158,8 +170,15 @@ export default function TapeSpinner({
       <div className="tape-viewport" ref={viewportRef} onWheel={handleWheel}>
         <div className="tape-vignette tape-vignette-left" />
         <div className="tape-vignette tape-vignette-right" />
+
+        {/* Resting label — visible when not active */}
+        <div className={`tape-resting${active ? " tape-resting-hidden" : ""}`}>
+          {items[activeIndex].toUpperCase()}
+        </div>
+
+        {/* Full tape — visible when active */}
         <div
-          className="tape-track"
+          className={`tape-track${active ? " tape-track-visible" : ""}`}
           style={{ transform: `translateX(${offset}px)` }}
         >
           {items.map((item, i) => (

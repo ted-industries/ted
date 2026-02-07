@@ -14,13 +14,47 @@
 
 /* Gutter left padding */
 .monaco-editor .margin {
-    padding-left: 8px !important;
+    padding-left: -10px !important;
+}
+
+.monaco-editor .line-numbers {
+    padding-right: 10px !important;
 }
 
 /* Match gutter background to editor */
 .monaco-editor .margin,
 .monaco-editor .monaco-editor-background {
     background-color: #1a1a1a !important;
+}
+
+/* Fold/unfold icons - smaller with rounded background on hover */
+.monaco-editor .cldr {
+    margin-left: 0 !important;
+}
+
+.monaco-editor .cldr.folding {
+    margin-right: 1px !important;
+}
+
+.monaco-editor .folding-decoration {
+    width: 16px !important;
+    height: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 0.6 !important;
+    cursor: pointer !important;
+}
+
+.monaco-editor .folding-decoration:hover {
+    background-color: #2a2a2a !important;
+    border-radius: 4px !important;
+    opacity: 1 !important;
+}
+
+/* Chevron icon inside fold button */
+.monaco-editor .folding-decoration::before {
+    font-size: 12px !important;
 }
 
 /* Hover widget styling */

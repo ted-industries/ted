@@ -64,9 +64,10 @@ export const tedDarkTheme: editor.IStandaloneThemeData = {
     "editor.background": "#1a1a1a",
     "editor.foreground": "#d4d4d4",
     "editor.lineHighlightBackground": "#ffffff08",
-    "editor.selectionBackground": "#264f78",
-    "editor.selectionHighlightBackground": "#264f7840",
+    "editor.selectionBackground": "#0e2a3d",
+    "editor.selectionHighlightBackground": "#0e2a3d40",
     "editor.wordHighlightBackground": "#575757b8",
+    "editor.inactiveSelectionBackground": "#0e2a3d80",
 
     // Line numbers
     "editorLineNumber.foreground": "#555555",

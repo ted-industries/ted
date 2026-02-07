@@ -66,6 +66,12 @@ function App() {
     const activeTab = s.tabs.find((t) => t.path === s.activeTabPath);
     if (!activeTab) return;
 
+    // Handle virtual paths
+    if (activeTab.path.startsWith("ted://")) {
+      editorStore.markTabSaved(activeTab.path, activeTab.content);
+      return;
+    }
+
     try {
       await invoke("write_file", {
         path: activeTab.path,

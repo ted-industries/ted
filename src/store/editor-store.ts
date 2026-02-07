@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { invoke } from "@tauri-apps/api/core";
 
 export interface TabState {
   path: string;
@@ -22,9 +23,22 @@ interface EditorStoreState {
   tabs: TabState[];
   activeTabPath: string | null;
   explorerPath: string | null;
+  projectName: string | null;
   explorerCollapsed: boolean;
   commandPaletteOpen: boolean;
   settingsOpen: boolean;
+  userSettings: {
+    sidebarWidth: number;
+    fontSize: number;
+    lineNumbers: boolean;
+    volume: number;
+  };
+  projectSettings: {
+    sidebarWidth?: number;
+    fontSize?: number;
+    lineNumbers?: boolean;
+    volume?: number;
+  };
   settings: {
     sidebarWidth: number;
     fontSize: number;
@@ -40,9 +54,17 @@ let state: EditorStoreState = {
   tabs: [],
   activeTabPath: null,
   explorerPath: null,
+  projectName: null,
   explorerCollapsed: false,
   commandPaletteOpen: false,
   settingsOpen: false,
+  userSettings: {
+    sidebarWidth: 240,
+    fontSize: 15,
+    lineNumbers: true,
+    volume: 50,
+  },
+  projectSettings: {},
   settings: {
     sidebarWidth: 240,
     fontSize: 15,
@@ -54,21 +76,12 @@ let state: EditorStoreState = {
 
 const MAX_LOGS = 1000;
 const listeners = new Set<Listener>();
-let batchingLevel = 0;
-let pendingEmits = false;
+let userSettingsPath: string | null = null;
 
 function emit() {
-  if (batchingLevel > 0) {
-    pendingEmits = true;
-    return;
-  }
   for (const l of listeners) l();
 }
 
-/**
- * Updates the state and logs the action.
- * Internal only.
- */
 function dispatch(type: string, partial: Partial<EditorStoreState>, payload?: any) {
   const log: ActionLog = {
     id: crypto.randomUUID(),
@@ -78,9 +91,33 @@ function dispatch(type: string, partial: Partial<EditorStoreState>, payload?: an
   };
 
   const nextLogs = [log, ...state.logs].slice(0, MAX_LOGS);
+  let nextState = { ...state, ...partial, logs: nextLogs };
 
-  state = { ...state, ...partial, logs: nextLogs };
+  if (partial.userSettings || partial.projectSettings) {
+    nextState.settings = {
+      ...nextState.userSettings,
+      ...nextState.projectSettings,
+    };
+
+    // Auto-persist settings on change
+    if (userSettingsPath && partial.userSettings) {
+      persistSettings(userSettingsPath, nextState.userSettings);
+    }
+    if (nextState.explorerPath && partial.projectSettings) {
+      persistSettings(`${nextState.explorerPath}/.ted/settings.json`, nextState.projectSettings);
+    }
+  }
+
+  state = nextState;
   emit();
+}
+
+async function persistSettings(path: string, settings: any) {
+  try {
+    await invoke("write_file", { path, content: JSON.stringify(settings, null, 2) });
+  } catch (err) {
+    console.error("Failed to persist settings to", path, err);
+  }
 }
 
 function updateTab(path: string, update: Partial<TabState>) {
@@ -91,6 +128,19 @@ function updateTab(path: string, update: Partial<TabState>) {
 }
 
 export const editorStore = {
+  async initialize() {
+    try {
+      userSettingsPath = await invoke("get_user_config_dir");
+      console.log("User settings path:", userSettingsPath);
+
+      const content: string = await invoke("read_file", { path: userSettingsPath });
+      const parsed = JSON.parse(content);
+      dispatch("INIT_USER_SETTINGS", { userSettings: { ...state.userSettings, ...parsed } });
+    } catch (err) {
+      console.log("No existing user settings found, using defaults.");
+    }
+  },
+
   getState: () => state,
   subscribe: (listener: Listener) => {
     listeners.add(listener);
@@ -99,34 +149,15 @@ export const editorStore = {
     };
   },
 
-  /**
-   * Batch multiple operations together. Only one notification will be emitted
-   * to listeners at the end of the batch.
-   */
-  batch(cb: () => void) {
-    batchingLevel++;
-    try {
-      cb();
-    } finally {
-      batchingLevel--;
-      if (batchingLevel === 0 && pendingEmits) {
-        pendingEmits = false;
-        emit();
-      }
-    }
-  },
-
   newFile() {
-    const untitledCount = state.tabs.filter((t) => t.name.startsWith("Untitled")).length;
-    const name = `Untitled-${untitledCount + 1}`;
-    const path = `untitled://${name}`;
-    this.openTab(path, name, "");
+    const id = crypto.randomUUID();
+    const path = `untitled-${id}`;
+    this.openTab(path, "Untitled", "");
   },
 
   openTab(path: string, name: string, content: string) {
-    const existing = state.tabs.find((t) => t.path === path);
-    if (existing) {
-      dispatch("SET_ACTIVE_TAB", { activeTabPath: path });
+    if (state.tabs.find((t) => t.path === path)) {
+      this.setActiveTab(path);
       return;
     }
     const tab: TabState = {
@@ -164,6 +195,22 @@ export const editorStore = {
     const tab = state.tabs.find((t) => t.path === path);
     if (!tab) return;
     updateTab(path, { content, isDirty: content !== tab.savedContent });
+
+    if (path === "ted://settings.json") {
+      try {
+        const parsed = JSON.parse(content);
+        if (parsed && typeof parsed === "object") {
+          this.updateSettings(parsed, "user");
+        }
+      } catch { }
+    } else if (path === "ted://project-settings.json") {
+      try {
+        const parsed = JSON.parse(content);
+        if (parsed && typeof parsed === "object") {
+          this.updateSettings(parsed, "project");
+        }
+      } catch { }
+    }
   },
 
   saveTabViewState(
@@ -179,8 +226,23 @@ export const editorStore = {
     updateTab(path, { savedContent: content, content, isDirty: false });
   },
 
-  setExplorerPath(path: string | null) {
-    dispatch("SET_EXPLORER_PATH", { explorerPath: path });
+  async setExplorerPath(path: string | null) {
+    dispatch("SET_EXPLORER_PATH", { explorerPath: path, projectSettings: {} });
+
+    if (path) {
+      try {
+        const projectSettingsPath = `${path}/.ted/settings.json`;
+        const content: string = await invoke("read_file", { path: projectSettingsPath });
+        const parsed = JSON.parse(content);
+        dispatch("LOAD_PROJECT_SETTINGS", { projectSettings: parsed });
+      } catch {
+        console.log("No project settings found for", path);
+      }
+    }
+  },
+
+  setProjectName(name: string | null) {
+    dispatch("SET_PROJECT_NAME", { projectName: name });
   },
 
   toggleExplorer() {
@@ -203,9 +265,14 @@ export const editorStore = {
     dispatch("TOGGLE_SETTINGS", { settingsOpen: !state.settingsOpen });
   },
 
-  updateSettings(update: Partial<EditorStoreState["settings"]>) {
-    const settings = { ...state.settings, ...update };
-    dispatch("UPDATE_SETTINGS", { settings }, { update });
+  updateSettings(update: any, level: "user" | "project" = "user") {
+    if (level === "user") {
+      const userSettings = { ...state.userSettings, ...update };
+      dispatch("UPDATE_USER_SETTINGS", { userSettings }, { update });
+    } else {
+      const projectSettings = { ...state.projectSettings, ...update };
+      dispatch("UPDATE_PROJECT_SETTINGS", { projectSettings }, { update });
+    }
   },
 };
 

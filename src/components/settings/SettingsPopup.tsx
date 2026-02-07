@@ -20,26 +20,22 @@ const CATEGORIES = [
 
 export default function SettingsPopup() {
     const isOpen = useEditorStore((s) => s.settingsOpen);
-    const settings = useEditorStore((s) => s.settings);
-    const explorerPath = useEditorStore((s) => s.explorerPath);
+    const userSettings = useEditorStore((s) => s.userSettings);
+    const projectSettings = useEditorStore((s) => s.projectSettings);
+    const projectName = useEditorStore((s) => s.projectName);
 
     const [activeCategory, setActiveCategory] = useState("general");
-    const [activeTab, setActiveTab] = useState("user");
-    const [projectName, setProjectName] = useState("ted");
+    const [activeTab, setActiveTab] = useState<"user" | "project">("user");
 
     const generalRef = useRef<HTMLDivElement>(null);
     const appearanceRef = useRef<HTMLDivElement>(null);
     const editorRef = useRef<HTMLDivElement>(null);
     const filesRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        if (explorerPath) {
-            const parts = explorerPath.split(/[\\/]/);
-            setProjectName(parts[parts.length - 1] || "ted");
-        } else {
-            setProjectName("ted");
-        }
-    }, [explorerPath]);
+    const displayProjectName = projectName || "Project";
+
+    // Computed settings based on active tab
+    const activeSettings = activeTab === "user" ? userSettings : projectSettings;
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -53,13 +49,34 @@ export default function SettingsPopup() {
 
     const scrollToCategory = (id: string) => {
         setActiveCategory(id);
-        const refs: Record<string, React.RefObject<HTMLDivElement>> = {
+        const refs: Record<string, React.RefObject<HTMLDivElement | null>> = {
             general: generalRef,
             appearance: appearanceRef,
             editor: editorRef,
             files: filesRef
         };
         refs[id]?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+
+    const handleEditJson = () => {
+        if (activeTab === "user") {
+            editorStore.openTab(
+                "ted://settings.json",
+                "user-settings.json",
+                JSON.stringify(userSettings, null, 2)
+            );
+        } else {
+            editorStore.openTab(
+                "ted://project-settings.json",
+                `${displayProjectName.toLowerCase()}.json`,
+                JSON.stringify(projectSettings, null, 2)
+            );
+        }
+        editorStore.setSettingsOpen(false);
+    };
+
+    const updateActiveSetting = (key: string, value: any) => {
+        editorStore.updateSettings({ [key]: value }, activeTab);
     };
 
     if (!isOpen) return null;
@@ -106,15 +123,15 @@ export default function SettingsPopup() {
                                 User
                             </div>
                             <div
-                                className={`settings-tab ${activeTab === 'ted' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('ted')}
+                                className={`settings-tab ${activeTab === 'project' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('project')}
                             >
-                                {projectName}
+                                {displayProjectName}
                             </div>
                         </div>
 
                         <div className="settings-header-actions">
-                            <button className="settings-json-btn">
+                            <button className="settings-json-btn" onClick={handleEditJson}>
                                 <span>Edit in settings.json</span>
                             </button>
                             <button className="settings-close-btn" onClick={() => editorStore.setSettingsOpen(false)}>
@@ -157,10 +174,10 @@ export default function SettingsPopup() {
                                             type="range"
                                             min={0}
                                             max={100}
-                                            value={settings.volume}
-                                            onChange={(e) => editorStore.updateSettings({ volume: parseInt(e.target.value) })}
+                                            value={activeSettings.volume ?? 50}
+                                            onChange={(e) => updateActiveSetting("volume", parseInt(e.target.value))}
                                         />
-                                        <div className="zed-slider-track" style={{ width: `${settings.volume}%` }} />
+                                        <div className="zed-slider-track" style={{ width: `${activeSettings.volume ?? 50}%` }} />
                                     </div>
                                 </div>
                             </div>
@@ -180,8 +197,9 @@ export default function SettingsPopup() {
                                     <input
                                         type="number"
                                         className="zed-input"
-                                        value={settings.fontSize}
-                                        onChange={(e) => editorStore.updateSettings({ fontSize: parseInt(e.target.value) || 0 })}
+                                        value={activeSettings.fontSize ?? ""}
+                                        placeholder={activeTab === "project" ? "Inherit" : "15"}
+                                        onChange={(e) => updateActiveSetting("fontSize", parseInt(e.target.value) || undefined)}
                                     />
                                 </div>
                             </div>
@@ -195,8 +213,8 @@ export default function SettingsPopup() {
                                 </div>
                                 <div className="row-control">
                                     <div
-                                        className={`zed-switch ${settings.lineNumbers ? 'active' : ''}`}
-                                        onClick={() => editorStore.updateSettings({ lineNumbers: !settings.lineNumbers })}
+                                        className={`zed-switch ${activeSettings.lineNumbers ? 'active' : ''}`}
+                                        onClick={() => updateActiveSetting("lineNumbers", !activeSettings.lineNumbers)}
                                     />
                                 </div>
                             </div>
@@ -216,8 +234,9 @@ export default function SettingsPopup() {
                                     <input
                                         type="number"
                                         className="zed-input"
-                                        value={settings.sidebarWidth}
-                                        onChange={(e) => editorStore.updateSettings({ sidebarWidth: parseInt(e.target.value) || 0 })}
+                                        value={activeSettings.sidebarWidth ?? ""}
+                                        placeholder={activeTab === "project" ? "Inherit" : "240"}
+                                        onChange={(e) => updateActiveSetting("sidebarWidth", parseInt(e.target.value) || undefined)}
                                     />
                                 </div>
                             </div>

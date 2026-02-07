@@ -1,4 +1,5 @@
 use serde::Serialize;
+use tauri::Manager;
 use std::fs;
 use std::path::Path;
 
@@ -104,6 +105,16 @@ fn get_basename(path: String) -> String {
         .unwrap_or_else(|| path.clone())
 }
 
+#[tauri::command]
+fn get_user_config_dir(handle: tauri::AppHandle) -> Result<String, String> {
+    use tauri::path::BaseDirectory;
+    handle
+        .path()
+        .resolve("settings.json", BaseDirectory::Config)
+        .map(|p: std::path::PathBuf| p.to_string_lossy().to_string())
+        .map_err(|e: tauri::Error| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -114,6 +125,7 @@ pub fn run() {
             write_file,
             list_dir,
             get_basename,
+            get_user_config_dir,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

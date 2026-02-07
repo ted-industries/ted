@@ -107,6 +107,7 @@ export default function Explorer() {
         if (!cancelled) {
           setEntries(items);
           setRootName(name);
+          editorStore.setProjectName(name);
         }
       } catch (err) {
         console.error("Failed to list directory:", err);

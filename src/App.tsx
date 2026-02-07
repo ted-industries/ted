@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import Explorer from "./components/explorer/Explorer";
+import Sidebar from "./components/sidebar/Sidebar";
 import TabBar from "./components/tabs/TabBar";
 import Editor from "./components/editor/Editor";
 import { editorStore, useEditorStore } from "./store/editor-store";
@@ -26,7 +26,6 @@ function App() {
     }
   }, []);
 
-  // Global keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === "o") {
@@ -46,7 +45,7 @@ function App() {
     <div className="app-layout">
       {!explorerCollapsed && (
         <div className="app-sidebar">
-          <Explorer />
+          <Sidebar />
         </div>
       )}
       <div className="app-main">

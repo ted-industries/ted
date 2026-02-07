@@ -1,0 +1,99 @@
+.tape-spinner {
+    display: flex;
+    align-items: center;
+    height: 32px;
+    padding: 0 4px;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+/* Chevrons */
+.tape-chevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: none;
+    border: none;
+    color: #666666;
+    cursor: pointer;
+    padding: 0;
+    border-radius: 3px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.tape-spinner-hover .tape-chevron {
+    opacity: 1;
+}
+
+.tape-chevron:hover {
+    color: #aaaaaa;
+    background: #ffffff0a;
+}
+
+/* Viewport — the visible window */
+.tape-viewport {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    height: 100%;
+}
+
+/* Vignette overlays */
+.tape-vignette {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 32px;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s;
+}
+
+.tape-spinner-hover .tape-vignette {
+    opacity: 1;
+}
+
+.tape-vignette-left {
+    left: 0;
+    background: linear-gradient(to right, #181818 0%, transparent 100%);
+}
+
+.tape-vignette-right {
+    right: 0;
+    background: linear-gradient(to left, #181818 0%, transparent 100%);
+}
+
+/* Track — the sliding tape */
+.tape-track {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    will-change: transform;
+}
+
+/* Individual tape items */
+.tape-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    height: 100%;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    color: #555555;
+    transition: color 0.15s;
+    cursor: default;
+}
+
+.tape-item-active {
+    color: #999999;
+}

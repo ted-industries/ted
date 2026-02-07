@@ -1,0 +1,22 @@
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.sidebar-content {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.sidebar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #555555;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}

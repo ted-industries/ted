@@ -136,7 +136,6 @@ export default function Explorer() {
   if (!explorerPath) {
     return (
       <div className="explorer">
-        <div className="explorer-header">EXPLORER</div>
         <div className="explorer-empty">
           <button className="explorer-open-btn" onClick={handleOpenFolder}>
             <RiFolderAddLine size={16} />
@@ -149,7 +148,6 @@ export default function Explorer() {
 
   return (
     <div className="explorer">
-      <div className="explorer-header">EXPLORER</div>
       <div className="explorer-section-header" onClick={handleOpenFolder}>
         <RiArrowDownSLine size={16} />
         <span>{rootName.toUpperCase()}</span>

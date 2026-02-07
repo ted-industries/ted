@@ -1,14 +1,16 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import Sidebar from "./components/sidebar/Sidebar";
 import TabBar from "./components/tabs/TabBar";
 import Editor from "./components/editor/Editor";
+import SoundLab from "./components/SoundLab";
 import { editorStore, useEditorStore } from "./store/editor-store";
 import "./App.css";
 
 function App() {
   const explorerCollapsed = useEditorStore((s) => s.explorerCollapsed);
+  const [showSoundLab, setShowSoundLab] = useState(false);
 
   const handleOpenFile = useCallback(async () => {
     const selected = await open({
@@ -36,6 +38,13 @@ function App() {
         e.preventDefault();
         editorStore.toggleExplorer();
       }
+      if (e.ctrlKey && e.shiftKey && e.key === "U") {
+        e.preventDefault();
+        setShowSoundLab((v) => !v);
+      }
+      if (e.key === "Escape") {
+        setShowSoundLab(false);
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -54,6 +63,7 @@ function App() {
           <Editor />
         </div>
       </div>
+      {showSoundLab && <SoundLab onClose={() => setShowSoundLab(false)} />}
     </div>
   );
 }

@@ -21,12 +21,24 @@ body,
 }
 
 .app-sidebar {
-    width: 240px;
     flex-shrink: 0;
     border-right: 1px solid #252525;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+}
+
+.app-resize-handle {
+    width: 4px;
+    height: 100vh;
+    cursor: col-resize;
+    background: transparent;
+    flex-shrink: 0;
+    transition: background-color 0.15s;
+}
+
+.app-resize-handle:hover {
+    background-color: #404040;
 }
 
 .app-main {

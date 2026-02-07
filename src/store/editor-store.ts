@@ -31,18 +31,21 @@ interface EditorStoreState {
     sidebarWidth: number;
     fontSize: number;
     lineNumbers: boolean;
+    indentGuides: boolean;
     volume: number;
   };
   projectSettings: {
     sidebarWidth?: number;
     fontSize?: number;
     lineNumbers?: boolean;
+    indentGuides?: boolean;
     volume?: number;
   };
   settings: {
     sidebarWidth: number;
     fontSize: number;
     lineNumbers: boolean;
+    indentGuides: boolean;
     volume: number;
   };
   logs: ActionLog[];
@@ -62,6 +65,7 @@ let state: EditorStoreState = {
     sidebarWidth: 240,
     fontSize: 15,
     lineNumbers: true,
+    indentGuides: true,
     volume: 50,
   },
   projectSettings: {},
@@ -69,6 +73,7 @@ let state: EditorStoreState = {
     sidebarWidth: 240,
     fontSize: 15,
     lineNumbers: true,
+    indentGuides: true,
     volume: 50,
   },
   logs: [],

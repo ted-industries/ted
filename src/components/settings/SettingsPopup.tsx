@@ -218,6 +218,21 @@ export default function SettingsPopup() {
                                     />
                                 </div>
                             </div>
+
+                            <div className="settings-row divider">
+                                <div className="row-text">
+                                    <div className="row-title">Indent Guides</div>
+                                    <div className="row-description">
+                                        Whether to show vertical lines for indentation.
+                                    </div>
+                                </div>
+                                <div className="row-control">
+                                    <div
+                                        className={`zed-switch ${activeSettings.indentGuides ? 'active' : ''}`}
+                                        onClick={() => updateActiveSetting("indentGuides", !activeSettings.indentGuides)}
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         {/* FILES SECTION */}

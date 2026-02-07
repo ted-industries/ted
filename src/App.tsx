@@ -14,8 +14,16 @@ import "./App.css";
 function App() {
   const explorerCollapsed = useEditorStore((s) => s.explorerCollapsed);
   const activeTabPath = useEditorStore((s) => s.activeTabPath);
-  const [sidebarWidth, setSidebarWidth] = useState(240);
+  const storeSidebarWidth = useEditorStore((s) => s.settings.sidebarWidth);
+  const [sidebarWidth, setSidebarWidth] = useState(storeSidebarWidth);
   const isDraggingRef = useRef(false);
+
+  // Sync local state when store changes (e.g. from settings popup)
+  useEffect(() => {
+    if (!isDraggingRef.current) {
+      setSidebarWidth(storeSidebarWidth);
+    }
+  }, [storeSidebarWidth]);
 
   const handleOpenFile = useCallback(async () => {
     const selected = await open({
@@ -38,8 +46,11 @@ function App() {
   }, []);
 
   const handleMouseUp = useCallback(() => {
-    isDraggingRef.current = false;
-  }, []);
+    if (isDraggingRef.current) {
+      isDraggingRef.current = false;
+      editorStore.updateSettings({ sidebarWidth });
+    }
+  }, [sidebarWidth]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDraggingRef.current) return;

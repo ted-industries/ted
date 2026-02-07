@@ -1,14 +1,12 @@
 import { useState, useCallback, useRef } from "react";
 import TapeSpinner from "../spinner/TapeSpinner";
 import Explorer from "../explorer/Explorer";
-import { useEditorStore } from "../../store/editor-store";
 import "./sidebar.css";
 
 const PANELS = ["explorer", "search", "source control", "extensions"];
 
 export default function Sidebar() {
   const [activePanel, setActivePanel] = useState(0);
-  const settings = useEditorStore((s) => s.settings);
   const lastScrollTime = useRef(0);
 
   const handleChange = useCallback((index: number) => {
@@ -37,7 +35,7 @@ export default function Sidebar() {
   );
 
   return (
-    <div className="sidebar" onWheel={handleWheel} style={{ width: `${settings.sidebarWidth}px` }}>
+    <div className="sidebar" onWheel={handleWheel}>
       <TapeSpinner
         items={PANELS}
         activeIndex={activePanel}

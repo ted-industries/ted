@@ -91,6 +91,10 @@ const tedDarkTheme = EditorView.theme(
     "&.cm-focused": {
       outline: "none",
     },
+    // Indent guides
+    ".cm-indentation-marker": {
+      display: "inline-block",
+    },
   },
   { dark: true },
 );

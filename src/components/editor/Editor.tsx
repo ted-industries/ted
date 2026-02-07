@@ -18,12 +18,8 @@ import {
 } from "@codemirror/language";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
-import {
-  autocompletion,
-  completionKeymap,
-  closeBrackets,
-  closeBracketsKeymap,
-} from "@codemirror/autocomplete";
+import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
+import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import { invoke } from "@tauri-apps/api/core";
 import { RiArrowDownSLine, RiArrowRightSLine } from "@remixicon/react";
 import { tedDark } from "./theme";
@@ -51,7 +47,7 @@ function buildExtensions(
   langExt: Extension | null,
   saveFile: (path: string, content: string) => void,
   autoSaveTimerRef: React.RefObject<ReturnType<typeof setTimeout> | null>,
-  settings: { fontSize: number; lineNumbers: boolean },
+  settings: { fontSize: number; lineNumbers: boolean; indentGuides: boolean },
 ): Extension[] {
   const exts: Extension[] = [
     tedDark,
@@ -59,6 +55,14 @@ function buildExtensions(
       "&": { fontSize: `${settings.fontSize}px` },
     }),
     settings.lineNumbers ? lineNumbers() : [],
+    settings.indentGuides ? indentationMarkers({
+      colors: {
+        light: "#ffffff10",
+        dark: "#ffffff10",
+        activeLight: "#ffffff20",
+        activeDark: "#ffffff20",
+      }
+    }) : [],
     highlightActiveLine(),
     highlightActiveLineGutter(),
     bracketMatching(),

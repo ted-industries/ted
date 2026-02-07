@@ -1,0 +1,135 @@
+.explorer {
+    width: 100%;
+    height: 100%;
+    background-color: #181818;
+    color: #cccccc;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+    overflow: hidden;
+    font-size: 13px;
+}
+
+.explorer-header {
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    color: #7a7a7a;
+    flex-shrink: 0;
+}
+
+.explorer-section-header {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: #cccccc;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.explorer-section-header:hover {
+    background-color: #ffffff08;
+}
+
+.explorer-tree {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 2px 0;
+}
+
+.explorer-tree::-webkit-scrollbar {
+    width: 6px;
+}
+
+.explorer-tree::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.explorer-tree::-webkit-scrollbar-thumb {
+    background: #ffffff15;
+    border-radius: 3px;
+}
+
+.explorer-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 22px;
+}
+
+.explorer-item:hover {
+    background-color: #ffffff0a;
+}
+
+.explorer-item-active {
+    background-color: #ffffff12;
+}
+
+.explorer-item-active:hover {
+    background-color: #ffffff15;
+}
+
+.explorer-chevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: #858585;
+}
+
+.explorer-chevron-spacer {
+    visibility: hidden;
+}
+
+.explorer-icon {
+    flex-shrink: 0;
+}
+
+.explorer-icon.file {
+    color: #858585;
+}
+
+.explorer-item-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.explorer-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 16px;
+}
+
+.explorer-open-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #2a2a2a;
+    color: #cccccc;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    transition: background-color 0.1s;
+}
+
+.explorer-open-btn:hover {
+    background: #333333;
+}

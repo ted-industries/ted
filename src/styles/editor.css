@@ -1,12 +1,47 @@
-.editor-wrapper {
-    height: 100vh;
-    width: 100vw;
-    box-sizing: border-box;
+.editor-root {
+    height: 100%;
+    width: 100%;
+    position: relative;
     background-color: #1a1a1a;
 }
 
-.editor-wrapper .cm-editor {
+.editor-container {
     height: 100%;
+    width: 100%;
+}
+
+.editor-container .cm-editor {
+    height: 100%;
+}
+
+.editor-welcome {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.editor-welcome-inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #555555;
+    font-size: 13px;
+}
+
+.editor-welcome-key {
+    color: #666666;
+    background: #252525;
+    padding: 3px 8px;
+    border-radius: 3px;
+    border: 1px solid #333333;
+    font-size: 12px;
+    font-family: inherit;
+}
+
+.editor-welcome-text {
+    color: #555555;
 }
 
 /* Scrollbars */

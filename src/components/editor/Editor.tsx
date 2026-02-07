@@ -1,15 +1,15 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
-import { EditorState } from "@codemirror/state";
+import { EditorState, type Extension } from "@codemirror/state";
 import {
   EditorView,
   keymap,
   lineNumbers,
   highlightActiveLine,
   highlightActiveLineGutter,
+  type ViewUpdate,
 } from "@codemirror/view";
-import { javascript } from "@codemirror/lang-javascript";
 import {
   foldGutter,
   foldKeymap,
@@ -24,8 +24,11 @@ import {
   closeBrackets,
   closeBracketsKeymap,
 } from "@codemirror/autocomplete";
+import { invoke } from "@tauri-apps/api/core";
 import { RiArrowDownSLine, RiArrowRightSLine } from "@remixicon/react";
 import { tedDark } from "./theme";
+import { editorStore, useEditorStore } from "../../store/editor-store";
+import { getLanguageExtension } from "../../utils/languages";
 import "../../styles/editor.css";
 
 const chevronDownSvg = renderToStaticMarkup(
@@ -43,60 +46,167 @@ function makeFoldMarker(open: boolean) {
   return el;
 }
 
+function buildExtensions(
+  tabPath: string,
+  langExt: Extension | null,
+  saveFile: (path: string, content: string) => void,
+  autoSaveTimerRef: React.RefObject<ReturnType<typeof setTimeout> | null>,
+): Extension[] {
+  const exts: Extension[] = [
+    tedDark,
+    lineNumbers(),
+    highlightActiveLine(),
+    highlightActiveLineGutter(),
+    bracketMatching(),
+    foldGutter({
+      openText: "\u00A0",
+      closedText: "\u00A0",
+      markerDOM(open) {
+        return makeFoldMarker(open);
+      },
+    }),
+    history(),
+    indentOnInput(),
+    closeBrackets(),
+    autocompletion(),
+    highlightSelectionMatches(),
+    keymap.of([
+      {
+        key: "Mod-s",
+        run: () => {
+          const s = editorStore.getState();
+          const tab = s.tabs.find((t) => t.path === s.activeTabPath);
+          if (tab) saveFile(tab.path, tab.content);
+          return true;
+        },
+      },
+      ...closeBracketsKeymap,
+      ...defaultKeymap,
+      ...searchKeymap,
+      ...historyKeymap,
+      ...foldKeymap,
+      ...completionKeymap,
+    ]),
+    EditorView.updateListener.of((update: ViewUpdate) => {
+      if (update.docChanged) {
+        const content = update.state.doc.toString();
+        editorStore.updateTabContent(tabPath, content);
+
+        if (autoSaveTimerRef.current) {
+          clearTimeout(autoSaveTimerRef.current);
+        }
+        autoSaveTimerRef.current = setTimeout(() => {
+          saveFile(tabPath, content);
+        }, 1500);
+      }
+    }),
+  ];
+
+  if (langExt) {
+    exts.unshift(langExt);
+  }
+
+  return exts;
+}
+
 export default function Editor() {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+  const prevPathRef = useRef<string | null>(null);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    if (!containerRef.current) return;
+  const activeTabPath = useEditorStore((s) => s.activeTabPath);
+  const tabs = useEditorStore((s) => s.tabs);
+  const activeTab = tabs.find((t) => t.path === activeTabPath) ?? null;
 
-    const state = EditorState.create({
-      doc: `import Editor from "./components/editor/Editor";
-import "./App.css";
-
-function App() {
-  return <Editor />;
-}
-
-export default App;
-`,
-      extensions: [
-        javascript({ typescript: true, jsx: true }),
-        tedDark,
-        lineNumbers(),
-        highlightActiveLine(),
-        highlightActiveLineGutter(),
-        bracketMatching(),
-        foldGutter({
-          openText: "\u00A0",
-          closedText: "\u00A0",
-          markerDOM(open) {
-            return makeFoldMarker(open);
-          },
-        }),
-        history(),
-        indentOnInput(),
-        closeBrackets(),
-        autocompletion(),
-        highlightSelectionMatches(),
-        keymap.of([
-          ...closeBracketsKeymap,
-          ...defaultKeymap,
-          ...searchKeymap,
-          ...historyKeymap,
-          ...foldKeymap,
-          ...completionKeymap,
-        ]),
-      ],
-    });
-
-    const view = new EditorView({ state, parent: containerRef.current });
-    viewRef.current = view;
-
-    return () => {
-      view.destroy();
-    };
+  const saveFile = useCallback((path: string, content: string) => {
+    invoke("write_file", { path, content })
+      .then(() => editorStore.markTabSaved(path, content))
+      .catch((err) => console.error("Save failed:", err));
   }, []);
 
-  return <div className="editor-wrapper" ref={containerRef} />;
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Save view state of previous tab before switching
+    if (viewRef.current && prevPathRef.current) {
+      const view = viewRef.current;
+      const scroller = view.scrollDOM;
+      editorStore.saveTabViewState(
+        prevPathRef.current,
+        scroller.scrollTop,
+        scroller.scrollLeft,
+        view.state.selection.main.head,
+      );
+    }
+
+    // Destroy previous editor
+    if (viewRef.current) {
+      viewRef.current.destroy();
+      viewRef.current = null;
+    }
+
+    // Clear auto-save timer
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+
+    prevPathRef.current = activeTab?.path ?? null;
+
+    if (!activeTab) return;
+
+    const langExt = getLanguageExtension(activeTab.name);
+    const extensions = buildExtensions(
+      activeTab.path,
+      langExt,
+      saveFile,
+      autoSaveTimerRef,
+    );
+
+    const state = EditorState.create({
+      doc: activeTab.content,
+      extensions,
+      selection: { anchor: activeTab.cursorPos },
+    });
+
+    const view = new EditorView({ state, parent: container });
+    viewRef.current = view;
+
+    // Restore scroll position
+    requestAnimationFrame(() => {
+      view.scrollDOM.scrollTop = activeTab.scrollTop;
+      view.scrollDOM.scrollLeft = activeTab.scrollLeft;
+    });
+
+    view.focus();
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+    };
+  }, [activeTabPath, saveFile]);
+
+  const hasActiveTab = activeTab !== null;
+
+  return (
+    <div className="editor-root">
+      {!hasActiveTab && (
+        <div className="editor-welcome">
+          <div className="editor-welcome-inner">
+            <span className="editor-welcome-key">Ctrl+O</span>
+            <span className="editor-welcome-text">Open a file</span>
+          </div>
+        </div>
+      )}
+      <div
+        className="editor-container"
+        ref={containerRef}
+        style={{ display: hasActiveTab ? "block" : "none" }}
+      />
+    </div>
+  );
 }

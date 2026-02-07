@@ -7,8 +7,3 @@ body,
     width: 100%;
     overflow: hidden;
 }
-
-.editor-container {
-    height: 100vh;
-    width: 100vw;
-}

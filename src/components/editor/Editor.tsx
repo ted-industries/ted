@@ -17,7 +17,8 @@ export default function Editor() {
         options={{
           fontSize: 14,
           lineHeight: 24,
-          fontFamily: "'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace",
+          fontFamily:
+            "'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace",
           fontLigatures: true,
           padding: { top: 16, bottom: 16 },
           minimap: { enabled: false },

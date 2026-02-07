@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import NavTape from "../navigation/NavTape";
 import Explorer from "../explorer/Explorer";
 import "./sidebar.css";
@@ -7,11 +7,24 @@ const PANELS = ["explorer", "search", "source control", "extensions"];
 
 export default function Sidebar() {
   const [activePanel, setActivePanel] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
   const lastScrollTime = useRef(0);
+  const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const startAnimation = useCallback(() => {
+    setIsAnimating(true);
+    if (animationTimeoutRef.current) clearTimeout(animationTimeoutRef.current);
+    animationTimeoutRef.current = setTimeout(() => {
+      setIsAnimating(false);
+    }, 350); // Matches CSS transition duration
+  }, []);
 
   const handleChange = useCallback((index: number) => {
-    setActivePanel(index);
-  }, []);
+    if (index !== activePanel) {
+      startAnimation();
+      setActivePanel(index);
+    }
+  }, [activePanel, startAnimation]);
 
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
@@ -24,15 +37,29 @@ export default function Sidebar() {
         if (Math.abs(delta) > 10) {
           lastScrollTime.current = now;
           if (delta > 0) {
-            setActivePanel((prev) => Math.min(PANELS.length - 1, prev + 1));
+            const next = Math.min(PANELS.length - 1, activePanel + 1);
+            if (next !== activePanel) {
+              startAnimation();
+              setActivePanel(next);
+            }
           } else {
-            setActivePanel((prev) => Math.max(0, prev - 1));
+            const prev = Math.max(0, activePanel - 1);
+            if (prev !== activePanel) {
+              startAnimation();
+              setActivePanel(prev);
+            }
           }
         }
       }
     },
-    []
+    [activePanel, startAnimation]
   );
+
+  useEffect(() => {
+    return () => {
+      if (animationTimeoutRef.current) clearTimeout(animationTimeoutRef.current);
+    };
+  }, []);
 
   return (
     <div className="sidebar" onWheel={handleWheel}>
@@ -44,7 +71,7 @@ export default function Sidebar() {
 
       <div className="sidebar-content">
         <div
-          className="sidebar-panel-container"
+          className={`sidebar-panel-container ${isAnimating ? "is-animating" : ""}`}
           style={{ transform: `translateX(-${activePanel * 100}%)` }}
         >
           <div className="sidebar-panel">

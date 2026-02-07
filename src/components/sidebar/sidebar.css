@@ -17,8 +17,15 @@
 .sidebar-panel-container {
     display: flex;
     height: 100%;
-    will-change: transform;
-    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform, filter;
+    transition:
+        transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Motion Blur Effect */
+.sidebar-panel-container.is-animating {
+    filter: blur(0.8px);
 }
 
 .sidebar-panel {
@@ -27,6 +34,14 @@
     height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
+}
+
+.sidebar-panel::-webkit-scrollbar {
+    width: 0;
+}
+
+.sidebar-panel {
+    scrollbar-width: none;
 }
 
 .sidebar-placeholder {

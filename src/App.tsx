@@ -8,6 +8,7 @@ import Titlebar from "./components/titlebar/Titlebar";
 import CommandPalette from "./components/palette/CommandPalette";
 import Welcome from "./components/welcome/Welcome";
 import SettingsPopup from "./components/settings/SettingsPopup";
+import TerminalPanel from "./components/terminal/TerminalPanel";
 import { editorStore, useEditorStore } from "./store/editor-store";
 import "./App.css";
 
@@ -77,7 +78,6 @@ function App() {
     const activeTab = s.tabs.find((t) => t.path === s.activeTabPath);
     if (!activeTab) return;
 
-    // Handle virtual paths
     if (activeTab.path.startsWith("ted://")) {
       editorStore.markTabSaved(activeTab.path, activeTab.content);
       return;
@@ -107,6 +107,20 @@ function App() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Command Palette (Ctrl+Shift+P)
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "p") {
+        e.preventDefault();
+        editorStore.toggleCommandPalette();
+      }
+
+      // Escape closes current UI overlays
+      if (e.key === "Escape") {
+        const s = editorStore.getState();
+        if (s.commandPaletteOpen) editorStore.setCommandPaletteOpen(false);
+        if (s.settingsOpen) editorStore.setSettingsOpen(false);
+      }
+
+      // File Management
       if (e.ctrlKey && e.key === "n") {
         e.preventDefault();
         editorStore.newFile();
@@ -115,21 +129,57 @@ function App() {
         e.preventDefault();
         handleOpenFile();
       }
-      if (e.ctrlKey && e.key === "b") {
-        e.preventDefault();
-        editorStore.toggleExplorer();
-      }
       if (e.ctrlKey && e.key === "s") {
         e.preventDefault();
         handleSaveFile();
       }
-      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "p") {
+      if (e.ctrlKey && e.key === "w") {
         e.preventDefault();
-        editorStore.toggleCommandPalette();
+        const s = editorStore.getState();
+        if (s.activeTabPath) editorStore.closeTab(s.activeTabPath);
       }
+
+      // View Toggles
+      if (e.ctrlKey && e.key === "b") {
+        e.preventDefault();
+        editorStore.toggleExplorer();
+      }
+      if (e.ctrlKey && e.key === "j") {
+        e.preventDefault();
+        editorStore.toggleTerminal();
+      }
+      if (e.ctrlKey && e.shiftKey && e.key === "`") {
+        e.preventDefault();
+        editorStore.newTerminal();
+      }
+
+      // Settings
       if (e.ctrlKey && e.key === ",") {
         e.preventDefault();
         editorStore.toggleSettings();
+      }
+
+      // Tab Navigation
+      if (e.ctrlKey && e.key === "Tab") {
+        e.preventDefault();
+        const s = editorStore.getState();
+        if (s.tabs.length > 0) {
+          const idx = s.tabs.findIndex(t => t.path === s.activeTabPath);
+          const nextIdx = e.shiftKey
+            ? (idx - 1 + s.tabs.length) % s.tabs.length
+            : (idx + 1) % s.tabs.length;
+          editorStore.setActiveTab(s.tabs[nextIdx].path);
+        }
+      }
+
+      // Direct Tab Access (Ctrl+1, Ctrl+2, etc)
+      if (e.ctrlKey && e.key >= "1" && e.key <= "9") {
+        const s = editorStore.getState();
+        const idx = parseInt(e.key) - 1;
+        if (s.tabs[idx]) {
+          e.preventDefault();
+          editorStore.setActiveTab(s.tabs[idx].path);
+        }
       }
     };
     window.addEventListener("keydown", handler);
@@ -145,22 +195,28 @@ function App() {
             <div className="app-sidebar" style={{ width: `${sidebarWidth}px` }}>
               <Sidebar />
             </div>
-            <div className="app-resize-handle" />
+            <div
+              className="app-resize-handle"
+              onMouseDown={handleMouseDown}
+            />
           </>
         )}
         <div className="app-main">
-          {activeTabPath ? (
-            <>
-              <TabBar />
-              <div className="app-editor">
-                <Editor />
-              </div>
-            </>
-          ) : (
-            <Welcome />
-          )}
+          <div className="editor-area">
+            {activeTabPath ? (
+              <>
+                <TabBar />
+                <div className="app-editor">
+                  <Editor />
+                </div>
+              </>
+            ) : (
+              <Welcome />
+            )}
+          </div>
         </div>
       </div>
+      <TerminalPanel />
       <CommandPalette />
       <SettingsPopup />
     </div>

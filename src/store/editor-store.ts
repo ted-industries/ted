@@ -12,6 +12,11 @@ export interface TabState {
   cursorPos: number;
 }
 
+export interface TerminalState {
+  id: string;
+  name: string;
+}
+
 export interface ActionLog {
   id: string;
   type: string;
@@ -27,6 +32,10 @@ interface EditorStoreState {
   explorerCollapsed: boolean;
   commandPaletteOpen: boolean;
   settingsOpen: boolean;
+  terminalOpen: boolean;
+  terminalHeight: number;
+  terminals: TerminalState[];
+  activeTerminalId: string | null;
   userSettings: {
     sidebarWidth: number;
     fontSize: number;
@@ -61,6 +70,10 @@ let state: EditorStoreState = {
   explorerCollapsed: false,
   commandPaletteOpen: false,
   settingsOpen: false,
+  terminalOpen: false,
+  terminalHeight: 300,
+  terminals: [],
+  activeTerminalId: null,
   userSettings: {
     sidebarWidth: 240,
     fontSize: 15,
@@ -104,7 +117,6 @@ function dispatch(type: string, partial: Partial<EditorStoreState>, payload?: an
       ...nextState.projectSettings,
     };
 
-    // Auto-persist settings on change
     if (userSettingsPath && partial.userSettings) {
       persistSettings(userSettingsPath, nextState.userSettings);
     }
@@ -136,8 +148,6 @@ export const editorStore = {
   async initialize() {
     try {
       userSettingsPath = await invoke("get_user_config_dir");
-      console.log("User settings path:", userSettingsPath);
-
       const content: string = await invoke("read_file", { path: userSettingsPath });
       const parsed = JSON.parse(content);
       dispatch("INIT_USER_SETTINGS", { userSettings: { ...state.userSettings, ...parsed } });
@@ -279,6 +289,53 @@ export const editorStore = {
       dispatch("UPDATE_PROJECT_SETTINGS", { projectSettings }, { update });
     }
   },
+
+  // Terminal actions
+  toggleTerminal() {
+    const nextOpen = !state.terminalOpen;
+    if (nextOpen && state.terminals.length === 0) {
+      this.newTerminal();
+    }
+    dispatch("TOGGLE_TERMINAL", { terminalOpen: nextOpen });
+  },
+
+  setTerminalOpen(open: boolean) {
+    if (open && state.terminals.length === 0) {
+      this.newTerminal();
+    }
+    dispatch("SET_TERMINAL_OPEN", { terminalOpen: open });
+  },
+
+  newTerminal() {
+    const id = crypto.randomUUID();
+    const newTerminal: TerminalState = {
+      id,
+      name: `Terminal ${state.terminals.length + 1}`,
+    };
+    dispatch("NEW_TERMINAL", {
+      terminals: [...state.terminals, newTerminal],
+      activeTerminalId: id,
+      terminalOpen: true,
+    });
+  },
+
+  setActiveTerminal(id: string) {
+    dispatch("SET_ACTIVE_TERMINAL", { activeTerminalId: id });
+  },
+
+  closeTerminal(id: string) {
+    const terminals = state.terminals.filter(t => t.id !== id);
+    let activeTerminalId = state.activeTerminalId;
+    if (activeTerminalId === id) {
+      activeTerminalId = terminals.length > 0 ? terminals[terminals.length - 1].id : null;
+    }
+    const terminalOpen = terminals.length === 0 ? false : state.terminalOpen;
+    dispatch("CLOSE_TERMINAL", { terminals, activeTerminalId, terminalOpen });
+  },
+
+  setTerminalHeight(height: number) {
+    dispatch("SET_TERMINAL_HEIGHT", { terminalHeight: height });
+  }
 };
 
 export function useEditorStore<T>(selector: (s: EditorStoreState) => T): T {

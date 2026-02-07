@@ -5,61 +5,97 @@
     z-index: 1000;
     display: flex;
     justify-content: center;
-    padding-top: 20vh;
+    padding-top: 64px;
 }
 
 .command-palette {
-    width: 600px;
+    width: 620px;
     max-width: 90vw;
     background-color: #1a1a1a;
     border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-    border: 1px solid #252525;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7);
+    border: 1px solid #2d2d2d;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    max-height: 60vh;
-}
-
-.palette-input-container {
-    padding: 12px;
-    border-bottom: 1px solid #252525;
-    background-color: #202020;
+    max-height: 480px;
 }
 
 .palette-input {
     width: 100%;
-    background: transparent;
+    background: #1a1a1a;
     border: none;
+    border-bottom: 1px solid #2d2d2d;
     outline: none;
-    color: #e0e0e0;
+    color: #cccccc;
     font-family: inherit;
     font-size: 14px;
+    padding: 12px 14px;
+}
+
+.palette-input::placeholder {
+    color: #666666;
 }
 
 .palette-list {
-    padding: 4px;
+    padding: 6px;
     overflow-y: auto;
-    background-color: #1a1a1a;
+    flex: 1;
+}
+
+.palette-list::-webkit-scrollbar {
+    width: 0;
+}
+
+.palette-list {
+    scrollbar-width: none;
 }
 
 .palette-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
-    border-radius: 4px;
+    padding: 8px 8px;
+    /* Slightly less horizontal padding inside */
+    margin: 0;
+    /* Reset margin */
     cursor: pointer;
     user-select: none;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    border: 1px solid transparent;
+    /* Reserve space for border to prevent layout shift */
+}
+
+/* Adjust text padding visually to align with input if needed, 
+   but usually padding on the item container is best.
+   Input padding: 12px 14px.
+   Item padding: 8px 8px.
+   
+   To align text:
+   Input text starts at 14px from left.
+   Item text starts at 8px (padding) + 0px.
+   
+   Let's create a visual alignment. 
+   Input padding-left: 14px.
+   Item padding-left: 14px.
+*/
+
+.palette-item {
+    padding: 8px 14px;
 }
 
 .palette-item.selected {
-    background-color: #3e3e3e;
+    background-color: #2f2f2f;
+    border: 1px solid #383838;
+    /* Subtle border for that "popping" look */
 }
 
 .palette-item-label {
     font-size: 13px;
-    color: #ccc;
+    color: #888888;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 400;
 }
 
 .palette-item.selected .palette-item-label {
@@ -67,9 +103,36 @@
 }
 
 .palette-item-shortcut {
-    font-size: 11px;
-    color: #666;
+    font-size: 12px;
+    color: #555555;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.palette-item.selected .palette-item-shortcut {
+    color: #999999;
+}
+
+.palette-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 8px 14px;
+    background-color: #1a1a1a;
+    border-top: 1px solid #2d2d2d;
+    gap: 20px;
+}
+
+.footer-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #666666;
+    font-weight: 450;
+}
+
+.hint-key {
+    color: #888888;
 }
 
 .palette-no-results {

@@ -19,24 +19,32 @@ export default function CommandPalette() {
 
     const commands = useMemo<Command[]>(() => [
         {
-            id: "toggle-explorer",
-            label: "Toggle Sidebar Explorer",
-            shortcut: "Ctrl+B",
-            action: () => editorStore.toggleExplorer(),
+            id: "new-file",
+            label: "file: new file",
+            shortcut: "Ctrl+N",
+            action: () => editorStore.newFile(),
         },
         {
             id: "open-file",
-            label: "Open File...",
+            label: "file: open file...",
             shortcut: "Ctrl+O",
-            action: () => {
-                // This will be handled in App.tsx but we can trigger it here if we expose it
-                // For now, let's just emit a custom event or similar
-                window.dispatchEvent(new CustomEvent("ted:open-file"));
-            },
+            action: () => window.dispatchEvent(new CustomEvent("ted:open-file")),
+        },
+        {
+            id: "save-file",
+            label: "file: save",
+            shortcut: "Ctrl+S",
+            action: () => window.dispatchEvent(new CustomEvent("ted:save-file")),
+        },
+        {
+            id: "save-as",
+            label: "file: save as...",
+            shortcut: "Ctrl+Shift+S",
+            action: () => window.dispatchEvent(new CustomEvent("ted:save-file-as")),
         },
         {
             id: "close-active-tab",
-            label: "Close Active Tab",
+            label: "file: close active tab",
             shortcut: "Ctrl+W",
             action: () => {
                 const state = editorStore.getState();
@@ -46,21 +54,56 @@ export default function CommandPalette() {
             },
         },
         {
-            id: "new-file",
-            label: "New File",
-            shortcut: "Ctrl+N",
+            id: "toggle-line-numbers",
+            label: "view: toggle line numbers",
             action: () => {
-                // Placeholder
-                console.log("New file command trigger");
+                const s = editorStore.getState().settings;
+                editorStore.updateSettings({ lineNumbers: !s.lineNumbers });
             },
         },
         {
-            id: "save-file",
-            label: "Save File",
-            shortcut: "Ctrl+S",
+            id: "toggle-indent-guides",
+            label: "view: toggle indent guides",
             action: () => {
-                window.dispatchEvent(new CustomEvent("ted:save-file"));
+                const s = editorStore.getState().settings;
+                editorStore.updateSettings({ indentGuides: !s.indentGuides });
+            },
+        },
+        {
+            id: "toggle-explorer",
+            label: "view: toggle sidebar explorer",
+            shortcut: "Ctrl+B",
+            action: () => editorStore.toggleExplorer(),
+        },
+        {
+            id: "toggle-terminal",
+            label: "view: toggle integrated terminal",
+            shortcut: "Ctrl+J",
+            action: () => editorStore.toggleTerminal(),
+        },
+        {
+            id: "new-terminal",
+            label: "terminal: create new terminal",
+            shortcut: "Ctrl+Shift+`",
+            action: () => editorStore.newTerminal(),
+        },
+        {
+            id: "open-settings",
+            label: "zed: open settings",
+            shortcut: "Ctrl+,",
+            action: () => editorStore.setSettingsOpen(true),
+        },
+        {
+            id: "open-logs",
+            label: "developer: view action logs",
+            action: () => {
+                console.log("Logs:", editorStore.getState().logs);
             }
+        },
+        {
+            id: "reload-window",
+            label: "developer: reload window",
+            action: () => window.location.reload(),
         }
     ], []);
 
@@ -68,8 +111,7 @@ export default function CommandPalette() {
         if (!query) return commands;
         const lowerQuery = query.toLowerCase();
         return commands.filter((c) =>
-            c.label.toLowerCase().includes(lowerQuery) ||
-            c.category?.toLowerCase().includes(lowerQuery)
+            c.label.toLowerCase().includes(lowerQuery)
         );
     }, [query, commands]);
 
@@ -89,10 +131,10 @@ export default function CommandPalette() {
                 editorStore.setCommandPaletteOpen(false);
             } else if (e.key === "ArrowDown") {
                 e.preventDefault();
-                setSelectedIndex((i) => (i + 1) % filteredCommands.length);
+                setSelectedIndex((i) => (filteredCommands.length > 0 ? (i + 1) % filteredCommands.length : 0));
             } else if (e.key === "ArrowUp") {
                 e.preventDefault();
-                setSelectedIndex((i) => (i - 1 + filteredCommands.length) % filteredCommands.length);
+                setSelectedIndex((i) => (filteredCommands.length > 0 ? (i - 1 + filteredCommands.length) % filteredCommands.length : 0));
             } else if (e.key === "Enter") {
                 e.preventDefault();
                 if (filteredCommands[selectedIndex]) {
@@ -111,16 +153,15 @@ export default function CommandPalette() {
     return (
         <div className="command-palette-overlay" onClick={() => editorStore.setCommandPaletteOpen(false)}>
             <div className="command-palette" onClick={(e) => e.stopPropagation()}>
-                <div className="palette-input-container">
-                    <input
-                        ref={inputRef}
-                        type="text"
-                        className="palette-input"
-                        placeholder="Type a command or search..."
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                    />
-                </div>
+                <input
+                    ref={inputRef}
+                    type="text"
+                    className="palette-input"
+                    placeholder="Execute a command..."
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    spellCheck={false}
+                />
                 <div className="palette-list" ref={listRef}>
                     {filteredCommands.length > 0 ? (
                         filteredCommands.map((command, index) => (
@@ -143,6 +184,16 @@ export default function CommandPalette() {
                         <div className="palette-no-results">No commands found</div>
                     )}
                 </div>
+                {/* <div className="palette-footer">
+                    <div className="footer-hint">
+                        <span>Add Keybinding...</span>
+                        <span className="hint-key">Ctrl-Enter</span>
+                    </div>
+                    <div className="footer-hint">
+                        <span>Run</span>
+                        <span className="hint-key">Enter</span>
+                    </div>
+                </div> */}
             </div>
         </div>
     );

@@ -15,10 +15,12 @@ import {
   foldKeymap,
   indentOnInput,
   bracketMatching,
+  indentUnit,
 } from "@codemirror/language";
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
 import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
+import { commentKeymap } from "@codemirror/comment";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import { invoke } from "@tauri-apps/api/core";
 import { RiArrowDownSLine, RiArrowRightSLine } from "@remixicon/react";
@@ -75,6 +77,7 @@ function buildExtensions(
     }),
     history(),
     indentOnInput(),
+    indentUnit.of("    "),
     closeBrackets(),
     autocompletion(),
     highlightSelectionMatches(),
@@ -94,6 +97,8 @@ function buildExtensions(
       ...historyKeymap,
       ...foldKeymap,
       ...completionKeymap,
+      ...commentKeymap,
+      indentWithTab,
     ]),
     EditorView.updateListener.of((update: ViewUpdate) => {
       if (update.docChanged) {
@@ -138,7 +143,6 @@ export default function Editor() {
     const container = containerRef.current;
     if (!container) return;
 
-    // Save view state of previous tab before switching
     if (viewRef.current && prevPathRef.current) {
       const view = viewRef.current;
       const scroller = view.scrollDOM;
@@ -150,13 +154,11 @@ export default function Editor() {
       );
     }
 
-    // Destroy previous editor
     if (viewRef.current) {
       viewRef.current.destroy();
       viewRef.current = null;
     }
 
-    // Clear auto-save timer
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
       autoSaveTimerRef.current = null;
@@ -184,7 +186,6 @@ export default function Editor() {
     const view = new EditorView({ state, parent: container });
     viewRef.current = view;
 
-    // Restore scroll position
     requestAnimationFrame(() => {
       view.scrollDOM.scrollTop = activeTab.scrollTop;
       view.scrollDOM.scrollLeft = activeTab.scrollLeft;

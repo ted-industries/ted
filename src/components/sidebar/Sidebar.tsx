@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import TapeSpinner from "../spinner/TapeSpinner";
+import NavTape from "../navigation/NavTape";
 import Explorer from "../explorer/Explorer";
 import "./sidebar.css";
 
@@ -36,22 +36,30 @@ export default function Sidebar() {
 
   return (
     <div className="sidebar" onWheel={handleWheel}>
-      <TapeSpinner
+      <NavTape
         items={PANELS}
         activeIndex={activePanel}
         onChange={handleChange}
       />
+
       <div className="sidebar-content">
-        {activePanel === 0 && <Explorer />}
-        {activePanel === 1 && (
-          <div className="sidebar-placeholder">Search</div>
-        )}
-        {activePanel === 2 && (
-          <div className="sidebar-placeholder">Source Control</div>
-        )}
-        {activePanel === 3 && (
-          <div className="sidebar-placeholder">Extensions</div>
-        )}
+        <div
+          className="sidebar-panel-container"
+          style={{ transform: `translateX(-${activePanel * 100}%)` }}
+        >
+          <div className="sidebar-panel">
+            <Explorer />
+          </div>
+          <div className="sidebar-panel">
+            <div className="sidebar-placeholder">Search</div>
+          </div>
+          <div className="sidebar-panel">
+            <div className="sidebar-placeholder">Source Control</div>
+          </div>
+          <div className="sidebar-panel">
+            <div className="sidebar-placeholder">Extensions</div>
+          </div>
+        </div>
       </div>
     </div>
   );

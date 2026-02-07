@@ -1,4 +1,4 @@
-.tape-spinner {
+.nav-tape {
     display: flex;
     align-items: center;
     height: 32px;
@@ -27,7 +27,7 @@
     pointer-events: none;
 }
 
-.tape-spinner-active .tape-chevron {
+.nav-tape-active .tape-chevron {
     opacity: 1;
     pointer-events: auto;
 }
@@ -75,7 +75,7 @@
     transition: opacity 0.2s;
 }
 
-.tape-spinner-active .tape-vignette {
+.nav-tape-active .tape-vignette {
     opacity: 1;
 }
 

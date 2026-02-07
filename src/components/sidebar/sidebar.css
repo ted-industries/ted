@@ -3,12 +3,30 @@
     flex-direction: column;
     height: 100%;
     overflow: hidden;
+    background-color: #181818;
+    border-right: 1px solid #252525;
 }
 
 .sidebar-content {
     flex: 1;
     min-height: 0;
     overflow: hidden;
+    position: relative;
+}
+
+.sidebar-panel-container {
+    display: flex;
+    height: 100%;
+    will-change: transform;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-panel {
+    flex-shrink: 0;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .sidebar-placeholder {
@@ -17,7 +35,9 @@
     justify-content: center;
     height: 100%;
     color: #555555;
-    font-size: 12px;
-    letter-spacing: 0.5px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
     background-color: #181818;
 }

@@ -1,19 +1,19 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { RiArrowLeftSLine, RiArrowRightSLine } from "@remixicon/react";
 import { playTick } from "../../utils/tick-sound";
-import "./tape-spinner.css";
+import "./NavTape.css";
 
-interface TapeSpinnerProps {
+interface NavTapeProps {
   items: string[];
   activeIndex: number;
   onChange: (index: number) => void;
 }
 
-export default function TapeSpinner({
+export default function NavTape({
   items,
   activeIndex,
   onChange,
-}: TapeSpinnerProps) {
+}: NavTapeProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [isHovering, setIsHovering] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -21,7 +21,6 @@ export default function TapeSpinner({
   const itemWidth = 120;
   const lastTickIndexRef = useRef(activeIndex);
   const animFrameRef = useRef<number>(0);
-  const velocityRef = useRef(0);
   const targetOffsetRef = useRef(0);
   const currentOffsetRef = useRef(0);
   const spinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -44,19 +43,6 @@ export default function TapeSpinner({
   }, []);
 
 
-  const snapToNearest = useCallback(() => {
-    const vp = viewportRef.current;
-    const viewportCenter = vp ? vp.offsetWidth / 2 : 100;
-    const rawIndex = Math.round(
-      (viewportCenter - currentOffsetRef.current - itemWidth / 2) / itemWidth,
-    );
-    const clamped = Math.max(0, Math.min(items.length - 1, rawIndex));
-    targetOffsetRef.current = getOffsetForIndex(clamped);
-
-    if (clamped !== activeIndex) {
-      onChange(clamped);
-    }
-  }, [items.length, itemWidth, activeIndex, onChange, getOffsetForIndex]);
 
   const checkTick = useCallback(
     (off: number) => {
@@ -73,7 +59,7 @@ export default function TapeSpinner({
     [itemWidth],
   );
 
-  // Animation loop — also detects when settled to clear spinning state
+  // Animation loop
   useEffect(() => {
     let running = true;
     const animate = () => {
@@ -96,7 +82,7 @@ export default function TapeSpinner({
     };
   }, [checkTick]);
 
-  // Mark spinning, auto-clear after settling
+  // Mark spinning
   const markSpinning = useCallback(() => {
     setIsSpinning(true);
     if (spinTimeoutRef.current) clearTimeout(spinTimeoutRef.current);
@@ -111,32 +97,37 @@ export default function TapeSpinner({
     markSpinning();
   }, [activeIndex, getOffsetForIndex, markSpinning]);
 
+  const lastScrollTime = useRef(0);
+
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       e.preventDefault();
       e.stopPropagation();
 
-      markSpinning();
+      const now = Date.now();
+      if (now - lastScrollTime.current < 150) return;
 
       const delta = e.deltaY || e.deltaX;
-      velocityRef.current += delta * 0.6;
-      currentOffsetRef.current -= velocityRef.current;
-      velocityRef.current *= 0.3;
+      if (Math.abs(delta) < 10) return;
 
-      const maxOffset = getOffsetForIndex(0);
-      const minOffset = getOffsetForIndex(items.length - 1);
-      const rubber = 30;
-      if (currentOffsetRef.current > maxOffset + rubber) {
-        currentOffsetRef.current = maxOffset + rubber;
-      } else if (currentOffsetRef.current < minOffset - rubber) {
-        currentOffsetRef.current = minOffset - rubber;
+      lastScrollTime.current = now;
+      markSpinning();
+
+      if (delta > 0) {
+        const newIndex = Math.min(items.length - 1, activeIndex + 1);
+        if (newIndex !== activeIndex) {
+          onChange(newIndex);
+          playTick();
+        }
+      } else {
+        const newIndex = Math.max(0, activeIndex - 1);
+        if (newIndex !== activeIndex) {
+          onChange(newIndex);
+          playTick();
+        }
       }
-
-      checkTick(currentOffsetRef.current);
-      setOffset(currentOffsetRef.current);
-      snapToNearest();
     },
-    [items.length, getOffsetForIndex, checkTick, snapToNearest, markSpinning],
+    [items.length, activeIndex, onChange, markSpinning],
   );
 
   const goLeft = useCallback(() => {
@@ -161,7 +152,7 @@ export default function TapeSpinner({
 
   return (
     <div
-      className={`tape-spinner${active ? " tape-spinner-active" : ""}`}
+      className={`nav-tape${active ? " nav-tape-active" : ""}`}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
@@ -173,12 +164,10 @@ export default function TapeSpinner({
         <div className="tape-vignette tape-vignette-left" />
         <div className="tape-vignette tape-vignette-right" />
 
-        {/* Resting label — visible when not active */}
         <div className={`tape-resting${active ? " tape-resting-hidden" : ""}`}>
           {items[activeIndex].toUpperCase()}
         </div>
 
-        {/* Full tape — visible when active */}
         <div
           className={`tape-track${active ? " tape-track-visible" : ""}`}
           style={{ transform: `translateX(${offset}px)` }}

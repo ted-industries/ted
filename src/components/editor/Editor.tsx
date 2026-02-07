@@ -1,48 +1,89 @@
-import MonacoEditor, { type BeforeMount } from "@monaco-editor/react";
-import { THEME_NAME, tedDarkTheme } from "./theme";
-import "../../styles/editor.css";
-
-const handleBeforeMount: BeforeMount = (monaco) => {
-  monaco.editor.defineTheme(THEME_NAME, tedDarkTheme);
-};
+import { useRef, useEffect } from "react";
+import { EditorState } from "@codemirror/state";
+import {
+  EditorView,
+  keymap,
+  lineNumbers,
+  highlightActiveLine,
+  highlightActiveLineGutter,
+  drawSelection,
+} from "@codemirror/view";
+import { css } from "@codemirror/lang-css";
+import {
+  foldGutter,
+  foldKeymap,
+  indentOnInput,
+  bracketMatching,
+} from "@codemirror/language";
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
+import {
+  autocompletion,
+  completionKeymap,
+  closeBrackets,
+  closeBracketsKeymap,
+} from "@codemirror/autocomplete";
+import { tedDark } from "./theme";
 
 export default function Editor() {
-  return (
-    <div className="editor-wrapper">
-      <MonacoEditor
-        defaultLanguage="typescript"
-        defaultValue="// Welcome to ted"
-        theme={THEME_NAME}
-        beforeMount={handleBeforeMount}
-        options={{
-          fontSize: 14,
-          lineHeight: 24,
-          fontFamily:
-            "'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace",
-          fontLigatures: true,
-          padding: { top: 16, bottom: 16 },
-          minimap: { enabled: false },
-          scrollbar: {
-            verticalScrollbarSize: 8,
-            horizontalScrollbarSize: 8,
-            useShadows: false,
-          },
-          lineNumbersMinChars: 8,
-          glyphMargin: false,
-          folding: true,
-          showFoldingControls: "mouseover",
-          foldingHighlight: false,
-          renderLineHighlight: "line",
-          cursorBlinking: "smooth",
-          cursorSmoothCaretAnimation: "on",
-          smoothScrolling: true,
-          overviewRulerBorder: false,
-          hideCursorInOverviewRuler: true,
-          overviewRulerLanes: 0,
-          scrollBeyondLastLine: false,
-          automaticLayout: true,
-        }}
-      />
-    </div>
-  );
+  const containerRef = useRef<HTMLDivElement>(null);
+  const viewRef = useRef<EditorView | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const state = EditorState.create({
+      doc: `.editor-wrapper {
+    height: 100vh;
+    width: 100vw;
+    padding: 8px;
+    box-sizing: border-box;
+    background-color: #111111;
+}
+
+.editor-wrapper .cm-editor {
+    height: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.cm-editor.cm-focused {
+    outline: none;
+}
+
+.cm-scroller {`,
+      extensions: [
+        css(),
+        tedDark,
+        lineNumbers(),
+        highlightActiveLine(),
+        highlightActiveLineGutter(),
+        drawSelection(),
+        bracketMatching(),
+        foldGutter(),
+        history(),
+        indentOnInput(),
+        closeBrackets(),
+        autocompletion(),
+        highlightSelectionMatches(),
+        keymap.of([
+          ...closeBracketsKeymap,
+          ...defaultKeymap,
+          ...searchKeymap,
+          ...historyKeymap,
+          ...foldKeymap,
+          ...completionKeymap,
+        ]),
+      ],
+    });
+
+    const view = new EditorView({ state, parent: containerRef.current });
+    viewRef.current = view;
+
+    return () => {
+      view.destroy();
+    };
+  }, []);
+
+  return <div className="editor-wrapper" ref={containerRef} />;
 }

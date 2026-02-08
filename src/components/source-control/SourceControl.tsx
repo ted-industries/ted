@@ -106,24 +106,26 @@ export default function SourceControl() {
 
             <div className="sc-sections">
                 {/* Staged Changes */}
-                <div className="sc-section">
-                    <div className="sc-section-header" onClick={() => setExpandedStaged(!expandedStaged)}>
-                        {expandedStaged ? <RiArrowDownSLine size={16} /> : <RiArrowRightSLine size={16} />}
-                        <span>STAGED CHANGES</span>
-                        <span className="sc-count">{staged.length}</span>
-                    </div>
-                    {expandedStaged && staged.map(file => (
-                        <div key={file.path} className="sc-file-item">
-                            <span className={`sc-status-label ${file.status}`}>{file.status[0].toUpperCase()}</span>
-                            <span className="sc-file-name" onClick={() => editorStore.openDiff(file.path)}>
-                                {file.path.split(/[\\/]/).pop()}
-                            </span>
-                            <button className="sc-action-btn" onClick={() => handleUnstage(file.path)}>
-                                <RiSubtractLine size={14} />
-                            </button>
+                {staged.length > 0 && (
+                    <div className="sc-section">
+                        <div className="sc-section-header" onClick={() => setExpandedStaged(!expandedStaged)}>
+                            {expandedStaged ? <RiArrowDownSLine size={16} /> : <RiArrowRightSLine size={16} />}
+                            <span>STAGED CHANGES</span>
+                            <span className="sc-count">{staged.length}</span>
                         </div>
-                    ))}
-                </div>
+                        {expandedStaged && staged.map(file => (
+                            <div key={file.path} className="sc-file-item">
+                                <span className={`sc-status-label ${file.status}`}>{file.status[0].toUpperCase()}</span>
+                                <span className="sc-file-name" onClick={() => editorStore.openDiff(file.path)}>
+                                    {file.path.split(/[\\/]/).pop()}
+                                </span>
+                                <button className="sc-action-btn" onClick={() => handleUnstage(file.path)}>
+                                    <RiSubtractLine size={14} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 {/* Changes */}
                 <div className="sc-section">

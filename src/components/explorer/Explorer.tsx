@@ -229,7 +229,7 @@ export default function Explorer() {
     <div className="explorer">
       <div className="explorer-section-header" onClick={handleOpenFolder}>
         {/* <RiArrowDownSLine size={16} /> */}
-        <RiGitRepositoryLine size={14} style={{ marginRight: 6, opacity: 0.7 }} />
+        {/* <RiGitRepositoryLine size={14} style={{ marginRight: 6, opacity: 0.7 }} /> */}
         <span style={{ fontWeight: 600 }}>{rootName.toUpperCase()}</span>
         <span style={{ marginLeft: "auto", opacity: 0.5, fontSize: 10 }}>GIT</span>
       </div>

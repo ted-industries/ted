@@ -1,0 +1,186 @@
+.source-control {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: #181818;
+    color: #cccccc;
+    font-size: 13px;
+    overflow: hidden;
+}
+
+.sc-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-bottom: 1px solid #ffffff0a;
+    font-size: 11px;
+    font-weight: 600;
+    color: #858585;
+}
+
+.sc-refresh-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: #858585;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sc-refresh-btn:hover {
+    background-color: #ffffff10;
+    color: #cccccc;
+}
+
+.sc-commit-section {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-bottom: 1px solid #ffffff0a;
+}
+
+.sc-commit-input {
+    background-color: #1e1e1e;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    color: #cccccc;
+    padding: 8px;
+    font-family: inherit;
+    font-size: 12px;
+    resize: none;
+    height: 60px;
+    outline: none;
+}
+
+.sc-commit-input:focus {
+    border-color: #007acc;
+}
+
+.sc-commit-btn {
+    background-color: #007acc;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.sc-commit-btn:disabled {
+    background-color: #3e3e3e;
+    color: #858585;
+    cursor: not-allowed;
+}
+
+.sc-sections {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.sc-section-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #858585;
+    cursor: pointer;
+    background-color: #ffffff05;
+}
+
+.sc-section-header:hover {
+    background-color: #ffffff0a;
+}
+
+.sc-count {
+    margin-left: auto;
+    background-color: #3e3e3e;
+    color: #cccccc;
+    padding: 0 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    min-width: 16px;
+    text-align: center;
+}
+
+.sc-file-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px 4px 24px;
+    cursor: pointer;
+}
+
+.sc-file-item:hover {
+    background-color: #ffffff08;
+}
+
+.sc-status-label {
+    font-size: 10px;
+    font-weight: 900;
+    width: 14px;
+    text-align: center;
+}
+
+.sc-status-label.modified {
+    color: #e2c08d;
+}
+
+.sc-status-label.new {
+    color: #73c991;
+}
+
+.sc-status-label.deleted {
+    color: #ff7b72;
+}
+
+.sc-status-label.staged {
+    color: #58a6ff;
+}
+
+.sc-file-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sc-action-btn {
+    background: none;
+    border: none;
+    color: #858585;
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+}
+
+.sc-file-item:hover .sc-action-btn {
+    opacity: 1;
+}
+
+.sc-action-btn:hover {
+    background-color: #ffffff10;
+    color: #cccccc;
+}
+
+.sc-empty {
+    padding: 20px;
+    text-align: center;
+    color: #858585;
+    font-size: 12px;
+}

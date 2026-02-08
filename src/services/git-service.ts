@@ -48,6 +48,26 @@ class GitService {
             return "";
         }
     }
+
+    async stage(repoPath: string, filePath: string): Promise<void> {
+        await invoke("git_stage", { repoPath, filePath });
+    }
+
+    async unstage(repoPath: string, filePath: string): Promise<void> {
+        await invoke("git_unstage", { repoPath, filePath });
+    }
+
+    async commit(repoPath: string, message: string): Promise<void> {
+        await invoke("git_commit", { repoPath, message });
+    }
+
+    async getBranch(repoPath: string): Promise<string> {
+        try {
+            return await invoke("git_get_branch", { repoPath });
+        } catch {
+            return "unknown";
+        }
+    }
 }
 
 export const gitService = new GitService();

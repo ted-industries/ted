@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import NavTape from "../navigation/NavTape";
 import Explorer from "../explorer/Explorer";
+import SourceControl from "../source-control/SourceControl";
 import "./sidebar.css";
 
 const PANELS = ["explorer", "search", "source control", "extensions"];
@@ -81,7 +82,7 @@ export default function Sidebar() {
             <div className="sidebar-placeholder">Search</div>
           </div>
           <div className="sidebar-panel">
-            <div className="sidebar-placeholder">Source Control</div>
+            <SourceControl />
           </div>
           <div className="sidebar-panel">
             <div className="sidebar-placeholder">Extensions</div>

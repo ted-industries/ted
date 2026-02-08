@@ -139,3 +139,64 @@ pub fn git_read_file(path: String, revision: String) -> Result<String, String> {
     Ok(content.to_string())
 }
 
+#[tauri::command]
+pub fn git_stage(repo_path: String, file_path: String) -> Result<(), String> {
+    let repo = Repository::discover(&repo_path).map_err(|e| e.to_string())?;
+    let mut index = repo.index().map_err(|e| e.to_string())?;
+    
+    // Absolute to relative
+    let workdir = repo.workdir().ok_or("Not a working directory")?;
+    let abs_path = std::path::Path::new(&file_path);
+    let rel_path = abs_path.strip_prefix(workdir).map_err(|e| e.to_string())?;
+
+    index.add_path(rel_path).map_err(|e| e.to_string())?;
+    index.write().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn git_unstage(repo_path: String, file_path: String) -> Result<(), String> {
+    let repo = Repository::discover(&repo_path).map_err(|e| e.to_string())?;
+    
+    // Absolute to relative
+    let workdir = repo.workdir().ok_or("Not a working directory")?;
+    let abs_path = std::path::Path::new(&file_path);
+    let rel_path = abs_path.strip_prefix(workdir).map_err(|e| e.to_string())?;
+
+    // Unstaging is essentially resetting the path in the index to HEAD
+    let head = repo.head().map_err(|e| e.to_string())?;
+    let head_commit = head.peel_to_commit().map_err(|e| e.to_string())?;
+    let head_tree = head_commit.tree().map_err(|e| e.to_string())?;
+
+    repo.reset_default(Some(head_tree.as_object()), [rel_path].iter()).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn git_commit(repo_path: String, message: String) -> Result<(), String> {
+    let repo = Repository::discover(&repo_path).map_err(|e| e.to_string())?;
+    let mut index = repo.index().map_err(|e| e.to_string())?;
+    let tree_id = index.write_tree().map_err(|e| e.to_string())?;
+    let tree = repo.find_tree(tree_id).map_err(|e| e.to_string())?;
+
+    let sig = repo.signature().map_err(|e| e.to_string())?;
+    
+    let head = repo.head().map_err(|e| e.to_string())?;
+    let parent_commit = head.peel_to_commit().map_err(|e| e.to_string())?;
+
+    repo.commit(Some("HEAD"), &sig, &sig, &message, &tree, &[&parent_commit]).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn git_get_branch(repo_path: String) -> Result<String, String> {
+    let repo = Repository::discover(&repo_path).map_err(|e| e.to_string())?;
+    let head = repo.head().map_err(|e| e.to_string())?;
+    
+    if head.is_branch() {
+        Ok(head.shorthand().unwrap_or("unknown").to_string())
+    } else {
+        Ok(head.name().unwrap_or("Detached HEAD").to_string())
+    }
+}
+

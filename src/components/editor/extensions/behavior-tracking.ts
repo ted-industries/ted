@@ -13,6 +13,15 @@ class BehaviorTrackingPlugin implements PluginValue {
         // Tree-sitter update
         treeSitter.update(update);
 
+        // Detect Undo/Redo
+        for (const tr of update.transactions) {
+            if (tr.isUserEvent("undo")) {
+                telemetry.log("undo", {});
+            } else if (tr.isUserEvent("redo")) {
+                telemetry.log("redo", {});
+            }
+        }
+
         if (update.docChanged) {
             update.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
                 const insertedText = inserted.toString();

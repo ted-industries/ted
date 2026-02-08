@@ -60,23 +60,6 @@ class TelemetryService {
         return id;
     }
 
-    public log(type: TelemetryEventType, payload?: any) {
-        const event: TelemetryEvent = {
-            type,
-            payload,
-            timestamp: Date.now(),
-            isoTimestamp: new Date().toISOString(),
-            sessionId: this.sessionId,
-            userId: this.userId,
-        };
-
-        this.buffer.push(event);
-
-        if (this.buffer.length >= this.MAX_BUFFER_SIZE) {
-            this.flush();
-        }
-    }
-
     private startFlushTimer() {
         if (this.flushInterval) return;
         this.flushInterval = setInterval(() => {
@@ -84,7 +67,16 @@ class TelemetryService {
         }, this.FLUSH_DELAY);
     }
 
-    private async flush() {
+    private listeners: ((event: TelemetryEvent) => void)[] = [];
+
+    public subscribe(listener: (event: TelemetryEvent) => void): () => void {
+        this.listeners.push(listener);
+        return () => {
+            this.listeners = this.listeners.filter(l => l !== listener);
+        };
+    }
+
+    public async flush() {
         if (this.buffer.length === 0) return;
 
         const eventsToSend = [...this.buffer];
@@ -99,6 +91,26 @@ class TelemetryService {
                 console.error("Failed to log telemetry event:", err);
                 // Recover failed events? For now, just drop to avoid loops
             }
+        }
+    }
+
+    public log(type: TelemetryEventType, payload?: any) {
+        const event: TelemetryEvent = {
+            type,
+            payload,
+            timestamp: Date.now(),
+            isoTimestamp: new Date().toISOString(),
+            sessionId: this.sessionId,
+            userId: this.userId,
+        };
+
+        this.buffer.push(event);
+
+        // Notify listeners immediately for low-latency rule evaluation
+        this.listeners.forEach(l => l(event));
+
+        if (this.buffer.length >= this.MAX_BUFFER_SIZE) {
+            this.flush();
         }
     }
 

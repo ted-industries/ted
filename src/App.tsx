@@ -10,7 +10,9 @@ import CommandPalette from "./components/palette/CommandPalette";
 import Welcome from "./components/welcome/Welcome";
 import SettingsPopup from "./components/settings/SettingsPopup";
 import TerminalPanel from "./components/terminal/TerminalPanel";
+import SuggestionToast from "./components/agent/SuggestionToast";
 import { editorStore, useEditorStore } from "./store/editor-store";
+import { ruleEngine } from "./services/agent/rule-engine";
 import "./App.css";
 
 function App() {
@@ -20,23 +22,17 @@ function App() {
   const [sidebarWidth, setSidebarWidth] = useState(storeSidebarWidth);
   const isDraggingRef = useRef(false);
 
+  // Initialize Rule Engine
+  useEffect(() => {
+    ruleEngine.start();
+    return () => ruleEngine.stop();
+  }, []);
+
   useEffect(() => {
     if (!isDraggingRef.current) {
       setSidebarWidth(storeSidebarWidth);
     }
   }, [storeSidebarWidth]);
-
-  // Verification: Log Git signals for active file
-  useEffect(() => {
-    if (activeTabPath && !activeTabPath.startsWith("ted://") && !activeTabPath.startsWith("diff:")) {
-      import("./services/git-context-service").then(({ gitContext }) => {
-        console.log("[App] Requesting git context for", activeTabPath);
-        gitContext.getFileHistory(activeTabPath).then(h => console.log("[App] History:", h.length, "commits"));
-        const churn = gitContext.getFileChurn(activeTabPath);
-        if (churn) console.log("[App] Churn:", churn);
-      });
-    }
-  }, [activeTabPath]);
 
   const handleOpenFile = useCallback(async () => {
     const selected = await open({
@@ -235,6 +231,7 @@ function App() {
       <TerminalPanel />
       <CommandPalette />
       <SettingsPopup />
+      <SuggestionToast />
     </div>
   );
 }

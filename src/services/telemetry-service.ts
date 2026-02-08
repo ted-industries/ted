@@ -13,7 +13,18 @@ export type TelemetryEventType =
     | "redo"
     | "command_executed"
     | "terminal_spawn"
-    | "terminal_command";
+    | "terminal_command"
+    | "tree_sitter_ready"
+    | "tree_sitter_parse"
+    | "tree_sitter_error"
+    | "tree_sitter_init"
+    | "tree_sitter_boot"
+    | "tree_sitter_worker_error"
+    | "tree_sitter_worker_debug"
+    | "tree_sitter_semantic"
+    | "debug_service_not_ready"
+    | "debug_service_sending_update"
+    | "debug_editor_update";
 
 export interface TelemetryEvent {
     type: TelemetryEventType;
@@ -26,7 +37,7 @@ export interface TelemetryEvent {
 
 class TelemetryService {
     private buffer: TelemetryEvent[] = [];
-    private flushInterval: NodeJS.Timeout | null = null;
+    private flushInterval: ReturnType<typeof setTimeout> | null = null;
     private readonly FLUSH_DELAY = 5000;
     private readonly MAX_BUFFER_SIZE = 50;
     private sessionId: string;

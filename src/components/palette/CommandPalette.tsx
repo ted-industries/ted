@@ -90,7 +90,7 @@ export default function CommandPalette() {
         },
         {
             id: "open-settings",
-            label: "zed: open settings",
+            label: "ted: open settings",
             shortcut: "Ctrl+,",
             action: () => editorStore.setSettingsOpen(true),
         },

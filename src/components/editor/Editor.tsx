@@ -28,6 +28,8 @@ import { tedDark } from "./theme";
 import { editorStore, useEditorStore } from "../../store/editor-store";
 import { getLanguageExtension } from "../../utils/languages";
 import { behaviorTracking } from "./extensions/behavior-tracking";
+import { treeSitter } from "../../services/tree-sitter-service";
+import { telemetry } from "../../services/telemetry-service";
 import "../../styles/editor.css";
 
 const chevronDownSvg = renderToStaticMarkup(
@@ -99,12 +101,16 @@ function buildExtensions(
       ...foldKeymap,
       ...completionKeymap,
       ...commentKeymap,
-      indentWithTab,
+      indentWithTab as any,
     ]),
     EditorView.updateListener.of((update: ViewUpdate) => {
       if (update.docChanged) {
         const content = update.state.doc.toString();
         editorStore.updateTabContent(tabPath, content);
+
+        // Notify Tree-sitter worker of changes
+        telemetry.log("debug_editor_update", { length: content.length });
+        treeSitter.update(update);
 
         if (autoSaveTimerRef.current) {
           clearTimeout(autoSaveTimerRef.current);
@@ -169,6 +175,34 @@ export default function Editor() {
     prevPathRef.current = activeTab?.path ?? null;
 
     if (!activeTab) return;
+
+    // Load Tree-sitter language
+    const dot = activeTab.name.lastIndexOf(".");
+    if (dot !== -1) {
+      const ext = activeTab.name.slice(dot + 1).toLowerCase();
+      // Simple mapping for now - enhance as needed
+      const langMap: Record<string, string> = {
+        "ts": "typescript",
+        "tsx": "tsx",
+        "js": "javascript",
+        "jsx": "javascript",
+        "rs": "rust",
+        "py": "python",
+        "json": "json",
+        "html": "html",
+        "css": "css",
+        "c": "c",
+        "h": "c",
+        "cpp": "cpp",
+        "hpp": "cpp",
+        "cc": "cpp",
+        "cxx": "cpp"
+      };
+      const lang = langMap[ext];
+      if (lang) {
+        treeSitter.loadLanguage(lang, activeTab.content);
+      }
+    }
 
     const langExt = getLanguageExtension(activeTab.name);
     const extensions = buildExtensions(

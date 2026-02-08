@@ -1,15 +1,20 @@
-import { Extension, StateEffect } from "@codemirror/state";
-import { EditorView, ViewUpdate, ViewPlugin, PluginValue } from "@codemirror/view";
+import { ViewUpdate, ViewPlugin, PluginValue } from "@codemirror/view";
 import { telemetry } from "../../../services/telemetry-service";
+import { treeSitter } from "../../../services/tree-sitter-service";
+
 
 class BehaviorTrackingPlugin implements PluginValue {
-    constructor(view: EditorView) {
+    // @ts-ignore
+    constructor(_view: any) {
         // Initial log?
     }
 
     update(update: ViewUpdate) {
+        // Tree-sitter update
+        treeSitter.update(update);
+
         if (update.docChanged) {
-            update.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
+            update.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
                 const insertedText = inserted.toString();
                 const isHuge = insertedText.length > 500;
 

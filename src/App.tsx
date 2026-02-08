@@ -20,12 +20,23 @@ function App() {
   const [sidebarWidth, setSidebarWidth] = useState(storeSidebarWidth);
   const isDraggingRef = useRef(false);
 
-  // Sync local state when store changes (e.g. from settings popup)
   useEffect(() => {
     if (!isDraggingRef.current) {
       setSidebarWidth(storeSidebarWidth);
     }
   }, [storeSidebarWidth]);
+
+  // Verification: Log Git signals for active file
+  useEffect(() => {
+    if (activeTabPath && !activeTabPath.startsWith("ted://") && !activeTabPath.startsWith("diff:")) {
+      import("./services/git-context-service").then(({ gitContext }) => {
+        console.log("[App] Requesting git context for", activeTabPath);
+        gitContext.getFileHistory(activeTabPath).then(h => console.log("[App] History:", h.length, "commits"));
+        const churn = gitContext.getFileChurn(activeTabPath);
+        if (churn) console.log("[App] Churn:", churn);
+      });
+    }
+  }, [activeTabPath]);
 
   const handleOpenFile = useCallback(async () => {
     const selected = await open({

@@ -87,19 +87,77 @@ pub fn git_diff(repo_path: String, file_path: String) -> Result<String, String> 
 }
 
 #[tauri::command]
-pub fn git_log(repo_path: String, limit: usize) -> Result<Vec<CommitEntry>, String> {
+pub fn git_log(repo_path: String, limit: usize, file_filter: Option<String>) -> Result<Vec<CommitEntry>, String> {
     let repo = Repository::discover(&repo_path).map_err(|e| e.to_string())?;
     let mut revwalk = repo.revwalk().map_err(|e| e.to_string())?;
     revwalk.push_head().map_err(|e| e.to_string())?;
     
+    // Actually, let's keep it simple. git2 revwalk sorting by time.
+    revwalk.set_sorting(git2::Sort::TIME).map_err(|e| e.to_string())?;
+
     let mut commits = Vec::new();
     let mut count = 0;
+    
+    // Better approach: Use `git` CLI if possible? No, we want to stay in Rust.
+    // Let's implement the diff check.
+    
+    let filter_path = file_filter.as_deref();
+    
+    // Normalize filter path to relative if possible, or just use as is?
+    // Git expects relative paths for tree lookups usually relative to workdir
+    let mut rel_filter_path = String::new();
+    if let Some(fpath) = filter_path {
+        if let Some(workdir) = repo.workdir() {
+            let path = std::path::Path::new(fpath);
+            if path.is_absolute() {
+                if let Ok(rel) = path.strip_prefix(workdir) {
+                    rel_filter_path = rel.to_string_lossy().replace("\\", "/");
+                } else {
+                     rel_filter_path = fpath.to_string();
+                }
+            } else {
+                rel_filter_path = fpath.to_string();
+            }
+        }
+    }
 
     for oid in revwalk {
         if count >= limit { break; }
         
         let oid = oid.map_err(|e| e.to_string())?;
         let commit = repo.find_commit(oid).map_err(|e| e.to_string())?;
+        
+        if !rel_filter_path.is_empty() {
+            // Check if file changed in this commit
+            let mut changed = false;
+            
+            if commit.parent_count() == 0 {
+                 // Initial commit - check if file exists
+                 let tree = commit.tree().map_err(|e| e.to_string())?;
+                 if tree.get_path(std::path::Path::new(&rel_filter_path)).is_ok() {
+                     changed = true;
+                 }
+            } else {
+                 let parent = commit.parent(0).map_err(|e| e.to_string())?;
+                 let tree = commit.tree().map_err(|e| e.to_string())?;
+                 let parent_tree = parent.tree().map_err(|e| e.to_string())?;
+                 
+                 // Manual check since diff pathspec is tricky with lifetimes here
+                 // Or we can just use pathspec in diff options?
+                 let mut opts = DiffOptions::new();
+                 opts.pathspec(&rel_filter_path);
+                 let diff_filtered = repo.diff_tree_to_tree(Some(&parent_tree), Some(&tree), Some(&mut opts))
+                    .map_err(|e| e.to_string())?;
+                 
+                 if diff_filtered.deltas().len() > 0 {
+                     changed = true;
+                 }
+            }
+            
+            if !changed {
+                continue;
+            }
+        }
         
         let author = commit.author();
         let date = commit.time();
@@ -260,5 +318,72 @@ pub fn git_get_line_diff(repo_path: String, file_path: String) -> Result<Vec<Lin
     // For now, let's keep it simple and just return what we have.
     // The frontend can decide how to render overlapping lines.
     
+    Ok(results)
+}
+
+#[derive(Serialize, Clone)]
+pub struct FileChurn {
+    pub path: String,
+    pub commits: u32,
+    pub last_modified: String,
+}
+
+#[tauri::command]
+pub fn git_churn(repo_path: String, days_limit: u32) -> Result<Vec<FileChurn>, String> {
+    use std::collections::HashMap;
+    use chrono::{TimeZone, Utc, Duration};
+
+    let repo = Repository::discover(&repo_path).map_err(|e| e.to_string())?;
+    let mut revwalk = repo.revwalk().map_err(|e| e.to_string())?;
+    revwalk.push_head().map_err(|e| e.to_string())?;
+
+    let cutoff_date = Utc::now() - Duration::days(days_limit as i64);
+    let cutoff_seconds = cutoff_date.timestamp();
+
+    let mut churn_map: HashMap<String, (u32, i64)> = HashMap::new(); // path -> (count, last_mod_timestamp)
+
+    for oid in revwalk {
+        let oid = oid.map_err(|e| e.to_string())?;
+        let commit = repo.find_commit(oid).map_err(|e| e.to_string())?;
+        
+        let commit_time = commit.time().seconds();
+        if commit_time < cutoff_seconds {
+            break;
+        }
+
+        if let Ok(parent) = commit.parent(0) {
+            let tree = commit.tree().map_err(|e| e.to_string())?;
+            let parent_tree = parent.tree().map_err(|e| e.to_string())?;
+            
+            let diff = repo.diff_tree_to_tree(Some(&parent_tree), Some(&tree), None)
+                .map_err(|e| e.to_string())?;
+
+            diff.foreach(
+                &mut |delta, _hunk| {
+                    if let Some(path) = delta.new_file().path() {
+                        let path_str = path.to_string_lossy().to_string();
+                        let entry = churn_map.entry(path_str).or_insert((0, 0));
+                        entry.0 += 1;
+                        if commit_time > entry.1 {
+                            entry.1 = commit_time;
+                        }
+                    }
+                    true
+                },
+                None,
+                None,
+                None
+            ).map_err(|e| e.to_string())?;
+        }
+    }
+
+    let results = churn_map.into_iter().map(|(path, (commits, last_mod))| {
+        FileChurn {
+            path,
+            commits,
+            last_modified: format!("{}", last_mod),
+        }
+    }).collect();
+
     Ok(results)
 }

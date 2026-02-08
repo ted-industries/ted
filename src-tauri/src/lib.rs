@@ -166,6 +166,7 @@ pub fn run() {
             git::git_status,
             git::git_diff,
             git::git_log,
+            git::git_read_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

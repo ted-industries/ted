@@ -4,6 +4,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import Sidebar from "./components/sidebar/Sidebar";
 import TabBar from "./components/tabs/TabBar";
 import Editor from "./components/editor/Editor";
+import DiffEditor from "./components/editor/DiffEditor";
 import Titlebar from "./components/titlebar/Titlebar";
 import CommandPalette from "./components/palette/CommandPalette";
 import Welcome from "./components/welcome/Welcome";
@@ -207,7 +208,11 @@ function App() {
               <>
                 <TabBar />
                 <div className="app-editor">
-                  <Editor />
+                  {activeTabPath.startsWith("diff:") ? (
+                    <DiffEditor />
+                  ) : (
+                    <Editor />
+                  )}
                 </div>
               </>
             ) : (

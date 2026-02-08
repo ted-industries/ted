@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { telemetry } from "../services/telemetry-service";
+import { gitService } from "../services/git-service";
 
 export interface TabState {
   path: string;
@@ -11,6 +12,8 @@ export interface TabState {
   scrollTop: number;
   scrollLeft: number;
   cursorPos: number;
+  isDiff?: boolean;
+  originalContent?: string;
 }
 
 export interface TerminalState {
@@ -192,6 +195,39 @@ export const editorStore = {
     }, { path, name });
 
     telemetry.log("file_open", { path, name });
+  },
+
+  async openDiff(path: string) {
+    const diffPath = `diff:${path}`;
+    if (state.tabs.find((t) => t.path === diffPath)) {
+      this.setActiveTab(diffPath);
+      return;
+    }
+
+    const tab = state.tabs.find((t) => t.path === path);
+    const content = tab ? tab.content : await invoke<string>("read_file", { path });
+    const originalContent = await gitService.readFile(path, "HEAD");
+    const name = tab ? tab.name : await invoke<string>("get_basename", { path });
+
+    const diffTab: TabState = {
+      path: diffPath,
+      name: `Diff: ${name}`,
+      content,
+      savedContent: content,
+      originalContent,
+      isDiff: true,
+      isDirty: false,
+      scrollTop: 0,
+      scrollLeft: 0,
+      cursorPos: 0,
+    };
+
+    dispatch("OPEN_DIFF_TAB", {
+      tabs: [...state.tabs, diffTab],
+      activeTabPath: diffPath,
+    }, { path });
+
+    telemetry.log("diff_open", { path });
   },
 
   closeTab(path: string) {

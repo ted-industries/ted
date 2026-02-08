@@ -119,3 +119,23 @@ pub fn git_log(repo_path: String, limit: usize) -> Result<Vec<CommitEntry>, Stri
 
     Ok(commits)
 }
+
+#[tauri::command]
+pub fn git_read_file(path: String, revision: String) -> Result<String, String> {
+    let repo = Repository::discover(&path).map_err(|e| e.to_string())?;
+    let workdir = repo.workdir().ok_or("Not a working directory")?;
+    
+    // Convert absolute path to relative path for git
+    let abs_path = std::path::Path::new(&path);
+    let rel_path = abs_path.strip_prefix(workdir).map_err(|e| e.to_string())?;
+    let rel_path_str = rel_path.to_string_lossy().replace("\\", "/");
+
+    let spec = format!("{}:{}", revision, rel_path_str);
+    let obj = repo.revparse_single(&spec).map_err(|e| e.to_string())?;
+    
+    let blob = obj.as_blob().ok_or("Object is not a blob")?;
+    let content = std::str::from_utf8(blob.content()).map_err(|e| e.to_string())?;
+    
+    Ok(content.to_string())
+}
+

@@ -7,6 +7,7 @@ import {
   RiFileTextLine,
   RiFolderAddLine,
   RiGitRepositoryLine,
+  RiArrowLeftRightLine,
 } from "@remixicon/react";
 import { editorStore, useEditorStore } from "../../store/editor-store";
 import { gitService } from "../../services/git-service"; // Removed unused FileStatus
@@ -22,12 +23,14 @@ const FileTreeItem = memo(function FileTreeItem({
   entry,
   depth,
   onFileClick,
+  onDiffClick,
   activePath,
   gitStatus,
 }: {
   entry: FileEntry;
   depth: number;
   onFileClick: (path: string, name: string) => void;
+  onDiffClick: (path: string) => void;
   activePath: string | null;
   gitStatus: Record<string, string>;
 }) {
@@ -82,6 +85,18 @@ const FileTreeItem = memo(function FileTreeItem({
           style={{ display: entry.is_dir ? "none" : undefined }}
         />
         <span className="explorer-item-name">{entry.name}</span>
+        {status === "modified" && !entry.is_dir && (
+          <div
+            className="git-diff-btn"
+            title="Open Diff"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDiffClick(entry.path);
+            }}
+          >
+            <RiArrowLeftRightLine size={14} />
+          </div>
+        )}
         {status && <span className="git-indicator" />}
       </div>
       {expanded &&
@@ -91,6 +106,7 @@ const FileTreeItem = memo(function FileTreeItem({
             entry={child}
             depth={depth + 1}
             onFileClick={onFileClick}
+            onDiffClick={onDiffClick}
             activePath={activePath}
             gitStatus={gitStatus}
           />
@@ -192,6 +208,10 @@ export default function Explorer() {
     }
   }, []);
 
+  const handleDiffClick = useCallback((path: string) => {
+    editorStore.openDiff(path);
+  }, []);
+
   if (!explorerPath) {
     return (
       <div className="explorer">
@@ -220,6 +240,7 @@ export default function Explorer() {
             entry={entry}
             depth={0}
             onFileClick={handleFileClick}
+            onDiffClick={handleDiffClick}
             activePath={activePath}
             gitStatus={gitStatus}
           />

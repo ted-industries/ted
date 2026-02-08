@@ -39,6 +39,15 @@ class GitService {
             return [];
         }
     }
+
+    async readFile(path: string, revision: string = "HEAD"): Promise<string> {
+        try {
+            return await invoke("git_read_file", { path, revision });
+        } catch (e) {
+            console.warn(`Git read file failed for ${path} @ ${revision}:`, e);
+            return "";
+        }
+    }
 }
 
 export const gitService = new GitService();

@@ -18,7 +18,8 @@ export class QueryManager {
         if (!querySource) return null;
 
         try {
-            const query = this.language.query(querySource);
+            // Updated for newer web-tree-sitter versions which use new Query(...)
+            const query = this.language.query ? this.language.query(querySource) : new Query(this.language, querySource);
             this.queries.set(languageName, query);
             return query;
         } catch (e) {

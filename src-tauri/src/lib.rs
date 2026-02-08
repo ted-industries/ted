@@ -1,4 +1,5 @@
 mod terminal;
+mod git;
 
 use serde::Serialize;
 use tauri::Manager;
@@ -162,6 +163,9 @@ pub fn run() {
             terminal::write_to_terminal,
             terminal::resize_terminal,
             log_telemetry_event,
+            git::git_status,
+            git::git_diff,
+            git::git_log,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

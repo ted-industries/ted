@@ -6,8 +6,10 @@ import {
   RiArrowRightSLine,
   RiFileTextLine,
   RiFolderAddLine,
+  RiGitRepositoryLine,
 } from "@remixicon/react";
 import { editorStore, useEditorStore } from "../../store/editor-store";
+import { gitService } from "../../services/git-service"; // Removed unused FileStatus
 import "./explorer.css";
 
 interface FileEntry {
@@ -21,11 +23,13 @@ const FileTreeItem = memo(function FileTreeItem({
   depth,
   onFileClick,
   activePath,
+  gitStatus,
 }: {
   entry: FileEntry;
   depth: number;
   onFileClick: (path: string, name: string) => void;
   activePath: string | null;
+  gitStatus: Record<string, string>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [children, setChildren] = useState<FileEntry[]>([]);
@@ -49,13 +53,17 @@ const FileTreeItem = memo(function FileTreeItem({
   };
 
   const isActive = entry.path === activePath;
+  // Normalize lookup path
+  const lookupPath = entry.path.replace(/\\/g, "/").toLowerCase();
+  const status = gitStatus[lookupPath];
 
   return (
     <>
       <div
-        className={`explorer-item${isActive ? " explorer-item-active" : ""}`}
+        className={`explorer-item${isActive ? " explorer-item-active" : ""} ${status ? `git-${status}` : ""}`}
         style={{ paddingLeft: `${8 + depth * 16}px` }}
         onClick={toggle}
+        title={status ? `Git: ${status}` : undefined}
       >
         {entry.is_dir ? (
           <span className="explorer-chevron">
@@ -74,6 +82,7 @@ const FileTreeItem = memo(function FileTreeItem({
           style={{ display: entry.is_dir ? "none" : undefined }}
         />
         <span className="explorer-item-name">{entry.name}</span>
+        {status && <span className="git-indicator" />}
       </div>
       {expanded &&
         children.map((child) => (
@@ -83,6 +92,7 @@ const FileTreeItem = memo(function FileTreeItem({
             depth={depth + 1}
             onFileClick={onFileClick}
             activePath={activePath}
+            gitStatus={gitStatus}
           />
         ))}
     </>
@@ -94,6 +104,43 @@ export default function Explorer() {
   const activePath = useEditorStore((s) => s.activeTabPath);
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [rootName, setRootName] = useState("");
+  const [gitStatus, setGitStatus] = useState<Record<string, string>>({});
+
+  const refreshGitStatus = useCallback(async () => {
+    if (!explorerPath) return;
+    try {
+      const statuses = await gitService.getStatus(explorerPath);
+      const statusMap: Record<string, string> = {};
+
+      statuses.forEach((s) => {
+        // Normalize storage path
+        const normPath = s.path.replace(/\\/g, "/").toLowerCase();
+        statusMap[normPath] = s.status;
+
+        // Propagate to parents
+        // We need to walk up from normPath to explorerPath (normalized)
+        // Note: s.path is absolute. explorerPath is absolute.
+
+        let parentPath = normPath.substring(0, normPath.lastIndexOf("/"));
+        const rootPath = explorerPath.replace(/\\/g, "/").toLowerCase();
+
+        while (parentPath.length >= rootPath.length && parentPath.startsWith(rootPath)) {
+          if (!statusMap[parentPath]) {
+            // For now, mark any parent as 'modified' if a child is changed of any type
+            // You could be more specific (e.g. 'new' if all children are new), but 'modified' is standard for folders
+            statusMap[parentPath] = "modified";
+          }
+          const lastSlash = parentPath.lastIndexOf("/");
+          if (lastSlash === -1) break;
+          parentPath = parentPath.substring(0, lastSlash);
+        }
+      });
+      setGitStatus(statusMap);
+    } catch (e) {
+      console.error("Failed to refresh git status", e);
+    }
+  }, [explorerPath]);
+
 
   useEffect(() => {
     if (!explorerPath) return;
@@ -108,6 +155,7 @@ export default function Explorer() {
           setEntries(items);
           setRootName(name);
           editorStore.setProjectName(name);
+          refreshGitStatus();
         }
       } catch (err) {
         console.error("Failed to list directory:", err);
@@ -116,7 +164,17 @@ export default function Explorer() {
     return () => {
       cancelled = true;
     };
-  }, [explorerPath]);
+  }, [explorerPath, refreshGitStatus]);
+
+  // Hook into file saves or focus to refresh git status?
+  // For now, let's just refresh on mount/path change.
+  // Ideally, we'd have a system event or polling.
+  useEffect(() => {
+    // Poll ever 5s for now
+    if (!explorerPath) return;
+    const interval = setInterval(refreshGitStatus, 5000);
+    return () => clearInterval(interval);
+  }, [explorerPath, refreshGitStatus]);
 
   const handleOpenFolder = useCallback(async () => {
     const selected = await open({ directory: true, multiple: false });
@@ -150,8 +208,10 @@ export default function Explorer() {
   return (
     <div className="explorer">
       <div className="explorer-section-header" onClick={handleOpenFolder}>
-        <RiArrowDownSLine size={16} />
-        <span>{rootName.toUpperCase()}</span>
+        {/* <RiArrowDownSLine size={16} /> */}
+        <RiGitRepositoryLine size={14} style={{ marginRight: 6, opacity: 0.7 }} />
+        <span style={{ fontWeight: 600 }}>{rootName.toUpperCase()}</span>
+        <span style={{ marginLeft: "auto", opacity: 0.5, fontSize: 10 }}>GIT</span>
       </div>
       <div className="explorer-tree">
         {entries.map((entry) => (
@@ -161,6 +221,7 @@ export default function Explorer() {
             depth={0}
             onFileClick={handleFileClick}
             activePath={activePath}
+            gitStatus={gitStatus}
           />
         ))}
       </div>

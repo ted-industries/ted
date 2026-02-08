@@ -133,3 +133,47 @@
 .explorer-open-btn:hover {
     background: #333333;
 }
+
+/* Git Status Colors */
+.explorer-item.git-modified .explorer-item-name {
+    color: #e2c08d;
+}
+
+.explorer-item.git-new .explorer-item-name {
+    color: #73c991;
+}
+
+.explorer-item.git-deleted .explorer-item-name {
+    color: #ff7b72;
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+.explorer-item.git-staged .explorer-item-name {
+    color: #58a6ff;
+}
+
+.explorer-item.git-unknown .explorer-item-name {
+    color: #8b949e;
+}
+
+.git-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-left: auto;
+    margin-right: 8px;
+    opacity: 0.8;
+}
+
+.explorer-item.git-modified .git-indicator {
+    background-color: #e2c08d;
+}
+
+.explorer-item.git-new .git-indicator {
+    background-color: #73c991;
+}
+
+.explorer-item.git-staged .git-indicator {
+    background-color: #58a6ff;
+}

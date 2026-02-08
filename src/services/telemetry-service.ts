@@ -24,7 +24,8 @@ export type TelemetryEventType =
     | "tree_sitter_semantic"
     | "debug_service_not_ready"
     | "debug_service_sending_update"
-    | "debug_editor_update";
+    | "debug_editor_update"
+    | "diff_open";
 
 export interface TelemetryEvent {
     type: TelemetryEventType;

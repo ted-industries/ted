@@ -5,6 +5,7 @@ import { foldGutter, bracketMatching, indentOnInput } from "@codemirror/language
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { searchKeymap } from "@codemirror/search";
 import { commentKeymap } from "@codemirror/comment";
+import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import { invoke } from "@tauri-apps/api/core";
 import { tedDark } from "./theme";
 import { editorStore, useEditorStore } from "../../store/editor-store";
@@ -52,6 +53,14 @@ export default function DiffEditor() {
                 "&": { fontSize: `${settings.fontSize}px` },
             }),
             settings.lineNumbers ? lineNumbers() : [],
+            settings.indentGuides ? indentationMarkers({
+                colors: {
+                    light: "#ffffff10",
+                    dark: "#ffffff10",
+                    activeLight: "#ffffff20",
+                    activeDark: "#ffffff20",
+                }
+            }) : [],
             highlightActiveLine(),
             highlightActiveLineGutter(),
             bracketMatching(),
@@ -97,9 +106,11 @@ export default function DiffEditor() {
                             if (autoSaveTimerRef.current) {
                                 clearTimeout(autoSaveTimerRef.current);
                             }
-                            autoSaveTimerRef.current = setTimeout(() => {
-                                saveFile(activeTab.path, content);
-                            }, 1500);
+                            if (settings.autoSave) {
+                                autoSaveTimerRef.current = setTimeout(() => {
+                                    saveFile(activeTab.path, content);
+                                }, 1500);
+                            }
                         }
                     }),
                 ],

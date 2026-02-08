@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { RiArrowLeftSLine, RiArrowRightSLine } from "@remixicon/react";
 import { playTick } from "../../utils/tick-sound";
+import { useEditorStore } from "../../store/editor-store";
 import "./NavTape.css";
 
 interface NavTapeProps {
@@ -20,6 +21,7 @@ export default function NavTape({
   const [isHovering, setIsHovering] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const [offset, setOffset] = useState(0);
+  const volume = useEditorStore((s) => s.settings.volume);
   const itemWidth = 120;
   const lastTickIndexRef = useRef(activeIndex);
   const spinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -42,9 +44,9 @@ export default function NavTape({
     const currentIndex = Math.round(smoothIndex);
     if (currentIndex !== lastTickIndexRef.current) {
       lastTickIndexRef.current = currentIndex;
-      playTick();
+      playTick(volume);
     }
-  }, [smoothIndex, getOffsetForIndex]);
+  }, [smoothIndex, getOffsetForIndex, volume]);
 
   // Mark spinning
   const markSpinning = useCallback(() => {
@@ -88,17 +90,17 @@ export default function NavTape({
         const newIndex = Math.min(items.length - 1, activeIndex + 1);
         if (newIndex !== activeIndex) {
           onChange(newIndex);
-          playTick();
+          playTick(volume);
         }
       } else {
         const newIndex = Math.max(0, activeIndex - 1);
         if (newIndex !== activeIndex) {
           onChange(newIndex);
-          playTick();
+          playTick(volume);
         }
       }
     },
-    [items.length, activeIndex, onChange, markSpinning],
+    [items.length, activeIndex, onChange, markSpinning, volume],
   );
 
   const goLeft = useCallback(() => {
@@ -106,18 +108,18 @@ export default function NavTape({
     if (newIndex !== activeIndex) {
       markSpinning();
       onChange(newIndex);
-      playTick();
+      playTick(volume);
     }
-  }, [activeIndex, onChange, markSpinning]);
+  }, [activeIndex, onChange, markSpinning, volume]);
 
   const goRight = useCallback(() => {
     const newIndex = Math.min(items.length - 1, activeIndex + 1);
     if (newIndex !== activeIndex) {
       markSpinning();
       onChange(newIndex);
-      playTick();
+      playTick(volume);
     }
-  }, [activeIndex, items.length, onChange, markSpinning]);
+  }, [activeIndex, items.length, onChange, markSpinning, volume]);
 
   const active = isSpinning || isHovering;
 

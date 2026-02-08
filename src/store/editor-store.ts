@@ -47,6 +47,7 @@ interface EditorStoreState {
     indentGuides: boolean;
     volume: number;
     uiBlur: boolean;
+    autoSave: boolean;
   };
   projectSettings: {
     sidebarWidth?: number;
@@ -55,6 +56,7 @@ interface EditorStoreState {
     indentGuides?: boolean;
     volume?: number;
     uiBlur?: boolean;
+    autoSave?: boolean;
   };
   settings: {
     sidebarWidth: number;
@@ -63,6 +65,7 @@ interface EditorStoreState {
     indentGuides: boolean;
     volume: number;
     uiBlur: boolean;
+    autoSave: boolean;
   };
   logs: ActionLog[];
 }
@@ -88,6 +91,7 @@ let state: EditorStoreState = {
     indentGuides: true,
     volume: 50,
     uiBlur: false,
+    autoSave: false,
   },
   projectSettings: {},
   settings: {
@@ -97,6 +101,7 @@ let state: EditorStoreState = {
     indentGuides: true,
     volume: 50,
     uiBlur: false,
+    autoSave: false,
   },
   logs: [],
 };

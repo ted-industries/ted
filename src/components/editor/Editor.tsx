@@ -54,7 +54,7 @@ function buildExtensions(
   langExt: Extension | null,
   saveFile: (path: string, content: string) => void,
   autoSaveTimerRef: React.RefObject<ReturnType<typeof setTimeout> | null>,
-  settings: { fontSize: number; lineNumbers: boolean; indentGuides: boolean },
+  settings: { fontSize: number; lineNumbers: boolean; indentGuides: boolean; autoSave: boolean },
 ): Extension[] {
   const exts: Extension[] = [
     tedDark,
@@ -118,9 +118,11 @@ function buildExtensions(
         if (autoSaveTimerRef.current) {
           clearTimeout(autoSaveTimerRef.current);
         }
-        autoSaveTimerRef.current = setTimeout(() => {
-          saveFile(tabPath, content);
-        }, 1500);
+        if (settings.autoSave) {
+          autoSaveTimerRef.current = setTimeout(() => {
+            saveFile(tabPath, content);
+          }, 1500);
+        }
       }
     }),
     behaviorTracking,

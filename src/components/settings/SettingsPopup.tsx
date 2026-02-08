@@ -153,7 +153,10 @@ export default function SettingsPopup() {
                                     </div>
                                 </div>
                                 <div className="row-control">
-                                    <div className="zed-switch active"></div>
+                                    <div
+                                        className={`zed-switch ${activeSettings.autoSave ? 'active' : ''}`}
+                                        onClick={() => updateActiveSetting("autoSave", !activeSettings.autoSave)}
+                                    />
                                 </div>
                             </div>
                         </div>

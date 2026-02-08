@@ -121,6 +121,12 @@ class TelemetryService {
         }
         this.flush(); // Flush remaining
     }
+    public getRecentEventCount(type: TelemetryEventType, timeWindowMs: number): number {
+        const now = Date.now();
+        const cutoff = now - timeWindowMs;
+        // Count in buffer
+        return this.buffer.filter(e => e.type === type && e.timestamp >= cutoff).length;
+    }
 }
 
 export const telemetry = new TelemetryService();

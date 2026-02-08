@@ -48,6 +48,12 @@ interface EditorStoreState {
     volume: number;
     uiBlur: boolean;
     autoSave: boolean;
+    llm: {
+      provider: "ollama" | "openai" | "anthropic" | "google";
+      model: string;
+      baseUrl?: string;
+      apiKey?: string;
+    };
   };
   projectSettings: {
     sidebarWidth?: number;
@@ -57,6 +63,12 @@ interface EditorStoreState {
     volume?: number;
     uiBlur?: boolean;
     autoSave?: boolean;
+    llm?: {
+      provider?: "ollama" | "openai" | "anthropic" | "google";
+      model?: string;
+      baseUrl?: string;
+      apiKey?: string;
+    };
   };
   settings: {
     sidebarWidth: number;
@@ -66,6 +78,12 @@ interface EditorStoreState {
     volume: number;
     uiBlur: boolean;
     autoSave: boolean;
+    llm: {
+      provider: "ollama" | "openai" | "anthropic" | "google";
+      model: string;
+      baseUrl?: string;
+      apiKey?: string;
+    };
   };
   logs: ActionLog[];
 }
@@ -92,6 +110,12 @@ let state: EditorStoreState = {
     volume: 50,
     uiBlur: false,
     autoSave: false,
+    llm: {
+      provider: "ollama",
+      model: "mistral",
+      baseUrl: "http://localhost:11434",
+      apiKey: "",
+    },
   },
   projectSettings: {},
   settings: {
@@ -102,6 +126,12 @@ let state: EditorStoreState = {
     volume: 50,
     uiBlur: false,
     autoSave: false,
+    llm: {
+      provider: "ollama",
+      model: "mistral",
+      baseUrl: "http://localhost:11434",
+      apiKey: "",
+    },
   },
   logs: [],
 };
@@ -129,6 +159,13 @@ function dispatch(type: string, partial: Partial<EditorStoreState>, payload?: an
     nextState.settings = {
       ...nextState.userSettings,
       ...nextState.projectSettings,
+      llm: {
+        ...nextState.userSettings.llm,
+        ...nextState.projectSettings.llm,
+        // Ensure required fields are always present if project settings are partial
+        provider: nextState.projectSettings.llm?.provider ?? nextState.userSettings.llm.provider,
+        model: nextState.projectSettings.llm?.model ?? nextState.userSettings.llm.model,
+      }
     };
 
     if (userSettingsPath && partial.userSettings) {

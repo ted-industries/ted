@@ -1,4 +1,4 @@
-export type SuggestionType = "behavior" | "ast" | "git" | "other";
+export type SuggestionType = "behavior" | "ast" | "git" | "hybrid" | "other";
 
 export interface SuggestionAction {
     label: string;

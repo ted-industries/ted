@@ -7,7 +7,7 @@ class SuggestionDispatcher {
     private readonly GLOBAL_COOLDOWN = 2000; // 2s between any suggestions
     private lastSuggestionTime = 0;
 
-    public dispatch(suggestion: Suggestion) {
+    public async dispatch(suggestion: Suggestion) {
         const now = Date.now();
 
         // 1. Check Global Cooldown

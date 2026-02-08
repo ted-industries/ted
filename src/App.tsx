@@ -13,6 +13,7 @@ import TerminalPanel from "./components/terminal/TerminalPanel";
 import SuggestionToast from "./components/agent/SuggestionToast";
 import { editorStore, useEditorStore } from "./store/editor-store";
 import { ruleEngine } from "./services/agent/rule-engine";
+import { llmAgent } from "./services/agent/llm-agent";
 import "./App.css";
 
 function App() {
@@ -22,10 +23,14 @@ function App() {
   const [sidebarWidth, setSidebarWidth] = useState(storeSidebarWidth);
   const isDraggingRef = useRef(false);
 
-  // Initialize Rule Engine
+  // Initialize Rule Engine & LLM Agent
   useEffect(() => {
     ruleEngine.start();
-    return () => ruleEngine.stop();
+    llmAgent.start();
+    return () => {
+      ruleEngine.stop();
+      llmAgent.stop();
+    };
   }, []);
 
   useEffect(() => {

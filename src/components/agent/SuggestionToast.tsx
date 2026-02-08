@@ -13,10 +13,18 @@ export default function SuggestionToast() {
     useEffect(() => {
         if (current) {
             setActive(true);
+
+            // Auto-dismiss after 10 seconds
+            const timer = setTimeout(() => {
+                setActive(false);
+                setTimeout(() => dismiss(current.id), 300);
+            }, 10000);
+
+            return () => clearTimeout(timer);
         } else {
             setActive(false);
         }
-    }, [current]);
+    }, [current, dismiss]);
 
     if (!current || !active) return null;
 
@@ -38,6 +46,7 @@ export default function SuggestionToast() {
                 {current.type === "behavior" && "🧠"}
                 {current.type === "ast" && "📜"}
                 {current.type === "git" && "git"}
+                {current.type === "hybrid" && "🤖"}
             </div>
             <div className="suggestion-content">
                 <div className="suggestion-message">{current.message}</div>

@@ -274,6 +274,82 @@ export default function SettingsPopup() {
                                 </div>
                             </div>
                         </div>
+
+                        {/* AI ASSISTANT SECTION */}
+                        <div className="settings-section top-margin">
+                            <div className="section-header">AI Assistant</div>
+
+                            {/* Provider */}
+                            <div className="settings-row">
+                                <div className="row-text">
+                                    <div className="row-title">Provider</div>
+                                    <div className="row-description">Select the LLM backend.</div>
+                                </div>
+                                <div className="row-control">
+                                    <select
+                                        className="zed-input"
+                                        value={activeSettings.llm?.provider || "ollama"}
+                                        onChange={(e) => updateActiveSetting("llm", { ...activeSettings.llm, provider: e.target.value })}
+                                    >
+                                        <option value="ollama">Ollama (Local)</option>
+                                        <option value="openai">OpenAI</option>
+                                        <option value="anthropic">Anthropic</option>
+                                        <option value="google">Google Gemini</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Model */}
+                            <div className="settings-row divider">
+                                <div className="row-text">
+                                    <div className="row-title">Model Name</div>
+                                    <div className="row-description">E.g. mistral, gpt-4o, claude-3-opus</div>
+                                </div>
+                                <div className="row-control">
+                                    <input
+                                        type="text"
+                                        className="zed-input"
+                                        value={activeSettings.llm?.model || ""}
+                                        placeholder="mistral"
+                                        onChange={(e) => updateActiveSetting("llm", { ...activeSettings.llm, model: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* API Key */}
+                            <div className="settings-row divider">
+                                <div className="row-text">
+                                    <div className="row-title">API Key</div>
+                                    <div className="row-description">Required for cloud providers.</div>
+                                </div>
+                                <div className="row-control">
+                                    <input
+                                        type="password"
+                                        className="zed-input"
+                                        value={activeSettings.llm?.apiKey || ""}
+                                        placeholder="sk-..."
+                                        onChange={(e) => updateActiveSetting("llm", { ...activeSettings.llm, apiKey: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Base URL */}
+                            <div className="settings-row divider">
+                                <div className="row-text">
+                                    <div className="row-title">Base URL</div>
+                                    <div className="row-description">Optional override (e.g. for LM Studio).</div>
+                                </div>
+                                <div className="row-control">
+                                    <input
+                                        type="text"
+                                        className="zed-input"
+                                        value={activeSettings.llm?.baseUrl || ""}
+                                        placeholder="http://localhost:11434"
+                                        onChange={(e) => updateActiveSetting("llm", { ...activeSettings.llm, baseUrl: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -181,6 +181,21 @@ export default function SettingsPopup() {
                                     </div>
                                 </div>
                             </div>
+
+                            <div className="settings-row divider">
+                                <div className="row-text">
+                                    <div className="row-title">UI Motion Blur</div>
+                                    <div className="row-description">
+                                        Enable a subtle motion blur effect during panel transitions.
+                                    </div>
+                                </div>
+                                <div className="row-control">
+                                    <div
+                                        className={`zed-switch ${activeSettings.uiBlur ? 'active' : ''}`}
+                                        onClick={() => updateActiveSetting("uiBlur", !activeSettings.uiBlur)}
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         {/* EDITOR SECTION */}

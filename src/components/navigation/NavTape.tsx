@@ -6,12 +6,14 @@ import "./NavTape.css";
 interface NavTapeProps {
   items: string[];
   activeIndex: number;
+  smoothIndex?: number;
   onChange: (index: number) => void;
 }
 
 export default function NavTape({
   items,
   activeIndex,
+  smoothIndex = activeIndex,
   onChange,
 }: NavTapeProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -20,9 +22,6 @@ export default function NavTape({
   const [offset, setOffset] = useState(0);
   const itemWidth = 120;
   const lastTickIndexRef = useRef(activeIndex);
-  const animFrameRef = useRef<number>(0);
-  const targetOffsetRef = useRef(0);
-  const currentOffsetRef = useRef(0);
   const spinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getOffsetForIndex = useCallback(
@@ -34,53 +33,18 @@ export default function NavTape({
     [itemWidth],
   );
 
-  // Initialize
+  // Sync offset from smoothIndex (provided by Sidebar)
   useEffect(() => {
-    const off = getOffsetForIndex(activeIndex);
+    const off = getOffsetForIndex(smoothIndex);
     setOffset(off);
-    currentOffsetRef.current = off;
-    targetOffsetRef.current = off;
-  }, []);
 
-
-
-  const checkTick = useCallback(
-    (off: number) => {
-      const vp = viewportRef.current;
-      const viewportCenter = vp ? vp.offsetWidth / 2 : 100;
-      const currentIndex = Math.round(
-        (viewportCenter - off - itemWidth / 2) / itemWidth,
-      );
-      if (currentIndex !== lastTickIndexRef.current) {
-        lastTickIndexRef.current = currentIndex;
-        playTick();
-      }
-    },
-    [itemWidth],
-  );
-
-  // Animation loop
-  useEffect(() => {
-    let running = true;
-    const animate = () => {
-      if (!running) return;
-      const diff = targetOffsetRef.current - currentOffsetRef.current;
-      if (Math.abs(diff) > 0.3) {
-        currentOffsetRef.current += diff * 0.15;
-        checkTick(currentOffsetRef.current);
-        setOffset(currentOffsetRef.current);
-      } else if (Math.abs(diff) > 0.01) {
-        currentOffsetRef.current = targetOffsetRef.current;
-        setOffset(currentOffsetRef.current);
-      }
-      animFrameRef.current = requestAnimationFrame(animate);
-    };
-    animFrameRef.current = requestAnimationFrame(animate);
-    return () => {
-      running = false;
-      cancelAnimationFrame(animFrameRef.current);
-    };
-  }, [checkTick]);
+    // Tick sound based on smoothIndex crossings
+    const currentIndex = Math.round(smoothIndex);
+    if (currentIndex !== lastTickIndexRef.current) {
+      lastTickIndexRef.current = currentIndex;
+      playTick();
+    }
+  }, [smoothIndex, getOffsetForIndex]);
 
   // Mark spinning
   const markSpinning = useCallback(() => {
@@ -91,11 +55,18 @@ export default function NavTape({
     }, 600);
   }, []);
 
-  // Animate to new activeIndex when changed externally
+  // Handle resize to keep centered
   useEffect(() => {
-    targetOffsetRef.current = getOffsetForIndex(activeIndex);
-    markSpinning();
-  }, [activeIndex, getOffsetForIndex, markSpinning]);
+    const vp = viewportRef.current;
+    if (!vp) return;
+
+    const observer = new ResizeObserver(() => {
+      setOffset(getOffsetForIndex(smoothIndex));
+    });
+
+    observer.observe(vp);
+    return () => observer.disconnect();
+  }, [smoothIndex, getOffsetForIndex]);
 
   const lastScrollTime = useRef(0);
 

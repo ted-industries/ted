@@ -5,6 +5,11 @@ export interface FileStatus {
     status: "new" | "modified" | "deleted" | "staged" | "unknown";
 }
 
+export interface LineDiff {
+    line: number;
+    diff_type: "added" | "modified" | "deleted";
+}
+
 export interface CommitEntry {
     hash: string;
     message: string;
@@ -66,6 +71,15 @@ class GitService {
             return await invoke("git_get_branch", { repoPath });
         } catch {
             return "unknown";
+        }
+    }
+
+    async getLineDiff(repoPath: string, filePath: string): Promise<LineDiff[]> {
+        try {
+            return await invoke("git_get_line_diff", { repoPath, filePath });
+        } catch (e) {
+            console.warn(`Git line diff failed for ${filePath}:`, e);
+            return [];
         }
     }
 }

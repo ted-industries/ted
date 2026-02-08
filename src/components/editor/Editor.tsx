@@ -30,6 +30,8 @@ import { getLanguageExtension } from "../../utils/languages";
 import { behaviorTracking } from "./extensions/behavior-tracking";
 import { treeSitter } from "../../services/tree-sitter-service";
 import { telemetry } from "../../services/telemetry-service";
+import { gitService } from "../../services/git-service";
+import { gitGutterExtension, setGitDiff } from "./GitGutter";
 import "../../styles/editor.css";
 
 const chevronDownSvg = renderToStaticMarkup(
@@ -84,6 +86,7 @@ function buildExtensions(
     closeBrackets(),
     autocompletion(),
     highlightSelectionMatches(),
+    gitGutterExtension,
     keymap.of([
       {
         key: "Mod-s",
@@ -237,10 +240,35 @@ export default function Editor() {
     };
   }, [activeTabPath, saveFile, settings]);
 
+  // Git Gutter Update
+  const explorerPath = useEditorStore((s) => s.explorerPath);
+  useEffect(() => {
+    if (!viewRef.current || !activeTab || activeTab.isDiff || !explorerPath) return;
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const diffs = await gitService.getLineDiff(explorerPath, activeTab.path);
+        if (!cancelled && viewRef.current) {
+          viewRef.current.dispatch({
+            effects: setGitDiff.of(diffs)
+          });
+        }
+      } catch (e) {
+        // Silently fail if not a git repo or other minor issue
+      }
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [activeTab?.path, activeTab?.content, explorerPath]);
+
   const hasActiveTab = activeTab !== null;
 
   return (
-    <div className="editor-root">
+    <div className="editor-root" onContextMenu={(e) => e.preventDefault()}>
       {!hasActiveTab && (
         <div className="editor-welcome">
           <div className="editor-welcome-inner">

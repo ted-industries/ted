@@ -12,6 +12,7 @@
 
 .editor-container .cm-editor {
     height: 100%;
+    cursor: text;
 }
 
 .editor-welcome {
@@ -65,4 +66,32 @@
 
 .cm-scroller::-webkit-scrollbar-corner {
     background: transparent;
+}
+
+/* Git Gutter */
+.cm-git-gutter-container {
+    width: 3px;
+    margin-left: 2px;
+}
+
+.cm-git-gutter-marker {
+    width: 3px;
+    height: 100%;
+}
+
+.cm-git-added {
+    background-color: #2ea043;
+}
+
+.cm-git-modified {
+    background-color: #d29922;
+}
+
+.cm-git-deleted {
+    border-left: 3px solid #f85149;
+    height: 0;
+    width: 0;
+    border-top: 3px solid transparent;
+    border-bottom: 3px solid transparent;
+    margin-top: 8px;
 }

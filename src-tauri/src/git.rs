@@ -200,3 +200,65 @@ pub fn git_get_branch(repo_path: String) -> Result<String, String> {
     }
 }
 
+#[derive(Serialize, Clone)]
+pub struct LineDiff {
+    pub line: u32,
+    pub diff_type: String, // "added", "modified", "deleted"
+}
+
+#[tauri::command]
+pub fn git_get_line_diff(repo_path: String, file_path: String) -> Result<Vec<LineDiff>, String> {
+    let repo = Repository::discover(&repo_path).map_err(|e| e.to_string())?;
+    
+    // Absolute to relative
+    let workdir = repo.workdir().ok_or("Not a working directory")?;
+    let abs_path = std::path::Path::new(&file_path);
+    let rel_path = abs_path.strip_prefix(workdir).map_err(|e| e.to_string())?;
+    let rel_path_str = rel_path.to_string_lossy().replace("\\", "/");
+
+    let mut opts = DiffOptions::new();
+    opts.pathspec(&rel_path_str);
+    opts.context_lines(0); // We only want changed lines
+
+    let index = repo.index().map_err(|e| e.to_string())?;
+    let diff = repo.diff_index_to_workdir(Some(&index), Some(&mut opts)).map_err(|e| e.to_string())?;
+
+    let mut results = Vec::new();
+
+    diff.foreach(
+        &mut |_delta, _hunk| true,
+        None,
+        None,
+        Some(&mut |_delta, _hunk, line| {
+            let origin = line.origin();
+            match origin {
+                '+' => {
+                    if let Some(lineno) = line.new_lineno() {
+                        results.push(LineDiff {
+                            line: lineno,
+                            diff_type: "added".to_string(),
+                        });
+                    }
+                }
+                '-' => {
+                    if let Some(lineno) = line.old_lineno() {
+                        results.push(LineDiff {
+                            line: lineno,
+                            diff_type: "deleted".to_string(),
+                        });
+                    }
+                }
+                _ => {}
+            }
+            true
+        }),
+    ).map_err(|e| e.to_string())?;
+
+    // Post-process to detect modifications: 
+    // If a hunk has both additions and deletions in the same logical area,
+    // simplify to 'modified' for the gutter bar.
+    // For now, let's keep it simple and just return what we have.
+    // The frontend can decide how to render overlapping lines.
+    
+    Ok(results)
+}

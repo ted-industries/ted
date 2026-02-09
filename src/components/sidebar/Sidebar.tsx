@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import NavTape from "../navigation/NavTape";
 import Explorer from "../explorer/Explorer";
 import SourceControl from "../source-control/SourceControl";
+import SearchPanel from "../search/SearchPanel";
 import AgentsPanel from "../agent/AgentsPanel";
 import { useEditorStore } from "../../store/editor-store";
 import "./sidebar.css";
@@ -98,7 +99,7 @@ export default function Sidebar() {
             <Explorer />
           </div>
           <div className="sidebar-panel">
-            <div className="sidebar-placeholder">Search</div>
+            <SearchPanel />
           </div>
           <div className="sidebar-panel">
             <SourceControl />

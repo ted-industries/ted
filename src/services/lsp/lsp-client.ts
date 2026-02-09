@@ -41,6 +41,7 @@ export class LspClient {
   private diagnosticsListeners: DiagnosticsListener[] = [];
   private _syncKind = 1; // default Full
   private restartCount = 0;
+  private _everInitialized = false;
   private readonly MAX_RESTARTS = 3;
   private readonly RESTART_BACKOFF_BASE = 2000;
   private rootUri: string | null = null;
@@ -78,7 +79,19 @@ export class LspClient {
     this.unlistenError = await listen<{ server_id: string; error: string }>(
       `lsp-error:${this.serverId}`,
       (event) => {
-        console.warn(`[LSP:${this.serverId}] stderr:`, event.payload.error);
+        const line = event.payload.error;
+        // Suppress noisy / non-actionable stderr lines from LSP servers
+        if (
+          !line.trim() || // empty lines
+          /^Stack backtrace:/.test(line) || // backtrace header
+          /^\s*\d+:\s/.test(line) || // numbered stack frames (0: std::...)
+          /^\s+at \/rustc\//.test(line) || // rustc source locations
+          /client exited without proper shutdown/i.test(line) || // expected during HMR/reload
+          /Input watch path is neither a file nor a directory/.test(line) // benign file-watcher warning
+        ) {
+          return;
+        }
+        console.warn(`[LSP:${this.serverId}] stderr:`, line);
       },
     );
 
@@ -129,6 +142,7 @@ export class LspClient {
 
     this.notify("initialized", {});
     this._initialized = true;
+    this._everInitialized = true;
     this.restartCount = 0;
 
     telemetry.log("lsp_ready", {
@@ -182,8 +196,19 @@ export class LspClient {
   }
 
   private async handleServerExit(): Promise<void> {
+    const wasInitialized = this._initialized;
     this.cleanup();
     if (!this.rootUri) return;
+
+    // If the server never successfully completed initialization (e.g. binary
+    // not installed, immediate crash), don't attempt restarts — they will
+    // just keep failing.
+    if (!wasInitialized && !this._everInitialized) {
+      console.warn(
+        `[LSP:${this.serverId}] Server exited before initialization, skipping restart (is the binary installed?)`,
+      );
+      return;
+    }
 
     this.restartCount++;
     if (this.restartCount > this.MAX_RESTARTS) {
@@ -329,7 +354,16 @@ export class LspClient {
 
   // ---- Document Sync ----
 
+  /** Check whether a document is currently tracked as open by this client. */
+  isDocumentOpen(uri: string): boolean {
+    return this.documentVersions.has(uri);
+  }
+
   didOpen(uri: string, languageId: string, text: string): void {
+    if (this.documentVersions.has(uri)) {
+      // Already open — skip duplicate didOpen to avoid LSP errors.
+      return;
+    }
     this.documentVersions.set(uri, 1);
     this.notify("textDocument/didOpen", {
       textDocument: { uri, languageId, version: 1, text },
@@ -358,6 +392,10 @@ export class LspClient {
   }
 
   didClose(uri: string): void {
+    if (!this.documentVersions.has(uri)) {
+      // Not tracked as open — skip to avoid "orphan DidCloseTextDocument" errors.
+      return;
+    }
     this.documentVersions.delete(uri);
     this.notify("textDocument/didClose", {
       textDocument: { uri },

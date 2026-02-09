@@ -129,7 +129,31 @@ export class LspManager {
 
     this.starting.add(language);
     try {
-      await client.start(rootUri);
+      try {
+        await client.start(rootUri);
+      } catch (startErr: unknown) {
+        // If the Rust backend still has a stale session (e.g. after HMR reload),
+        // stop it first, then retry once.
+        const errMsg = String(startErr);
+        if (errMsg.includes("already running")) {
+          console.warn(
+            `[LspManager] Stale ${language} server detected, stopping and retrying`,
+          );
+          try {
+            await (await import("@tauri-apps/api/core")).invoke("lsp_stop", {
+              serverId,
+            });
+          } catch {
+            /* ignore stop error */
+          }
+          // Small delay for cleanup
+          await new Promise((r) => setTimeout(r, 200));
+          await client.start(rootUri);
+        } else {
+          throw startErr;
+        }
+      }
+
       this.clients.set(language, client);
 
       // Re-open any already-open documents for this language
@@ -173,7 +197,11 @@ export class LspManager {
 
     const client = await this.ensureClient(language);
     if (client) {
-      client.didOpen(uri, this.getLspLanguageId(path, language), content);
+      // Only send didOpen if the client doesn't already have it open.
+      // ensureClient() may have already re-opened tracked documents after startup.
+      if (!client.isDocumentOpen(uri)) {
+        client.didOpen(uri, this.getLspLanguageId(path, language), content);
+      }
     }
   }
 

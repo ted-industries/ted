@@ -18,13 +18,37 @@ export class QueryManager {
         if (!querySource) return null;
 
         try {
-            // Updated for newer web-tree-sitter versions which use new Query(...)
+            // Try compiling the full query first
             const query = this.language.query ? this.language.query(querySource) : new Query(this.language, querySource);
             this.queries.set(languageName, query);
             return query;
-        } catch (e) {
-            console.error(`Failed to compile query for ${languageName}:`, e);
-            return null;
+        } catch {
+            // If the full query fails, try each pattern individually and
+            // combine only the ones the grammar actually supports.
+            const patterns = querySource.split("\n").filter((p: string) => p.trim());
+            const valid: string[] = [];
+            for (const pattern of patterns) {
+                try {
+                    const test = this.language.query ? this.language.query(pattern) : new Query(this.language, pattern);
+                    test.delete?.(); // free the test query
+                    valid.push(pattern);
+                } catch {
+                    console.warn(`[QueryManager] Skipping unsupported pattern for ${languageName}: ${pattern.trim()}`);
+                }
+            }
+            if (valid.length === 0) {
+                console.warn(`[QueryManager] No valid patterns for ${languageName}`);
+                return null;
+            }
+            try {
+                const combined = valid.join("\n");
+                const query = this.language.query ? this.language.query(combined) : new Query(this.language, combined);
+                this.queries.set(languageName, query);
+                return query;
+            } catch (e) {
+                console.error(`Failed to compile combined query for ${languageName}:`, e);
+                return null;
+            }
         }
     }
 
@@ -52,33 +76,33 @@ export class QueryManager {
             case "tsx":
             case "javascript":
             case "jsx":
-                return `
-                    (function_declaration name: (identifier) @def.function)
-                    (method_definition name: (property_identifier) @def.method)
-                    (class_declaration name: (identifier) @def.class)
-                    (variable_declarator name: (identifier) @def.variable)
-                    (call_expression function: (identifier) @ref.call)
-                `;
+                return [
+                    "(function_declaration name: (identifier) @def_function)",
+                    "(method_definition name: (property_identifier) @def_method)",
+                    "(class_declaration name: (identifier) @def_class)",
+                    "(variable_declarator name: (identifier) @def_variable)",
+                    "(call_expression function: (identifier) @ref_call)",
+                ].join("\n");
             case "rust":
-                return `
-                    (function_item name: (identifier) @def.function)
-                    (struct_item name: (type_identifier) @def.struct)
-                    (impl_item type: (type_identifier) @def.impl)
-                    (call_expression function: (identifier) @ref.call)
-                `;
+                return [
+                    "(function_item name: (identifier) @def_function)",
+                    "(struct_item name: (type_identifier) @def_struct)",
+                    "(impl_item type: (type_identifier) @def_impl)",
+                    "(call_expression function: (identifier) @ref_call)",
+                ].join("\n");
             case "python":
-                return `
-                    (function_definition name: (identifier) @def.function)
-                    (class_definition name: (identifier) @def.class)
-                    (call function: (identifier) @ref.call)
-                `;
+                return [
+                    "(function_definition name: (identifier) @def_function)",
+                    "(class_definition name: (identifier) @def_class)",
+                    "(call function: (identifier) @ref_call)",
+                ].join("\n");
             case "c":
             case "cpp":
-                return `
-                    (function_definition declarator: (function_declarator declarator: (identifier) @def.function))
-                    (struct_specifier name: (type_identifier) @def.struct)
-                    (call_expression function: (identifier) @ref.call)
-                `;
+                return [
+                    "(function_definition declarator: (function_declarator declarator: (identifier) @def_function))",
+                    "(struct_specifier name: (type_identifier) @def_struct)",
+                    "(call_expression function: (identifier) @ref_call)",
+                ].join("\n");
             default:
                 return null;
         }

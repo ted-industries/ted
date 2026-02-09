@@ -1,12 +1,12 @@
-mod terminal;
 mod git;
+mod terminal;
 
 use serde::Serialize;
-use tauri::Manager;
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
+use tauri::Manager;
 use terminal::TerminalState;
 
 const IGNORED_DIRS: &[&str] = &[
@@ -148,6 +148,7 @@ fn get_user_config_dir(handle: tauri::AppHandle) -> Result<String, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_http::init())
         .manage(TerminalState {
             sessions: Arc::new(Mutex::new(HashMap::new())),
         })

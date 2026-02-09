@@ -2,10 +2,11 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import NavTape from "../navigation/NavTape";
 import Explorer from "../explorer/Explorer";
 import SourceControl from "../source-control/SourceControl";
+import AgentsPanel from "../agent/AgentsPanel";
 import { useEditorStore } from "../../store/editor-store";
 import "./sidebar.css";
 
-const PANELS = ["explorer", "search", "source control", "extensions"];
+const PANELS = ["explorer", "search", "source control", "extensions", "agent"];
 
 export default function Sidebar() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -104,6 +105,9 @@ export default function Sidebar() {
           </div>
           <div className="sidebar-panel">
             <div className="sidebar-placeholder">Extensions</div>
+          </div>
+          <div className="sidebar-panel">
+            <AgentsPanel />
           </div>
         </div>
       </div>

@@ -1,0 +1,94 @@
+.agent-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: #181818;
+    color: #cccccc;
+    font-size: 12px;
+    user-select: none;
+}
+
+.agent-header {
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: #cccccc;
+    flex-shrink: 0;
+}
+
+.agent-messages {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.agent-messages::-webkit-scrollbar {
+    width: 0;
+}
+
+.agent-messages {
+    scrollbar-width: none;
+}
+
+.agent-msg {
+    max-width: 90%;
+    padding: 5px 8px;
+    line-height: 1.4;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.agent-msg-user {
+    align-self: flex-end;
+    color: #cccccc;
+    background: #ffffff08;
+}
+
+.agent-msg-agent {
+    align-self: flex-start;
+    color: #999999;
+}
+
+.agent-empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555555;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+.agent-input-row {
+    display: flex;
+    flex-shrink: 0;
+    border-top: 1px solid #252525;
+}
+
+.agent-input {
+    flex: 1;
+    background: #1e1e1e;
+    color: #cccccc;
+    border: none;
+    outline: none;
+    padding: 8px;
+    font-size: 12px;
+    font-family: inherit;
+}
+
+.agent-input::placeholder {
+    color: #555555;
+}
+
+.agent-typing {
+    color: #555555;
+    font-size: 11px;
+    padding: 4px 8px;
+}

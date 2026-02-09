@@ -57,19 +57,13 @@ export class LLMAgent {
 
         this.isGenerating = true;
         try {
-            console.log("[LLMAgent] Triggering generation...");
-            const context = await contextBuilder.build();
-            if (!context) {
-                console.log("[LLMAgent] No context available (no active file?)");
-                return;
-            }
-            console.log("[LLMAgent] Context built:", { path: context.file.path, cursor: context.file.cursor });
+            console.log("[LLMAgent] Triggering...");
+            const context = contextBuilder.build();
+            if (!context) return;
 
             const result = await llmService.generateSuggestions(context);
-            console.log("[LLMAgent] Raw LLM result:", JSON.stringify(result));
 
             const validated = responseValidator.validate(result);
-            console.log("[LLMAgent] Validated result:", validated);
 
             if (validated && validated.suggestions.length > 0) {
                 for (const s of validated.suggestions) {
@@ -83,7 +77,7 @@ export class LLMAgent {
                         priority: 5,
                     };
 
-                    console.log(`[LLMAgent] Dispatching suggestion: "${agentSuggestion.message}"`);
+                    console.log(`[LLMAgent] Suggestion: "${agentSuggestion.message}"`);
                     await suggestionDispatcher.dispatch(agentSuggestion);
                 }
             } else {

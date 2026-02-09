@@ -61,6 +61,7 @@ export class ContextBuilder {
         if (path.endsWith(".js") || path.endsWith(".jsx")) return "javascript";
         if (path.endsWith(".rs")) return "rust";
         if (path.endsWith(".cpp") || path.endsWith(".c")) return "cpp";
+        if (path.endsWith(".py")) return "python";
         return "text";
     }
 }

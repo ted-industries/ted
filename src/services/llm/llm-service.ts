@@ -26,8 +26,6 @@ export class ConfigurableLLMService implements LLMService {
 
     async generateSuggestions(context: AgentContext): Promise<LLMResult> {
         const config = editorStore.getState().settings.llm as LLMConfig;
-        console.log("[LLMService] Using provider:", config.provider, "model:", config.model);
-
         const provider = this.providers[config.provider];
 
         if (!provider) {
@@ -36,13 +34,9 @@ export class ConfigurableLLMService implements LLMService {
         }
 
         const prompt = this.buildPrompt(context);
-        console.log("[LLMService] Prompt length:", prompt.length, "chars");
 
         try {
-            console.log("[LLMService] Calling provider.generate()...");
-            const result = await provider.generate(context, config, prompt);
-            console.log("[LLMService] Provider returned:", result);
-            return result;
+            return await provider.generate(context, config, prompt);
         } catch (err) {
             console.error(`[LLMService] Generation failed (${config.provider}):`, err);
             return { suggestions: [] };
@@ -76,8 +70,9 @@ Find ONE improvement. Consider: naming, structure, performance, readability, bes
     private getFocusedCode(content: string, cursor: number): string {
         const lines = content.split('\n');
         const cursorLine = content.slice(0, cursor).split('\n').length - 1;
-        const start = Math.max(0, cursorLine - 50);
-        const end = Math.min(lines.length, cursorLine + 50);
+        // Only send ±20 lines around cursor — enough context, much less tokens
+        const start = Math.max(0, cursorLine - 20);
+        const end = Math.min(lines.length, cursorLine + 20);
         return lines.slice(start, end).join('\n');
     }
 }

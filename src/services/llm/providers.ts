@@ -50,7 +50,7 @@ export class OllamaProvider implements LLMProvider {
                 prompt: prompt,
                 stream: false,
                 format: forceJson ? "json" : undefined,
-                options: { temperature: 0.2, num_predict: 512 }
+                options: { temperature: 0.2, num_predict: 128 }
             })
         });
         if (!response.ok) throw new Error(`Ollama error: ${response.statusText}`);
@@ -80,6 +80,7 @@ export class OpenAIProvider implements LLMProvider {
                 model: config.model,
                 messages: [{ role: "user", content: prompt }],
                 temperature: 0.2,
+                max_tokens: 150,
                 response_format: forceJson ? { type: "json_object" } : undefined
             })
         });
@@ -110,7 +111,7 @@ export class AnthropicProvider implements LLMProvider {
             },
             body: JSON.stringify({
                 model: config.model,
-                max_tokens: 1024,
+                max_tokens: 150,
                 messages: [{ role: "user", content: prompt }]
             })
         });
@@ -137,7 +138,10 @@ export class GoogleProvider implements LLMProvider {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: forceJson ? { responseMimeType: "application/json" } : undefined
+                generationConfig: {
+                    maxOutputTokens: 150,
+                    ...(forceJson ? { responseMimeType: "application/json" } : {})
+                }
             })
         });
         if (!response.ok) throw new Error(`Google error: ${await response.text()}`);

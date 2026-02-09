@@ -32,10 +32,47 @@ export class LspManager {
   private openDocuments = new Map<string, string>(); // uri -> language
   private configs: Record<string, LspServerConfig>;
   private starting = new Set<string>(); // languages currently being started
+  private uriCache = new Map<string, string>(); // path -> uri
+
+  private unsubStore: (() => void) | null = null;
+  private lastExplorerPath: string | null = null;
 
   constructor() {
     this.configs = { ...DEFAULT_SERVER_CONFIGS };
     this.buildExtensionMap();
+
+    // Watch for explorerPath changes — when the user opens a folder,
+    // retry starting LSP servers for any already-open documents.
+    this.unsubStore = editorStore.subscribe(() => {
+      const explorerPath = editorStore.getState().explorerPath;
+      if (explorerPath && explorerPath !== this.lastExplorerPath) {
+        this.lastExplorerPath = explorerPath;
+        this.retryPendingDocuments();
+      }
+    });
+  }
+
+  /** When explorerPath becomes available, start servers for already-tracked documents. */
+  private retryPendingDocuments(): void {
+    if (this.openDocuments.size === 0) return;
+    console.log(
+      `[LspManager] explorerPath set, retrying ${this.openDocuments.size} pending document(s)`,
+    );
+    for (const [uri, language] of this.openDocuments) {
+      if (this.clients.has(language)) continue; // already running
+      const tab = editorStore
+        .getState()
+        .tabs.find((t) => this.pathToUri(t.path) === uri);
+      if (tab) {
+        this.ensureClient(language).then((client) => {
+          client?.didOpen(
+            uri,
+            this.getLspLanguageId(tab.path, language),
+            tab.content,
+          );
+        });
+      }
+    }
   }
 
   private buildExtensionMap(): void {
@@ -74,10 +111,18 @@ export class LspManager {
     if (this.starting.has(language)) return null;
 
     const config = this.configs[language];
-    if (!config || config.enabled === false) return null;
+    if (!config || config.enabled === false) {
+      console.log(`[LspManager] No config or disabled for '${language}'`);
+      return null;
+    }
 
     const rootUri = this.getRootUri();
-    if (!rootUri) return null;
+    if (!rootUri) {
+      console.log(
+        `[LspManager] No explorerPath set, cannot start '${language}' server`,
+      );
+      return null;
+    }
 
     const serverId = `lsp-${language}`;
     const client = new LspClient(serverId, config);
@@ -94,7 +139,11 @@ export class LspManager {
             .getState()
             .tabs.find((t) => this.pathToUri(t.path) === uri);
           if (tab) {
-            client.didOpen(uri, this.toLspLanguageId(language), tab.content);
+            client.didOpen(
+              uri,
+              this.getLspLanguageId(tab.path, language),
+              tab.content,
+            );
           }
         }
       }
@@ -113,13 +162,19 @@ export class LspManager {
 
   async documentOpened(path: string, content: string): Promise<void> {
     const language = this.getLanguageForFile(path);
-    if (!language) return;
+    if (!language) {
+      console.log(`[LspManager] No language match for: ${path}`);
+      return;
+    }
 
     const uri = this.pathToUri(path);
     this.openDocuments.set(uri, language);
+    console.log(`[LspManager] documentOpened: ${path} (${language})`);
 
     const client = await this.ensureClient(language);
-    client?.didOpen(uri, this.toLspLanguageId(language), content);
+    if (client) {
+      client.didOpen(uri, this.getLspLanguageId(path, language), content);
+    }
   }
 
   documentChanged(
@@ -174,6 +229,7 @@ export class LspManager {
   }
 
   async dispose(): Promise<void> {
+    this.unsubStore?.();
     const stops = [...this.clients.values()].map((c) => c.stop());
     await Promise.allSettled(stops);
     this.clients.clear();
@@ -183,11 +239,14 @@ export class LspManager {
   // ---- Path Utilities ----
 
   pathToUri(path: string): string {
+    let uri = this.uriCache.get(path);
+    if (uri) return uri;
     const normalized = path.replace(/\\/g, "/");
-    if (/^[a-zA-Z]:/.test(normalized)) {
-      return `file:///${normalized}`;
-    }
-    return `file://${normalized}`;
+    uri = /^[a-zA-Z]:/.test(normalized)
+      ? `file:///${normalized}`
+      : `file://${normalized}`;
+    this.uriCache.set(path, uri);
+    return uri;
   }
 
   uriToPath(uri: string): string {
@@ -202,9 +261,21 @@ export class LspManager {
     return this.pathToUri(explorerPath);
   }
 
-  private toLspLanguageId(language: string): string {
+  /** Map file path + language group to the exact LSP languageId */
+  private getLspLanguageId(path: string, language: string): string {
+    if (language === "typescript") {
+      const lower = path.toLowerCase();
+      if (lower.endsWith(".tsx")) return "typescriptreact";
+      if (lower.endsWith(".jsx")) return "javascriptreact";
+      if (
+        lower.endsWith(".js") ||
+        lower.endsWith(".mjs") ||
+        lower.endsWith(".cjs")
+      )
+        return "javascript";
+      return "typescript";
+    }
     const map: Record<string, string> = {
-      typescript: "typescript",
       rust: "rust",
       python: "python",
       cpp: "cpp",

@@ -38,6 +38,7 @@ import { tedDark } from "./theme";
 import { editorStore, useEditorStore } from "../../store/editor-store";
 import { getLanguageExtension } from "../../utils/languages";
 import { behaviorTracking } from "./extensions/behavior-tracking";
+import { filePathFacet } from "./extensions/lsp-filepath";
 import { lspCompletionSource } from "./extensions/lsp-completion";
 import { lspHoverTooltip } from "./extensions/lsp-hover";
 import { lspGoToKeymap } from "./extensions/lsp-goto";
@@ -77,6 +78,7 @@ function buildExtensions(
   },
 ): Extension[] {
   const exts: Extension[] = [
+    filePathFacet.of(tabPath),
     tedDark,
     EditorView.theme({
       "&": { fontSize: `${settings.fontSize}px` },
@@ -255,8 +257,6 @@ export default function Editor() {
     });
 
     const view = new EditorView({ state, parent: container });
-    (view as unknown as { __tedFilePath: string }).__tedFilePath =
-      activeTab.path;
     viewRef.current = view;
 
     requestAnimationFrame(() => {

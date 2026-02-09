@@ -44,6 +44,8 @@ export class LspClient {
   private readonly MAX_RESTARTS = 3;
   private readonly RESTART_BACKOFF_BASE = 2000;
   private rootUri: string | null = null;
+  /** Track last request ID per feature slot so we can cancel superseded requests */
+  private activeFeatureRequest = new Map<string, number>();
 
   constructor(serverId: string, config: LspServerConfig) {
     this.serverId = serverId;
@@ -371,39 +373,58 @@ export class LspClient {
 
   // ---- LSP Feature Requests ----
 
+  /**
+   * Send a feature request, auto-cancelling any previous in-flight request
+   * for the same slot (e.g. "completion", "hover"). This prevents stale
+   * responses and reduces server load during rapid interactions.
+   */
+  private async featureRequest<T>(
+    slot: string,
+    method: string,
+    params: unknown,
+    timeout: number,
+  ): Promise<T | null> {
+    // Cancel previous in-flight request for this slot
+    const prevId = this.activeFeatureRequest.get(slot);
+    if (prevId !== undefined) {
+      this.cancelRequest(prevId);
+    }
+    const id = this.nextId; // peek — request() will increment
+    this.activeFeatureRequest.set(slot, id);
+    try {
+      const result = await this.request(method, params, timeout);
+      return result as T;
+    } catch {
+      return null;
+    } finally {
+      // Only clear if this is still the active request for the slot
+      if (this.activeFeatureRequest.get(slot) === id) {
+        this.activeFeatureRequest.delete(slot);
+      }
+    }
+  }
+
   async completion(
     uri: string,
     position: Position,
   ): Promise<CompletionItem[] | CompletionList | null> {
     if (!this.capabilities?.completionProvider) return null;
-    try {
-      return (await this.request(
-        "textDocument/completion",
-        {
-          textDocument: { uri },
-          position,
-        },
-        5000,
-      )) as CompletionItem[] | CompletionList | null;
-    } catch {
-      return null;
-    }
+    return this.featureRequest(
+      "completion",
+      "textDocument/completion",
+      { textDocument: { uri }, position },
+      5000,
+    );
   }
 
   async hover(uri: string, position: Position): Promise<Hover | null> {
     if (!this.capabilities?.hoverProvider) return null;
-    try {
-      return (await this.request(
-        "textDocument/hover",
-        {
-          textDocument: { uri },
-          position,
-        },
-        5000,
-      )) as Hover | null;
-    } catch {
-      return null;
-    }
+    return this.featureRequest(
+      "hover",
+      "textDocument/hover",
+      { textDocument: { uri }, position },
+      5000,
+    );
   }
 
   async definition(
@@ -411,18 +432,12 @@ export class LspClient {
     position: Position,
   ): Promise<Location | Location[] | null> {
     if (!this.capabilities?.definitionProvider) return null;
-    try {
-      return (await this.request(
-        "textDocument/definition",
-        {
-          textDocument: { uri },
-          position,
-        },
-        5000,
-      )) as Location | Location[] | null;
-    } catch {
-      return null;
-    }
+    return this.featureRequest(
+      "definition",
+      "textDocument/definition",
+      { textDocument: { uri }, position },
+      5000,
+    );
   }
 
   async references(
@@ -430,19 +445,16 @@ export class LspClient {
     position: Position,
   ): Promise<Location[] | null> {
     if (!this.capabilities?.referencesProvider) return null;
-    try {
-      return (await this.request(
-        "textDocument/references",
-        {
-          textDocument: { uri },
-          position,
-          context: { includeDeclaration: true },
-        },
-        10000,
-      )) as Location[] | null;
-    } catch {
-      return null;
-    }
+    return this.featureRequest(
+      "references",
+      "textDocument/references",
+      {
+        textDocument: { uri },
+        position,
+        context: { includeDeclaration: true },
+      },
+      10000,
+    );
   }
 
   async typeDefinition(
@@ -450,18 +462,12 @@ export class LspClient {
     position: Position,
   ): Promise<Location | Location[] | null> {
     if (!this.capabilities?.typeDefinitionProvider) return null;
-    try {
-      return (await this.request(
-        "textDocument/typeDefinition",
-        {
-          textDocument: { uri },
-          position,
-        },
-        5000,
-      )) as Location | Location[] | null;
-    } catch {
-      return null;
-    }
+    return this.featureRequest(
+      "typeDefinition",
+      "textDocument/typeDefinition",
+      { textDocument: { uri }, position },
+      5000,
+    );
   }
 
   // ---- Subscriptions ----

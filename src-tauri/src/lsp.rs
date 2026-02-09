@@ -47,20 +47,30 @@ pub fn lsp_start<R: Runtime>(
         return Err(format!("Server {} already running", server_id));
     }
 
-    let mut cmd = Command::new(&command);
-    cmd.args(&args)
-        .stdin(Stdio::piped())
+    #[cfg(target_os = "windows")]
+    let mut cmd = {
+        use std::os::windows::process::CommandExt;
+        let mut c = Command::new("cmd");
+        let mut full_args = vec!["/C".to_string(), command.clone()];
+        full_args.extend(args.clone());
+        c.args(&full_args);
+        c.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        c
+    };
+
+    #[cfg(not(target_os = "windows"))]
+    let mut cmd = {
+        let mut c = Command::new(&command);
+        c.args(&args);
+        c
+    };
+
+    cmd.stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
     if let Some(ref cwd) = cwd {
         cmd.current_dir(cwd);
-    }
-
-    #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
     let mut child = cmd

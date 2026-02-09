@@ -17,9 +17,19 @@ import {
   bracketMatching,
   indentUnit,
 } from "@codemirror/language";
-import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
+import {
+  defaultKeymap,
+  history,
+  historyKeymap,
+  indentWithTab,
+} from "@codemirror/commands";
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
-import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
+import {
+  autocompletion,
+  completionKeymap,
+  closeBrackets,
+  closeBracketsKeymap,
+} from "@codemirror/autocomplete";
 import { commentKeymap } from "@codemirror/comment";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import { invoke } from "@tauri-apps/api/core";
@@ -28,6 +38,11 @@ import { tedDark } from "./theme";
 import { editorStore, useEditorStore } from "../../store/editor-store";
 import { getLanguageExtension } from "../../utils/languages";
 import { behaviorTracking } from "./extensions/behavior-tracking";
+import { lspCompletionSource } from "./extensions/lsp-completion";
+import { lspHoverTooltip } from "./extensions/lsp-hover";
+import { lspGoToKeymap } from "./extensions/lsp-goto";
+import { lspDiagnosticsExtension } from "./extensions/lsp-diagnostics";
+import { lspSync } from "./extensions/lsp-sync";
 import { treeSitter } from "../../services/tree-sitter-service";
 import { telemetry } from "../../services/telemetry-service";
 import { gitService } from "../../services/git-service";
@@ -54,7 +69,12 @@ function buildExtensions(
   langExt: Extension | null,
   saveFile: (path: string, content: string) => void,
   autoSaveTimerRef: React.RefObject<ReturnType<typeof setTimeout> | null>,
-  settings: { fontSize: number; lineNumbers: boolean; indentGuides: boolean; autoSave: boolean },
+  settings: {
+    fontSize: number;
+    lineNumbers: boolean;
+    indentGuides: boolean;
+    autoSave: boolean;
+  },
 ): Extension[] {
   const exts: Extension[] = [
     tedDark,
@@ -62,14 +82,16 @@ function buildExtensions(
       "&": { fontSize: `${settings.fontSize}px` },
     }),
     settings.lineNumbers ? lineNumbers() : [],
-    settings.indentGuides ? indentationMarkers({
-      colors: {
-        light: "#ffffff10",
-        dark: "#ffffff10",
-        activeLight: "#ffffff20",
-        activeDark: "#ffffff20",
-      }
-    }) : [],
+    settings.indentGuides
+      ? indentationMarkers({
+          colors: {
+            light: "#ffffff10",
+            dark: "#ffffff10",
+            activeLight: "#ffffff20",
+            activeDark: "#ffffff20",
+          },
+        })
+      : [],
     highlightActiveLine(),
     highlightActiveLineGutter(),
     bracketMatching(),
@@ -84,7 +106,15 @@ function buildExtensions(
     indentOnInput(),
     indentUnit.of("    "),
     closeBrackets(),
-    autocompletion(),
+    autocompletion({
+      override: [lspCompletionSource],
+      activateOnTyping: true,
+      maxRenderedOptions: 50,
+    }),
+    lspHoverTooltip(),
+    lspGoToKeymap(),
+    lspDiagnosticsExtension(),
+    lspSync,
     highlightSelectionMatches(),
     gitGutterExtension,
     keymap.of([
@@ -187,21 +217,21 @@ export default function Editor() {
       const ext = activeTab.name.slice(dot + 1).toLowerCase();
       // Simple mapping for now - enhance as needed
       const langMap: Record<string, string> = {
-        "ts": "typescript",
-        "tsx": "tsx",
-        "js": "javascript",
-        "jsx": "javascript",
-        "rs": "rust",
-        "py": "python",
-        "json": "json",
-        "html": "html",
-        "css": "css",
-        "c": "c",
-        "h": "c",
-        "cpp": "cpp",
-        "hpp": "cpp",
-        "cc": "cpp",
-        "cxx": "cpp"
+        ts: "typescript",
+        tsx: "tsx",
+        js: "javascript",
+        jsx: "javascript",
+        rs: "rust",
+        py: "python",
+        json: "json",
+        html: "html",
+        css: "css",
+        c: "c",
+        h: "c",
+        cpp: "cpp",
+        hpp: "cpp",
+        cc: "cpp",
+        cxx: "cpp",
       };
       const lang = langMap[ext];
       if (lang) {
@@ -225,6 +255,8 @@ export default function Editor() {
     });
 
     const view = new EditorView({ state, parent: container });
+    (view as unknown as { __tedFilePath: string }).__tedFilePath =
+      activeTab.path;
     viewRef.current = view;
 
     requestAnimationFrame(() => {
@@ -245,15 +277,19 @@ export default function Editor() {
   // Git Gutter Update
   const explorerPath = useEditorStore((s) => s.explorerPath);
   useEffect(() => {
-    if (!viewRef.current || !activeTab || activeTab.isDiff || !explorerPath) return;
+    if (!viewRef.current || !activeTab || activeTab.isDiff || !explorerPath)
+      return;
 
     let cancelled = false;
     const timer = setTimeout(async () => {
       try {
-        const diffs = await gitService.getLineDiff(explorerPath, activeTab.path);
+        const diffs = await gitService.getLineDiff(
+          explorerPath,
+          activeTab.path,
+        );
         if (!cancelled && viewRef.current) {
           viewRef.current.dispatch({
-            effects: setGitDiff.of(diffs)
+            effects: setGitDiff.of(diffs),
           });
         }
       } catch (e) {

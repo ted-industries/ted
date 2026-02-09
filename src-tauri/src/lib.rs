@@ -1,6 +1,8 @@
 mod git;
+mod lsp;
 mod terminal;
 
+use lsp::LspState;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fs;
@@ -152,6 +154,9 @@ pub fn run() {
         .manage(TerminalState {
             sessions: Arc::new(Mutex::new(HashMap::new())),
         })
+        .manage(LspState {
+            sessions: Arc::new(Mutex::new(HashMap::new())),
+        })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
@@ -174,6 +179,10 @@ pub fn run() {
             git::git_get_branch,
             git::git_get_line_diff,
             git::git_churn,
+            lsp::lsp_start,
+            lsp::lsp_send,
+            lsp::lsp_stop,
+            lsp::lsp_list,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

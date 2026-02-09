@@ -14,6 +14,7 @@ import SuggestionToast from "./components/agent/SuggestionToast";
 import { editorStore, useEditorStore } from "./store/editor-store";
 import { ruleEngine } from "./services/agent/rule-engine";
 import { llmAgent } from "./services/agent/llm-agent";
+import { lspManager } from "./services/lsp/lsp-manager";
 import "./App.css";
 
 function App() {
@@ -23,13 +24,21 @@ function App() {
   const [sidebarWidth, setSidebarWidth] = useState(storeSidebarWidth);
   const isDraggingRef = useRef(false);
 
-  // Initialize Rule Engine & LLM Agent
+  // Initialize Rule Engine, LLM Agent & LSP
   useEffect(() => {
     ruleEngine.start();
     llmAgent.start();
+
+    // Apply LSP server config overrides from settings
+    const settings = editorStore.getState().settings;
+    if (settings.lsp?.servers) {
+      lspManager.updateConfigs(settings.lsp.servers);
+    }
+
     return () => {
       ruleEngine.stop();
       llmAgent.stop();
+      lspManager.dispose();
     };
   }, []);
 
@@ -177,7 +186,7 @@ function App() {
         e.preventDefault();
         const s = editorStore.getState();
         if (s.tabs.length > 0) {
-          const idx = s.tabs.findIndex(t => t.path === s.activeTabPath);
+          const idx = s.tabs.findIndex((t) => t.path === s.activeTabPath);
           const nextIdx = e.shiftKey
             ? (idx - 1 + s.tabs.length) % s.tabs.length
             : (idx + 1) % s.tabs.length;
@@ -208,10 +217,7 @@ function App() {
             <div className="app-sidebar" style={{ width: `${sidebarWidth}px` }}>
               <Sidebar />
             </div>
-            <div
-              className="app-resize-handle"
-              onMouseDown={handleMouseDown}
-            />
+            <div className="app-resize-handle" onMouseDown={handleMouseDown} />
           </>
         )}
         <div className="app-main">

@@ -92,3 +92,20 @@
     font-size: 11px;
     padding: 4px 8px;
 }
+
+.agent-stop {
+    background: none;
+    border: none;
+    color: #555555;
+    font-size: 11px;
+    font-family: inherit;
+    padding: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.agent-stop:hover {
+    color: #cccccc;
+}

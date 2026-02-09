@@ -8,10 +8,16 @@ export interface LLMConfig {
     apiKey?: string;
 }
 
+export interface ChatMessage {
+    role: "system" | "user" | "assistant";
+    content: string;
+}
+
 export interface LLMProvider {
     isAvailable(): Promise<boolean>;
     generate(context: AgentContext, config: LLMConfig, prompt: string): Promise<LLMResult>;
     chat(prompt: string, config: LLMConfig): Promise<string>;
+    agentChat(messages: ChatMessage[], config: LLMConfig): Promise<string>;
 }
 
 function cleanJson(text: string): string {
@@ -57,6 +63,22 @@ export class OllamaProvider implements LLMProvider {
         const data = await response.json();
         return data.response;
     }
+
+    async agentChat(messages: ChatMessage[], config: LLMConfig): Promise<string> {
+        const response = await tauriFetch(`${config.baseUrl || "http://localhost:11434"}/api/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: config.model,
+                messages,
+                stream: false,
+                options: { temperature: 0.3, num_predict: 4096 }
+            })
+        });
+        if (!response.ok) throw new Error(`Ollama error: ${response.statusText}`);
+        const data = await response.json();
+        return data.message?.content || "";
+    }
 }
 
 // --- OpenAI Provider ---
@@ -82,6 +104,26 @@ export class OpenAIProvider implements LLMProvider {
                 temperature: 0.2,
                 max_tokens: 150,
                 response_format: forceJson ? { type: "json_object" } : undefined
+            })
+        });
+        if (!response.ok) throw new Error(`OpenAI error: ${await response.text()}`);
+        const data = await response.json();
+        return data.choices[0].message.content;
+    }
+
+    async agentChat(messages: ChatMessage[], config: LLMConfig): Promise<string> {
+        if (!config.apiKey) throw new Error("OpenAI API Key required");
+        const response = await tauriFetch(`${config.baseUrl || "https://api.openai.com/v1"}/chat/completions`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${config.apiKey}`
+            },
+            body: JSON.stringify({
+                model: config.model,
+                messages,
+                temperature: 0.3,
+                max_tokens: 4096,
             })
         });
         if (!response.ok) throw new Error(`OpenAI error: ${await response.text()}`);
@@ -119,6 +161,30 @@ export class AnthropicProvider implements LLMProvider {
         const data = await response.json();
         return data.content[0].text;
     }
+
+    async agentChat(messages: ChatMessage[], config: LLMConfig): Promise<string> {
+        if (!config.apiKey) throw new Error("Anthropic API Key required");
+        const systemMsg = messages.find(m => m.role === "system");
+        const nonSystem = messages.filter(m => m.role !== "system");
+        const response = await tauriFetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+                "x-api-key": config.apiKey,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+                "anthropic-dangerous-direct-browser-access": "true"
+            },
+            body: JSON.stringify({
+                model: config.model,
+                max_tokens: 4096,
+                system: systemMsg?.content || "",
+                messages: nonSystem,
+            })
+        });
+        if (!response.ok) throw new Error(`Anthropic error: ${await response.text()}`);
+        const data = await response.json();
+        return data.content[0].text;
+    }
 }
 
 // --- Google Provider ---
@@ -142,6 +208,29 @@ export class GoogleProvider implements LLMProvider {
                     maxOutputTokens: 150,
                     ...(forceJson ? { responseMimeType: "application/json" } : {})
                 }
+            })
+        });
+        if (!response.ok) throw new Error(`Google error: ${await response.text()}`);
+        const data = await response.json();
+        return data.candidates[0].content.parts[0].text;
+    }
+
+    async agentChat(messages: ChatMessage[], config: LLMConfig): Promise<string> {
+        if (!config.apiKey) throw new Error("Google API Key required");
+        const systemMsg = messages.find(m => m.role === "system");
+        const nonSystem = messages.filter(m => m.role !== "system");
+        const contents = nonSystem.map(m => ({
+            role: m.role === "assistant" ? "model" : "user",
+            parts: [{ text: m.content }]
+        }));
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent?key=${config.apiKey}`;
+        const response = await tauriFetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                ...(systemMsg ? { systemInstruction: { parts: [{ text: systemMsg.content }] } } : {}),
+                contents,
+                generationConfig: { maxOutputTokens: 4096 }
             })
         });
         if (!response.ok) throw new Error(`Google error: ${await response.text()}`);

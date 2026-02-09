@@ -1,36 +1,23 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { editorStore } from "../../store/editor-store";
-import {
-    OllamaProvider,
-    OpenAIProvider,
-    AnthropicProvider,
-    GoogleProvider,
-    LLMProvider,
-    LLMConfig
-} from "../../services/llm/providers";
+import { runAgentLoop, AgentUpdate } from "../../services/agent/agent-service";
 import "./AgentsPanel.css";
 
 interface Message {
-    role: "user" | "agent";
+    role: "user" | "agent" | "status";
     text: string;
 }
-
-const providers: Record<string, LLMProvider> = {
-    ollama: new OllamaProvider(),
-    openai: new OpenAIProvider(),
-    anthropic: new AnthropicProvider(),
-    google: new GoogleProvider(),
-};
 
 export default function AgentsPanel() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
+    const [status, setStatus] = useState("");
     const bottomRef = useRef<HTMLDivElement>(null);
+    const abortRef = useRef<AbortController | null>(null);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView();
-    }, [messages]);
+    }, [messages, status]);
 
     const send = useCallback(async () => {
         const text = input.trim();
@@ -39,21 +26,35 @@ export default function AgentsPanel() {
         setInput("");
         setMessages((prev) => [...prev, { role: "user", text }]);
         setLoading(true);
+        setStatus("");
+
+        const controller = new AbortController();
+        abortRef.current = controller;
+
+        const onUpdate = (update: AgentUpdate) => {
+            if (update.type === "thinking") {
+                setStatus(update.text);
+            } else if (update.type === "tool") {
+                setStatus(`⚡ ${update.text}`);
+            } else if (update.type === "tool_result") {
+                // brief flash, don't accumulate
+            }
+        };
 
         try {
-            const config = editorStore.getState().settings.llm as LLMConfig;
-            const provider = providers[config.provider];
-            if (!provider) throw new Error("No provider");
-
-            const reply = await provider.chat(text, config);
+            const reply = await runAgentLoop(text, onUpdate, controller.signal);
             setMessages((prev) => [...prev, { role: "agent", text: reply }]);
         } catch (e: any) {
-            setMessages((prev) => [
-                ...prev,
-                { role: "agent", text: e.message || "error" },
-            ]);
+            if (e.message !== "Aborted") {
+                setMessages((prev) => [
+                    ...prev,
+                    { role: "agent", text: e.message || "error" },
+                ]);
+            }
         } finally {
             setLoading(false);
+            setStatus("");
+            abortRef.current = null;
         }
     }, [input, loading]);
 
@@ -66,6 +67,10 @@ export default function AgentsPanel() {
         },
         [send],
     );
+
+    const handleStop = useCallback(() => {
+        abortRef.current?.abort();
+    }, []);
 
     return (
         <div className="agent-panel">
@@ -81,11 +86,21 @@ export default function AgentsPanel() {
                             {m.text}
                         </div>
                     ))}
-                    {loading && <div className="agent-typing">...</div>}
+                    {loading && status && (
+                        <div className="agent-typing">{status}</div>
+                    )}
+                    {loading && !status && (
+                        <div className="agent-typing">...</div>
+                    )}
                     <div ref={bottomRef} />
                 </div>
             )}
             <div className="agent-input-row">
+                {loading ? (
+                    <button className="agent-stop" onClick={handleStop}>
+                        stop
+                    </button>
+                ) : null}
                 <input
                     className="agent-input"
                     placeholder="ask ted"

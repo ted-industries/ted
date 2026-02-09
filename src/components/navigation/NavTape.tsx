@@ -73,7 +73,7 @@ export default function NavTape({
   const lastScrollTime = useRef(0);
 
   const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
+    (e: WheelEvent) => {
       e.preventDefault();
       e.stopPropagation();
 
@@ -102,6 +102,14 @@ export default function NavTape({
     },
     [items.length, activeIndex, onChange, markSpinning, volume],
   );
+
+  // Attach wheel listener natively with { passive: false } so preventDefault works
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, [handleWheel]);
 
   const goLeft = useCallback(() => {
     const newIndex = Math.max(0, activeIndex - 1);
@@ -133,7 +141,7 @@ export default function NavTape({
         <RiArrowLeftSLine size={14} />
       </button>
 
-      <div className="tape-viewport" ref={viewportRef} onWheel={handleWheel}>
+      <div className="tape-viewport" ref={viewportRef}>
         <div className="tape-vignette tape-vignette-left" />
         <div className="tape-vignette tape-vignette-right" />
 

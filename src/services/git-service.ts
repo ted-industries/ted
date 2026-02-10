@@ -15,6 +15,7 @@ export interface CommitEntry {
     message: string;
     author: string;
     date: string;
+    parent_hashes: string[];
 }
 
 class GitService {
@@ -86,6 +87,20 @@ class GitService {
     async clone(url: string, path: string): Promise<void> {
         await invoke("git_clone", { url, path });
     }
+
+    async getCommitDetails(repoPath: string, hash: string): Promise<CommitDetails> {
+        return await invoke("git_get_commit_details", { repoPath, hash });
+    }
+}
+
+export interface CommitDetails {
+    hash: string;
+    message: string;
+    author: string;
+    date: string;
+    files_changed: number;
+    insertions: number;
+    deletions: number;
 }
 
 export const gitService = new GitService();

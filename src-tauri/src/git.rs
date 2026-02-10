@@ -13,6 +13,18 @@ pub struct CommitEntry {
     pub message: String,
     pub author: String,
     pub date: String,
+    pub parent_hashes: Vec<String>,
+}
+
+#[derive(Serialize, Clone)]
+pub struct CommitDetails {
+    pub hash: String,
+    pub message: String,
+    pub author: String,
+    pub date: String,
+    pub files_changed: usize,
+    pub insertions: usize,
+    pub deletions: usize,
 }
 
 #[tauri::command]
@@ -184,6 +196,7 @@ pub fn git_log(
             message: commit.message().unwrap_or("").to_string(),
             author: author.name().unwrap_or("Unknown").to_string(),
             date: date_str,
+            parent_hashes: commit.parent_ids().map(|id| id.to_string()).collect(),
         });
 
         count += 1;
@@ -413,4 +426,55 @@ pub fn git_churn(repo_path: String, days_limit: u32) -> Result<Vec<FileChurn>, S
 pub fn git_clone(url: String, path: String) -> Result<(), String> {
     git2::Repository::clone(&url, &path).map_err(|e| e.to_string())?;
     Ok(())
+}
+
+#[tauri::command]
+pub fn git_get_commit_details(repo_path: String, hash: String) -> Result<CommitDetails, String> {
+    let repo = Repository::discover(&repo_path).map_err(|e| e.to_string())?;
+    let oid = git2::Oid::from_str(&hash).map_err(|e| e.to_string())?;
+    let commit = repo.find_commit(oid).map_err(|e| e.to_string())?;
+
+    let author = commit.author();
+    let date = commit.time();
+    let date_str = format!("{}", date.seconds());
+
+    let mut files_changed = 0;
+    let mut insertions = 0;
+    let mut deletions = 0;
+
+    if commit.parent_count() > 0 {
+        let parent = commit.parent(0).map_err(|e| e.to_string())?;
+        let tree = commit.tree().map_err(|e| e.to_string())?;
+        let parent_tree = parent.tree().map_err(|e| e.to_string())?;
+
+        let diff = repo
+            .diff_tree_to_tree(Some(&parent_tree), Some(&tree), None)
+            .map_err(|e| e.to_string())?;
+
+        let stats = diff.stats().map_err(|e| e.to_string())?;
+        files_changed = stats.files_changed();
+        insertions = stats.insertions();
+        deletions = stats.deletions();
+    } else {
+        // Initial commit - diff against empty tree
+        let tree = commit.tree().map_err(|e| e.to_string())?;
+        let diff = repo
+            .diff_tree_to_tree(None, Some(&tree), None)
+            .map_err(|e| e.to_string())?;
+
+        let stats = diff.stats().map_err(|e| e.to_string())?;
+        files_changed = stats.files_changed();
+        insertions = stats.insertions();
+        deletions = stats.deletions();
+    }
+
+    Ok(CommitDetails {
+        hash: commit.id().to_string(),
+        message: commit.message().unwrap_or("").to_string(),
+        author: author.name().unwrap_or("Unknown").to_string(),
+        date: date_str,
+        files_changed,
+        insertions,
+        deletions,
+    })
 }

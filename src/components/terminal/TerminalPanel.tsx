@@ -130,25 +130,30 @@ function TerminalInstance({ id, isActive }: TerminalInstanceProps) {
 
     // Handle focus/visibility changes
     useEffect(() => {
+        let isMounted = true;
         if (isActive && xtermRef.current && fitAddonRef.current && initializedRef.current) {
             requestAnimationFrame(() => {
+                if (!isMounted) return;
                 try {
-                    fitAddonRef.current?.fit();
-                    xtermRef.current?.focus();
-                    const term = xtermRef.current;
-                    if (term && term.cols > 0 && term.rows > 0) {
-                        invoke("resize_terminal", {
-                            id,
-                            cols: term.cols,
-                            rows: term.rows,
-                        });
+                    if (containerRef.current && containerRef.current.offsetParent !== null) {
+                        fitAddonRef.current?.fit();
+                        xtermRef.current?.focus();
+                        const term = xtermRef.current;
+                        if (term && term.cols > 0 && term.rows > 0) {
+                            invoke("resize_terminal", {
+                                id,
+                                cols: term.cols,
+                                rows: term.rows,
+                            });
+                        }
                     }
                 } catch (e) {
                     console.warn("Refocus error:", e);
                 }
             });
         }
-    }, [isActive]);
+        return () => { isMounted = false; };
+    }, [isActive, id]);
 
     return (
         <div

@@ -18,15 +18,50 @@ export interface ToolCall {
 // Parsing
 // ---------------------------------------------------------------------------
 
-/** Parse a ```tool JSON block from the LLM response. */
+/**
+ * Parse tool calls from the LLM response.
+ * Tries multiple formats:
+ *   1. ```tool { JSON } ```          (intended format)
+ *   2. ```json { "tool": ... } ```   (common variant)
+ *   3. <invoke name="X">...</invoke> (XML hallucination)
+ *   4. {"tool": "...", "args": ...}  (bare JSON in text)
+ */
 export function parseToolCall(response: string): ToolCall | null {
-    const match = response.match(/```tool\s*\n([\s\S]*?)\n```/);
-    if (!match) return null;
-    try {
-        return JSON.parse(match[1].trim());
-    } catch {
-        return null;
+    // 1. ```tool or ```json blocks
+    const fencedMatch = response.match(/```(?:tool|json)\s*\n([\s\S]*?)\n```/);
+    if (fencedMatch) {
+        try {
+            const parsed = JSON.parse(fencedMatch[1].trim());
+            if (parsed.tool && parsed.args) return parsed;
+        } catch { /* fall through */ }
     }
+
+    // 2. XML-style <invoke name="tool_name"><parameter name="key">value</parameter></invoke>
+    const invokeMatch = response.match(/<invoke\s+name="([^"]+)">([\s\S]*?)<\/invoke>/);
+    if (invokeMatch) {
+        const tool = invokeMatch[1];
+        const paramsBlock = invokeMatch[2];
+        const args: Record<string, any> = {};
+        const paramRegex = /<parameter\s+name="([^"]+)">([\s\S]*?)<\/parameter>/g;
+        let pm: RegExpExecArray | null;
+        while ((pm = paramRegex.exec(paramsBlock)) !== null) {
+            const val = pm[2].trim();
+            // Try to parse as JSON (for arrays, objects), fall back to string
+            try { args[pm[1]] = JSON.parse(val); } catch { args[pm[1]] = val; }
+        }
+        if (tool) return { tool, args };
+    }
+
+    // 3. Bare JSON with "tool" and "args" keys anywhere in text
+    const jsonMatch = response.match(/\{[\s\S]*?"tool"\s*:\s*"[^"]+?"[\s\S]*?"args"\s*:\s*\{[\s\S]*?\}\s*\}/);
+    if (jsonMatch) {
+        try {
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (parsed.tool && parsed.args) return parsed;
+        } catch { /* fall through */ }
+    }
+
+    return null;
 }
 
 // ---------------------------------------------------------------------------

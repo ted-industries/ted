@@ -141,5 +141,25 @@ export async function runAgentLoop(
         finalResponse = "Reached maximum iterations. The task may be partially complete.";
     }
 
-    return finalResponse;
+    return stripToolBlocks(finalResponse);
 }
+
+// ---------------------------------------------------------------------------
+// Cleanup — strip any residual tool blocks from the final response
+// ---------------------------------------------------------------------------
+
+function stripToolBlocks(text: string): string {
+    return text
+        // Remove ```tool ... ``` blocks
+        .replace(/```(?:tool|json)\s*\n[\s\S]*?\n```/g, "")
+        // Remove <function_calls>...</function_calls> XML blocks
+        .replace(/<function_calls>[\s\S]*?<\/function_calls>/g, "")
+        // Remove standalone <invoke ...>...</invoke> XML blocks
+        .replace(/<invoke[\s\S]*?<\/invoke>/g, "")
+        // Remove <function_calls> style tags
+        .replace(/<[\s\S]*?<\/antml:[^>]+>/g, "")
+        // Clean up excessive blank lines left behind
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+}
+

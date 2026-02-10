@@ -40,32 +40,28 @@
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 2px 0;
+    padding: 0;
 }
 
 .explorer-tree::-webkit-scrollbar {
-    width: 6px;
-}
-
-.explorer-tree::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.explorer-tree::-webkit-scrollbar-thumb {
-    background: #ffffff15;
-    border-radius: 3px;
+    width: 0;
+    /* Hide scrollbar for a cleaner look, or make it very thin */
 }
 
 .explorer-item {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
+    gap: 6px;
+    padding: 0 12px;
     cursor: pointer;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    height: 22px;
+    height: 20px;
+    /* High density */
+    position: relative;
+    border-left: 1px solid transparent;
+    transition: background-color 0.1s;
 }
 
 .explorer-item:hover {
@@ -74,6 +70,18 @@
 
 .explorer-item-active {
     background-color: var(--selection);
+    color: var(--foreground);
+}
+
+.explorer-item-active:before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--foreground);
+    opacity: 0.8;
 }
 
 .explorer-item-active:hover {
@@ -84,10 +92,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 16px;
-    height: 16px;
+    width: 12px;
+    height: 12px;
     flex-shrink: 0;
-    color: #858585;
+    color: var(--sidebar-fg);
+    opacity: 0.4;
+    transition: transform 0.1s, opacity 0.1s;
+}
+
+.explorer-item:hover .explorer-chevron {
+    opacity: 0.8;
 }
 
 .explorer-chevron-spacer {
@@ -96,6 +110,38 @@
 
 .explorer-icon {
     flex-shrink: 0;
+    opacity: 0.5;
+    transition: opacity 0.1s;
+}
+
+.explorer-item:hover .explorer-icon,
+.explorer-item-active .explorer-icon {
+    opacity: 0.9;
+}
+
+.explorer-item-name {
+    opacity: 0.6;
+    transition: opacity 0.1s, color 0.1s;
+    font-size: 11.5px;
+    font-weight: 450;
+}
+
+.explorer-item:hover .explorer-item-name,
+.explorer-item-active .explorer-item-name {
+    opacity: 1;
+}
+
+/* Indentation Guides */
+.explorer-indent-guide {
+    position: absolute;
+    left: 14px;
+    /* Adjust based on depth * 12px + offset */
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background-color: var(--sidebar-fg);
+    opacity: 0.08;
+    pointer-events: none;
 }
 
 .explorer-icon.file {
@@ -116,23 +162,93 @@
     padding: 16px;
 }
 
+.explorer-empty-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
 .explorer-open-btn {
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    color: var(--sidebar-fg);
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.4;
+    transition: opacity 0.1s, color 0.1s, transform 0.1s;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background: #2a2a2a;
-    color: #cccccc;
-    border: 1px solid #3a3a3a;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 13px;
-    font-family: inherit;
-    transition: background-color 0.1s;
+    gap: 10px;
+}
+
+.explorer-clone-input-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
 }
 
 .explorer-open-btn:hover {
-    background: var(--input-border);
+    opacity: 1;
+    color: var(--foreground);
+}
+
+.explorer-clone-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 8px;
+    width: 100%;
+}
+
+.explorer-clone-input-wrapper .clone-icon {
+    color: var(--sidebar-fg);
+    opacity: 0.4;
+    flex-shrink: 0;
+}
+
+.explorer-clone-input {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--foreground);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    width: 100%;
+    outline: none;
+    font-family: inherit;
+}
+
+.explorer-clone-input::placeholder {
+    color: var(--sidebar-fg);
+    opacity: 0.3;
+}
+
+.explorer-back-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--sidebar-fg);
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.3;
+    transition: opacity 0.1s, color 0.1s;
+}
+
+.explorer-back-btn:hover {
+    opacity: 1;
+    color: var(--foreground);
 }
 
 /* Git Status Colors */
@@ -156,27 +272,6 @@
 
 .explorer-item.git-unknown .explorer-item-name {
     color: #8b949e;
-}
-
-.git-indicator {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    margin-left: auto;
-    margin-right: 8px;
-    opacity: 0.8;
-}
-
-.explorer-item.git-modified .git-indicator {
-    background-color: #e2c08d;
-}
-
-.explorer-item.git-new .git-indicator {
-    background-color: #73c991;
-}
-
-.explorer-item.git-staged .git-indicator {
-    background-color: #58a6ff;
 }
 
 .git-diff-btn {

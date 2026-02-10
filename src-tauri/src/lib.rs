@@ -286,6 +286,7 @@ pub fn run() {
             git::git_get_branch,
             git::git_get_line_diff,
             git::git_churn,
+            git::git_clone,
             lsp::lsp_start,
             lsp::lsp_send,
             lsp::lsp_stop,

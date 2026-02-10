@@ -82,6 +82,10 @@ class GitService {
             return [];
         }
     }
+
+    async clone(url: string, path: string): Promise<void> {
+        await invoke("git_clone", { url, path });
+    }
 }
 
 export const gitService = new GitService();

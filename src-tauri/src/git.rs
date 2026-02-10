@@ -409,3 +409,8 @@ pub fn git_churn(repo_path: String, days_limit: u32) -> Result<Vec<FileChurn>, S
 
     Ok(results)
 }
+#[tauri::command]
+pub fn git_clone(url: String, path: String) -> Result<(), String> {
+    git2::Repository::clone(&url, &path).map_err(|e| e.to_string())?;
+    Ok(())
+}

@@ -6,12 +6,12 @@ import { tags as t } from "@lezer/highlight";
 const tedDarkTheme = EditorView.theme(
   {
     "&": {
-      color: "#d4d4d4",
-      backgroundColor: "#1a1a1a",
+      color: "var(--foreground)",
+      backgroundColor: "var(--background)",
       fontSize: "15px",
     },
     ".cm-content": {
-      caretColor: "#d4d4d4",
+      caretColor: "var(--foreground)",
       fontFamily:
         "'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace",
       padding: "0",
@@ -21,18 +21,18 @@ const tedDarkTheme = EditorView.theme(
       padding: "0 0 0 4px",
     },
     ".cm-cursor, .cm-dropCursor": {
-      borderLeftColor: "#aeafad",
+      borderLeftColor: "var(--foreground)",
       borderLeftWidth: "2px",
     },
     ".cm-content ::selection": {
-      backgroundColor: "#ffffff15",
+      backgroundColor: "var(--selection)",
     },
     ".cm-activeLine": {
-      backgroundColor: "#ffffff06",
+      backgroundColor: "var(--line-highlight)",
     },
     ".cm-gutters": {
-      backgroundColor: "#1a1a1a",
-      color: "#6e7681",
+      backgroundColor: "var(--background)",
+      color: "var(--sidebar-fg)",
       border: "none",
       minWidth: "72px",
     },
@@ -42,27 +42,27 @@ const tedDarkTheme = EditorView.theme(
       textAlign: "right",
     },
     ".cm-activeLineGutter": {
-      color: "#c6c6c6",
-      backgroundColor: "#ffffff06",
+      color: "var(--foreground)",
+      backgroundColor: "var(--line-highlight)",
     },
     "&.cm-focused .cm-matchingBracket": {
-      backgroundColor: "#0064001a",
-      outline: "1px solid #888888",
+      backgroundColor: "var(--selection)",
+      outline: "1px solid var(--border)",
     },
     ".cm-tooltip": {
-      backgroundColor: "#252526",
-      color: "#cccccc",
-      border: "1px solid #454545",
+      backgroundColor: "var(--sidebar-bg)",
+      color: "var(--foreground)",
+      border: "1px solid var(--border)",
       borderRadius: "3px",
     },
     ".cm-tooltip-autocomplete > ul > li[aria-selected]": {
-      backgroundColor: "#04395e",
+      backgroundColor: "var(--selection)",
     },
     ".cm-searchMatch": {
-      backgroundColor: "#515c6a",
+      backgroundColor: "var(--selection)",
     },
     ".cm-searchMatch.cm-searchMatch-selected": {
-      backgroundColor: "#ea5c0055",
+      backgroundColor: "var(--line-highlight)",
     },
     ".cm-scroller": {
       overflow: "auto",
@@ -102,40 +102,40 @@ const tedDarkTheme = EditorView.theme(
 const tedDarkHighlightStyle = HighlightStyle.define([
   {
     tag: [t.comment, t.lineComment, t.blockComment, t.docComment],
-    color: "#606060",
+    color: "var(--syntax-comment)",
     fontStyle: "italic",
   },
   // Keywords
   {
     tag: [t.keyword, t.controlKeyword, t.operatorKeyword, t.moduleKeyword],
-    color: "#c678dd",
+    color: "var(--syntax-keyword)",
     fontWeight: "600",
   },
   // Storage / modifiers
-  { tag: [t.modifier, t.definitionKeyword], color: "#c678dd" },
+  { tag: [t.modifier, t.definitionKeyword], color: "var(--syntax-keyword)" },
   // Strings
-  { tag: [t.string, t.special(t.string), t.character], color: "#98c379" },
+  { tag: [t.string, t.special(t.string), t.character], color: "var(--syntax-string)" },
   // Numbers & units
-  { tag: [t.number, t.integer, t.float], color: "#d19a66" },
-  { tag: t.unit, color: "#d19a66" },
+  { tag: [t.number, t.integer, t.float], color: "var(--syntax-number)" },
+  { tag: t.unit, color: "var(--syntax-number)" },
   // CSS color literals
-  { tag: t.color, color: "#d19a66" },
+  { tag: t.color, color: "var(--syntax-number)" },
   // Constants / keyword values
-  { tag: [t.bool, t.null, t.atom], color: "#d19a66" },
+  { tag: [t.bool, t.null, t.atom], color: "var(--syntax-number)" },
   // Types
-  { tag: [t.typeName, t.namespace], color: "#e5c07b" },
+  { tag: [t.typeName, t.namespace], color: "var(--syntax-type)" },
   // CSS class selectors
-  { tag: t.className, color: "#e5c07b" },
+  { tag: t.className, color: "var(--syntax-class)" },
   // Property names
-  { tag: t.propertyName, color: "#d19a66" },
+  { tag: t.propertyName, color: "var(--syntax-number)" },
   // Variables
-  { tag: t.variableName, color: "#e06c75" },
+  { tag: t.variableName, color: "var(--syntax-variable)" },
   // Predefined variables
-  { tag: t.special(t.variableName), color: "#e06c75" },
+  { tag: t.special(t.variableName), color: "var(--syntax-variable)" },
   // Functions
   {
     tag: [t.function(t.variableName), t.function(t.propertyName)],
-    color: "#61afef",
+    color: "var(--syntax-function)",
   },
   // Operators
   {
@@ -146,29 +146,29 @@ const tedDarkHighlightStyle = HighlightStyle.define([
       t.logicOperator,
       t.compareOperator,
     ],
-    color: "#56b6c2",
+    color: "var(--syntax-operator)",
   },
   // Tags (JSX/HTML)
-  { tag: t.tagName, color: "#e06c75" },
+  { tag: t.tagName, color: "var(--syntax-tag)" },
   // Tag attributes
-  { tag: t.attributeName, color: "#d19a66" },
+  { tag: t.attributeName, color: "var(--syntax-attribute)" },
   // Label names (CSS ID selectors)
-  { tag: t.labelName, color: "#e06c75" },
+  { tag: t.labelName, color: "var(--syntax-tag)" },
   // Pseudo-class names
-  { tag: t.constant(t.className), color: "#d19a66" },
+  { tag: t.constant(t.className), color: "var(--syntax-number)" },
   // Brackets
   {
     tag: [t.bracket, t.paren, t.brace, t.squareBracket],
-    color: "#abb2bf",
+    color: "var(--syntax-bracket)",
   },
   // Angle brackets (JSX < > />)
-  { tag: t.angleBracket, color: "#abb2bf" },
+  { tag: t.angleBracket, color: "var(--syntax-bracket)" },
   // Separators, punctuation (semicolons, commas, colons)
-  { tag: [t.separator, t.punctuation], color: "#abb2bf" },
+  { tag: [t.separator, t.punctuation], color: "var(--syntax-bracket)" },
   // Regex
-  { tag: t.regexp, color: "#98c379" },
+  { tag: t.regexp, color: "var(--syntax-string)" },
   // Default identifier
-  { tag: t.name, color: "#d4d4d4" },
+  { tag: t.name, color: "var(--foreground)" },
 ]);
 
 export const tedDark: Extension = [

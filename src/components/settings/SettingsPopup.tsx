@@ -164,7 +164,29 @@ export default function SettingsPopup() {
                         {/* APPEARANCE SECTION */}
                         <div ref={appearanceRef} className="settings-section top-margin">
                             <div className="section-header">Appearance</div>
+
                             <div className="settings-row">
+                                <div className="row-text">
+                                    <div className="row-title">Theme</div>
+                                    <div className="row-description">
+                                        Select the interface theme.
+                                    </div>
+                                </div>
+                                <div className="row-control">
+                                    <select
+                                        className="zed-input"
+                                        value={activeSettings.theme || "ted"}
+                                        onChange={(e) => updateActiveSetting("theme", e.target.value)}
+                                    >
+                                        <option value="ted">ted (Default Dark)</option>
+                                        <option value="ted light">ted light</option>
+                                        <option value="ted solarized">ted solarized dark</option>
+                                        <option value="ted solarized light">ted solarized light</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="settings-row divider">
                                 <div className="row-text">
                                     <div className="row-title">Tape Spinner Volume</div>
                                     <div className="row-description">

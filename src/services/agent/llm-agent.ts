@@ -58,7 +58,7 @@ export class LLMAgent {
         this.isGenerating = true;
         try {
             console.log("[LLMAgent] Triggering...");
-            const context = contextBuilder.build();
+            const context = await contextBuilder.build();
             if (!context) return;
 
             const result = await llmService.generateSuggestions(context);

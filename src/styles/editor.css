@@ -2,7 +2,7 @@
     height: 100%;
     width: 100%;
     position: relative;
-    background-color: #1a1a1a;
+    background-color: var(--background);
 }
 
 .editor-container {
@@ -27,22 +27,22 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    color: #555555;
+    color: var(--sidebar-fg);
     font-size: 13px;
 }
 
 .editor-welcome-key {
-    color: #666666;
-    background: #252525;
+    color: var(--foreground);
+    background: var(--sidebar-bg);
     padding: 3px 8px;
     border-radius: 3px;
-    border: 1px solid #333333;
+    border: 1px solid var(--border);
     font-size: 12px;
     font-family: inherit;
 }
 
 .editor-welcome-text {
-    color: #555555;
+    color: var(--sidebar-fg);
 }
 
 /* Scrollbars */
@@ -56,12 +56,12 @@
 }
 
 .cm-scroller::-webkit-scrollbar-thumb {
-    background: #ffffff15;
+    background: var(--scroll-thumb);
     border-radius: 4px;
 }
 
 .cm-scroller::-webkit-scrollbar-thumb:hover {
-    background: #ffffff25;
+    background: var(--scroll-thumb-hover);
 }
 
 .cm-scroller::-webkit-scrollbar-corner {

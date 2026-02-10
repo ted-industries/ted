@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { telemetry } from "../services/telemetry-service";
 import { gitService } from "../services/git-service";
+import { applyTheme } from "../services/theme/mod";
 
 export interface TabState {
   path: string;
@@ -48,6 +49,7 @@ interface EditorStoreState {
     volume: number;
     uiBlur: boolean;
     autoSave: boolean;
+    theme: string;
     llm: {
       provider: "ollama" | "openai" | "anthropic" | "google";
       model: string;
@@ -70,6 +72,7 @@ interface EditorStoreState {
     volume?: number;
     uiBlur?: boolean;
     autoSave?: boolean;
+    theme?: string;
     llm?: {
       provider?: "ollama" | "openai" | "anthropic" | "google";
       model?: string;
@@ -92,6 +95,7 @@ interface EditorStoreState {
     volume: number;
     uiBlur: boolean;
     autoSave: boolean;
+    theme: string;
     llm: {
       provider: "ollama" | "openai" | "anthropic" | "google";
       model: string;
@@ -131,6 +135,7 @@ let state: EditorStoreState = {
     volume: 50,
     uiBlur: false,
     autoSave: false,
+    theme: "ted",
     llm: {
       provider: "ollama",
       model: "mistral",
@@ -150,6 +155,7 @@ let state: EditorStoreState = {
     volume: 50,
     uiBlur: false,
     autoSave: false,
+    theme: "ted",
     llm: {
       provider: "ollama",
       model: "mistral",
@@ -190,6 +196,9 @@ function dispatch(
     nextState.settings = {
       ...nextState.userSettings,
       ...nextState.projectSettings,
+      theme:
+        nextState.projectSettings.theme ??
+        nextState.userSettings.theme,
       llm: {
         ...nextState.userSettings.llm,
         ...nextState.projectSettings.llm,
@@ -250,11 +259,16 @@ export const editorStore = {
         path: userSettingsPath,
       });
       const parsed = JSON.parse(content);
+
+      const theme = parsed.theme || "ted";
+      applyTheme(theme);
+
       dispatch("INIT_USER_SETTINGS", {
         userSettings: { ...state.userSettings, ...parsed },
       });
     } catch (err) {
       console.log("No existing user settings found, using defaults.");
+      applyTheme("ted");
     }
   },
 
@@ -368,14 +382,14 @@ export const editorStore = {
         if (parsed && typeof parsed === "object") {
           this.updateSettings(parsed, "user");
         }
-      } catch {}
+      } catch { }
     } else if (path === "ted://project-settings.json") {
       try {
         const parsed = JSON.parse(content);
         if (parsed && typeof parsed === "object") {
           this.updateSettings(parsed, "project");
         }
-      } catch {}
+      } catch { }
     }
   },
 
@@ -403,6 +417,11 @@ export const editorStore = {
         });
         const parsed = JSON.parse(content);
         dispatch("LOAD_PROJECT_SETTINGS", { projectSettings: parsed });
+
+        // Apply project theme if exists
+        if (parsed.theme) {
+          applyTheme(parsed.theme);
+        }
       } catch {
         console.log("No project settings found for", path);
       }
@@ -440,9 +459,11 @@ export const editorStore = {
   updateSettings(update: any, level: "user" | "project" = "user") {
     if (level === "user") {
       const userSettings = { ...state.userSettings, ...update };
+      if (update.theme) applyTheme(update.theme);
       dispatch("UPDATE_USER_SETTINGS", { userSettings }, { update });
     } else {
       const projectSettings = { ...state.projectSettings, ...update };
+      if (update.theme) applyTheme(update.theme);
       dispatch("UPDATE_PROJECT_SETTINGS", { projectSettings }, { update });
     }
   },

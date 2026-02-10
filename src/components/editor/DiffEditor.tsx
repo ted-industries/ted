@@ -55,10 +55,10 @@ export default function DiffEditor() {
             settings.lineNumbers ? lineNumbers() : [],
             settings.indentGuides ? indentationMarkers({
                 colors: {
-                    light: "#ffffff10",
-                    dark: "#ffffff10",
-                    activeLight: "#ffffff20",
-                    activeDark: "#ffffff20",
+                    light: "var(--border)",
+                    dark: "var(--border)",
+                    activeLight: "var(--foreground)",
+                    activeDark: "var(--foreground)",
                 }
             }) : [],
             highlightActiveLine(),

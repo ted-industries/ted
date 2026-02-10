@@ -2,8 +2,8 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background-color: #181818;
-    color: #cccccc;
+    background-color: var(--sidebar-bg);
+    color: var(--foreground);
     font-size: 13px;
     overflow: hidden;
 }
@@ -13,17 +13,17 @@
     align-items: center;
     gap: 8px;
     padding: 10px 16px;
-    border-bottom: 1px solid #ffffff0a;
+    border-bottom: 1px solid var(--border);
     font-size: 11px;
     font-weight: 600;
-    color: #858585;
+    color: var(--sidebar-fg);
 }
 
 .sc-refresh-btn {
     margin-left: auto;
     background: none;
     border: none;
-    color: #858585;
+    color: var(--sidebar-fg);
     cursor: pointer;
     padding: 4px;
     border-radius: 4px;
@@ -33,8 +33,8 @@
 }
 
 .sc-refresh-btn:hover {
-    background-color: #ffffff10;
-    color: #cccccc;
+    background-color: var(--selection);
+    color: var(--foreground);
 }
 
 .sc-commit-section {
@@ -42,14 +42,14 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    border-bottom: 1px solid #ffffff0a;
+    border-bottom: 1px solid var(--border);
 }
 
 .sc-commit-input {
-    background-color: #1e1e1e;
-    border: 1px solid #3a3a3a;
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
     border-radius: 4px;
-    color: #cccccc;
+    color: var(--input-fg);
     padding: 8px;
     font-family: inherit;
     font-size: 12px;
@@ -94,19 +94,20 @@
     padding: 4px 8px;
     font-size: 11px;
     font-weight: 700;
-    color: #858585;
+    color: var(--sidebar-fg);
     cursor: pointer;
-    background-color: #ffffff05;
+    background-color: var(--selection);
+    opacity: 0.8;
 }
 
 .sc-section-header:hover {
-    background-color: #ffffff0a;
+    opacity: 1;
 }
 
 .sc-count {
     margin-left: auto;
-    background-color: #3e3e3e;
-    color: #cccccc;
+    background-color: var(--border);
+    color: var(--sidebar-fg);
     padding: 0 6px;
     border-radius: 10px;
     font-size: 10px;
@@ -134,19 +135,19 @@
 }
 
 .sc-status-label.modified {
-    color: #e2c08d;
+    color: var(--syntax-variable);
 }
 
 .sc-status-label.new {
-    color: #73c991;
+    color: var(--syntax-string);
 }
 
 .sc-status-label.deleted {
-    color: #ff7b72;
+    color: var(--syntax-keyword);
 }
 
 .sc-status-label.staged {
-    color: #58a6ff;
+    color: var(--syntax-type);
 }
 
 .sc-file-name {

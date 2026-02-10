@@ -9,8 +9,8 @@ function injectStyles() {
   stylesInjected = true;
   const style = document.createElement("style");
   style.textContent = `
-.cm-lsp-hover { max-width:500px; max-height:300px; overflow:auto; padding:8px 12px; font-size:13px; line-height:1.4; color:#ccc; }
-.cm-lsp-hover pre { background:#1e1e1e; padding:6px 8px; border-radius:3px; overflow-x:auto; margin:4px 0; font-size:12px; white-space:pre-wrap; }
+.cm-lsp-hover { max-width:500px; max-height:300px; overflow:auto; padding:8px 12px; font-size:13px; line-height:1.4; color:var(--foreground); background-color: var(--sidebar-bg); border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+.cm-lsp-hover pre { background:var(--input-bg); padding:6px 8px; border-radius:3px; overflow-x:auto; margin:4px 0; font-size:12px; white-space:pre-wrap; color: var(--foreground); }
 .cm-lsp-hover div { margin:2px 0; }
 `;
   document.head.appendChild(style);

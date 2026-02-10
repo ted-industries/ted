@@ -6,7 +6,6 @@ import {
   RiArrowRightSLine,
   RiFileTextLine,
   RiFolderAddLine,
-  RiGitRepositoryLine,
   RiArrowLeftRightLine,
 } from "@remixicon/react";
 import { editorStore, useEditorStore } from "../../store/editor-store";

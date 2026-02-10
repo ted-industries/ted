@@ -24,27 +24,31 @@ function TerminalInstance({ id, isActive }: TerminalInstanceProps) {
         if (!containerRef.current) return;
 
         // Initialize xterm
+        // Get computed styles for theme colors
+        const computedStyle = getComputedStyle(document.documentElement);
+        const getVar = (name: string) => computedStyle.getPropertyValue(name).trim();
+
         const term = new Terminal({
             theme: {
-                background: "#1a1a1a",
-                foreground: "#d4d4d4",
-                cursor: "#aeafad",
-                selectionBackground: "#ffffff15",
-                black: "#1a1a1a",
-                red: "#f44747",
-                green: "#6a9955",
-                yellow: "#d7ba7d",
-                blue: "#569cd6",
-                magenta: "#c586c0",
-                cyan: "#4fc1ff",
-                white: "#d4d4d4",
-                brightBlack: "#808080",
-                brightRed: "#f44747",
-                brightGreen: "#6a9955",
-                brightYellow: "#d7ba7d",
-                brightBlue: "#569cd6",
-                brightMagenta: "#c586c0",
-                brightCyan: "#4fc1ff",
+                background: getVar("--background"),
+                foreground: getVar("--foreground"),
+                cursor: getVar("--foreground"),
+                selectionBackground: getVar("--selection"),
+                black: getVar("--background"),
+                red: getVar("--syntax-keyword"),
+                green: getVar("--syntax-string"),
+                yellow: getVar("--syntax-variable"),
+                blue: getVar("--syntax-type"),
+                magenta: getVar("--syntax-function"),
+                cyan: getVar("--syntax-operator"),
+                white: getVar("--foreground"),
+                brightBlack: getVar("--sidebar-fg"),
+                brightRed: getVar("--syntax-keyword"),
+                brightGreen: getVar("--syntax-string"),
+                brightYellow: getVar("--syntax-variable"),
+                brightBlue: getVar("--syntax-type"),
+                brightMagenta: getVar("--syntax-function"),
+                brightCyan: getVar("--syntax-operator"),
                 brightWhite: "#ffffff",
             },
             fontFamily: "'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace",

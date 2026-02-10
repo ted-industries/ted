@@ -1,8 +1,8 @@
 .terminal-panel {
     display: flex;
     flex-direction: column;
-    background-color: #1a1a1a;
-    border-top: 1px solid #252525;
+    background-color: var(--background);
+    border-top: 1px solid var(--border);
     position: relative;
     width: 100%;
     z-index: 10;
@@ -19,7 +19,7 @@
 }
 
 .terminal-resize-handle:hover {
-    background-color: #333333;
+    background-color: var(--border);
 }
 
 .terminal-header {
@@ -27,7 +27,7 @@
     align-items: center;
     justify-content: space-between;
     height: 32px;
-    background-color: #181818;
+    background-color: var(--sidebar-bg);
     padding: 0 4px;
     flex-shrink: 0;
 }
@@ -56,7 +56,7 @@
     gap: 6px;
     padding: 0 8px 0 12px;
     height: 26px;
-    color: #808080;
+    color: var(--inactive-tab-fg);
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
@@ -68,13 +68,14 @@
 }
 
 .terminal-tab:hover {
-    background-color: #ffffff08;
-    color: #bbbbbb;
+    background-color: var(--selection);
+    color: var(--foreground);
 }
 
 .terminal-tab.active {
-    background-color: #ffffff10;
-    color: #d4d4d4;
+    background-color: var(--selection);
+    color: var(--foreground);
+    box-shadow: 0 0 0 1px var(--border);
 }
 
 .terminal-tab-name {
@@ -90,7 +91,7 @@
     border-radius: 3px;
     background: none;
     border: none;
-    color: #666666;
+    color: var(--sidebar-fg);
     cursor: pointer;
     padding: 0;
     opacity: 0;
@@ -102,8 +103,8 @@
 }
 
 .terminal-tab-close:hover {
-    background-color: #ffffff15;
-    color: #cccccc;
+    background-color: var(--selection);
+    color: var(--foreground);
 }
 
 .terminal-add-btn {
@@ -115,14 +116,14 @@
     border-radius: 4px;
     background: none;
     border: none;
-    color: #808080;
+    color: var(--sidebar-fg);
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .terminal-add-btn:hover {
-    background-color: #ffffff08;
-    color: #bbbbbb;
+    background-color: var(--selection);
+    color: var(--foreground);
 }
 
 .terminal-actions {
@@ -146,14 +147,14 @@
 }
 
 .terminal-actions button:hover {
-    background-color: #ffffff08;
-    color: #bbbbbb;
+    background-color: var(--selection);
+    color: var(--foreground);
 }
 
 .terminal-body {
     flex: 1;
     min-height: 0;
-    background-color: #1a1a1a;
+    background-color: var(--background);
     padding: 4px;
     position: relative;
 }
@@ -176,12 +177,12 @@
 }
 
 .xterm-viewport::-webkit-scrollbar-thumb {
-    background-color: #ffffff10;
+    background-color: var(--scroll-thumb);
     border: 3px solid transparent;
     background-clip: content-box;
     border-radius: 10px;
 }
 
 .xterm-viewport::-webkit-scrollbar-thumb:hover {
-    background-color: #ffffff20;
+    background-color: var(--scroll-thumb-hover);
 }

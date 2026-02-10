@@ -7,15 +7,15 @@ import AgentsPanel from "../agent/AgentsPanel";
 import { useEditorStore } from "../../store/editor-store";
 import "./sidebar.css";
 
-const PANELS = ["explorer", "search", "source control", "extensions", "agent"];
+const PANELS = ["agent", "explorer", "search", "source control", "extensions"];
 
 export default function Sidebar() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [smoothIndex, setSmoothIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(1);
+  const [smoothIndex, setSmoothIndex] = useState(1);
   const uiBlur = useEditorStore((s) => s.settings.uiBlur);
   const lastScrollTime = useRef(0);
-  const targetIndexRef = useRef(0);
-  const smoothIndexRef = useRef(0);
+  const targetIndexRef = useRef(1);
+  const smoothIndexRef = useRef(1);
   const [isAnimating, setIsAnimating] = useState(false);
   const animTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -96,6 +96,9 @@ export default function Sidebar() {
           }}
         >
           <div className="sidebar-panel">
+            <AgentsPanel />
+          </div>
+          <div className="sidebar-panel">
             <Explorer />
           </div>
           <div className="sidebar-panel">
@@ -106,9 +109,6 @@ export default function Sidebar() {
           </div>
           <div className="sidebar-panel">
             <div className="sidebar-placeholder">Extensions</div>
-          </div>
-          <div className="sidebar-panel">
-            <AgentsPanel />
           </div>
         </div>
       </div>

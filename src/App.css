@@ -7,21 +7,24 @@
 }
 
 /* Global Scrollbar Styling */
+
+/* Global Scrollbar Styling */
 ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: transparent;
+    background: var(--scroll-track);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #2a2a2a;
+    background: var(--scroll-thumb);
+    border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #3a3a3a;
+    background: var(--scroll-thumb-hover);
 }
 
 ::-webkit-scrollbar-corner {
@@ -54,6 +57,7 @@ body {
 
 .app-sidebar {
     background-color: var(--sidebar-bg);
+    color: var(--sidebar-fg);
     flex-shrink: 0;
     height: 100%;
     min-width: 180px;
@@ -70,7 +74,7 @@ body {
 }
 
 .app-resize-handle:hover {
-    background-color: #333333;
+    background: var(--accent);
     width: 2px;
     margin-right: -1px;
 }
@@ -99,9 +103,9 @@ body {
 }
 
 .zed-input {
-    background-color: #252526;
-    border: 1px solid #3c3c3c;
-    color: #cccccc;
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--input-fg);
     padding: 4px 8px;
     border-radius: 3px;
     outline: none;
@@ -109,7 +113,8 @@ body {
 }
 
 .zed-input:focus {
-    border-color: #007acc;
+    border-color: var(--active-tab-fg);
+    /* Using explicit color or specific valid var */
 }
 
 /* Animations for panel switching */

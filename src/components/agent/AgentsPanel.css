@@ -40,18 +40,138 @@
     padding: 5px 8px;
     line-height: 1.4;
     word-wrap: break-word;
-    white-space: pre-wrap;
 }
 
 .agent-msg-user {
     align-self: flex-end;
     color: #cccccc;
     background: #ffffff08;
+    white-space: pre-wrap;
 }
 
 .agent-msg-agent {
     align-self: flex-start;
     color: #999999;
+    user-select: text;
+}
+
+/* ---- Markdown inside agent messages ---- */
+
+.agent-msg-agent p {
+    margin: 0 0 6px 0;
+}
+
+.agent-msg-agent p:last-child {
+    margin-bottom: 0;
+}
+
+.agent-msg-agent h1,
+.agent-msg-agent h2,
+.agent-msg-agent h3,
+.agent-msg-agent h4 {
+    color: #cccccc;
+    margin: 10px 0 4px 0;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.agent-msg-agent h1 {
+    font-size: 14px;
+}
+
+.agent-msg-agent h2 {
+    font-size: 13px;
+}
+
+.agent-msg-agent code {
+    font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", monospace;
+    font-size: 11px;
+    background: #ffffff0a;
+    padding: 1px 4px;
+    border-radius: 2px;
+    color: #bbbbbb;
+}
+
+.agent-msg-agent pre {
+    background: #0e0e0e;
+    border: 1px solid #252525;
+    border-radius: 3px;
+    padding: 8px;
+    margin: 6px 0;
+    overflow-x: auto;
+}
+
+.agent-msg-agent pre code {
+    background: none;
+    padding: 0;
+    font-size: 11px;
+    color: #aaaaaa;
+    white-space: pre;
+}
+
+.agent-msg-agent pre::-webkit-scrollbar {
+    height: 3px;
+}
+
+.agent-msg-agent pre::-webkit-scrollbar-thumb {
+    background: #333333;
+}
+
+.agent-msg-agent ul,
+.agent-msg-agent ol {
+    margin: 4px 0;
+    padding-left: 18px;
+}
+
+.agent-msg-agent li {
+    margin: 2px 0;
+}
+
+.agent-msg-agent a {
+    color: #7a9ec2;
+    text-decoration: none;
+}
+
+.agent-msg-agent a:hover {
+    text-decoration: underline;
+}
+
+.agent-msg-agent blockquote {
+    border-left: 2px solid #333333;
+    margin: 6px 0;
+    padding: 2px 8px;
+    color: #777777;
+}
+
+.agent-msg-agent table {
+    border-collapse: collapse;
+    margin: 6px 0;
+    font-size: 11px;
+    width: 100%;
+}
+
+.agent-msg-agent th,
+.agent-msg-agent td {
+    border: 1px solid #2a2a2a;
+    padding: 3px 6px;
+    text-align: left;
+}
+
+.agent-msg-agent th {
+    background: #1a1a1a;
+    color: #bbbbbb;
+    font-weight: 600;
+}
+
+.agent-msg-agent hr {
+    border: none;
+    border-top: 1px solid #2a2a2a;
+    margin: 8px 0;
+}
+
+.agent-msg-agent strong {
+    color: #bbbbbb;
+    font-weight: 600;
 }
 
 .agent-empty {

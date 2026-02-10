@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { runAgentLoop, AgentUpdate } from "../../services/agent/agent-service";
 import "./AgentsPanel.css";
 
@@ -83,7 +85,13 @@ export default function AgentsPanel() {
                             key={i}
                             className={`agent-msg agent-msg-${m.role}`}
                         >
-                            {m.text}
+                            {m.role === "agent" ? (
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {m.text}
+                                </ReactMarkdown>
+                            ) : (
+                                m.text
+                            )}
                         </div>
                     ))}
                     {loading && status && (

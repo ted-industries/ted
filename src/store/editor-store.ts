@@ -41,6 +41,7 @@ interface EditorStoreState {
   terminalHeight: number;
   terminals: TerminalState[];
   activeTerminalId: string | null;
+  historyOpen: boolean;
   userSettings: {
     sidebarWidth: number;
     fontSize: number;
@@ -127,6 +128,7 @@ let state: EditorStoreState = {
   terminalHeight: 300,
   terminals: [],
   activeTerminalId: null,
+  historyOpen: false,
   userSettings: {
     sidebarWidth: 240,
     fontSize: 15,
@@ -514,6 +516,21 @@ export const editorStore = {
 
   setTerminalHeight(height: number) {
     dispatch("SET_TERMINAL_HEIGHT", { terminalHeight: height });
+  },
+
+  toggleHistory() {
+    const nextOpen = !state.historyOpen;
+    if (nextOpen && !state.terminalOpen) {
+      this.setTerminalOpen(true);
+    }
+    dispatch("TOGGLE_HISTORY", { historyOpen: nextOpen });
+  },
+
+  setHistoryOpen(open: boolean) {
+    if (open && !state.terminalOpen) {
+      this.setTerminalOpen(true);
+    }
+    dispatch("SET_HISTORY_OPEN", { historyOpen: open });
   },
 };
 

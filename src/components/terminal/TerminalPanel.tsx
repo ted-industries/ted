@@ -4,7 +4,8 @@ import { FitAddon } from "xterm-addon-fit";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { editorStore, useEditorStore } from "../../store/editor-store";
-import { RiCloseLine, RiAddLine } from "@remixicon/react";
+import { RiCloseLine, RiAddLine, RiHistoryLine } from "@remixicon/react";
+import CommitHistory from "./CommitHistory";
 import "xterm/css/xterm.css";
 import "./TerminalPanel.css";
 
@@ -172,6 +173,7 @@ export default function TerminalPanel() {
     const activeTerminalId = useEditorStore((s) => s.activeTerminalId);
     const terminalOpen = useEditorStore((s) => s.terminalOpen);
     const terminalHeight = useEditorStore((s) => s.terminalHeight);
+    const historyOpen = useEditorStore((s) => s.historyOpen);
     const isDraggingRef = useRef(false);
 
     const handleMouseDown = (_: React.MouseEvent) => {
@@ -207,26 +209,45 @@ export default function TerminalPanel() {
             <div className="terminal-header">
                 <div className="terminal-tabs-wrapper">
                     <div className="terminal-tabs">
-                        {terminals.map((t) => (
-                            <div
-                                key={t.id}
-                                className={`terminal-tab ${activeTerminalId === t.id ? "active" : ""}`}
-                                onClick={() => editorStore.setActiveTerminal(t.id)}
-                            >
-                                <span className="terminal-tab-name">{t.name}</span>
-                                <button
-                                    className="terminal-tab-close"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        editorStore.closeTerminal(t.id);
-                                    }}
-                                >
+                        {!historyOpen ? (
+                            <>
+                                {terminals.map((t) => (
+                                    <div
+                                        key={t.id}
+                                        className={`terminal-tab ${activeTerminalId === t.id ? "active" : ""}`}
+                                        onClick={() => editorStore.setActiveTerminal(t.id)}
+                                    >
+                                        <span className="terminal-tab-name">{t.name}</span>
+                                        <button
+                                            className="terminal-tab-close"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                editorStore.closeTerminal(t.id);
+                                            }}
+                                        >
+                                            <RiCloseLine size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                                <button className="terminal-add-btn" onClick={() => editorStore.newTerminal()} title="New Terminal">
+                                    <RiAddLine size={16} />
+                                </button>
+                            </>
+                        ) : (
+                            <div className="terminal-tab active">
+                                <span className="terminal-tab-name">Commit History</span>
+                                <button className="terminal-tab-close" onClick={() => editorStore.setHistoryOpen(false)}>
                                     <RiCloseLine size={14} />
                                 </button>
                             </div>
-                        ))}
-                        <button className="terminal-add-btn" onClick={() => editorStore.newTerminal()}>
-                            <RiAddLine size={16} />
+                        )}
+                        <button
+                            className={`terminal-add-btn ${historyOpen ? "active" : ""}`}
+                            onClick={() => editorStore.toggleHistory()}
+                            title="Commit History"
+                            style={{ marginLeft: historyOpen ? '0' : '8px' }}
+                        >
+                            <RiHistoryLine size={15} />
                         </button>
                     </div>
                 </div>
@@ -237,13 +258,17 @@ export default function TerminalPanel() {
                 </div>
             </div>
             <div className="terminal-body">
-                {terminals.map((t) => (
-                    <TerminalInstance
-                        key={t.id}
-                        id={t.id}
-                        isActive={activeTerminalId === t.id}
-                    />
-                ))}
+                {historyOpen ? (
+                    <CommitHistory />
+                ) : (
+                    terminals.map((t) => (
+                        <TerminalInstance
+                            key={t.id}
+                            id={t.id}
+                            isActive={activeTerminalId === t.id}
+                        />
+                    ))
+                )}
             </div>
         </div>
     );

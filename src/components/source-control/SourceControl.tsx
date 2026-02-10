@@ -94,13 +94,14 @@ export default function SourceControl() {
                     value={commitMessage}
                     onChange={(e) => setCommitMessage(e.target.value)}
                     disabled={isCommitting}
+                    spellCheck={false}
                 />
                 <button
                     className="sc-commit-btn"
                     onClick={handleCommit}
                     disabled={isCommitting || staged.length === 0 || !commitMessage.trim()}
                 >
-                    {isCommitting ? "Committing..." : <><RiCheckLine size={16} /> Commit</>}
+                    {isCommitting ? "Committing..." : "Commit"}
                 </button>
             </div>
 
@@ -109,42 +110,56 @@ export default function SourceControl() {
                 {staged.length > 0 && (
                     <div className="sc-section">
                         <div className="sc-section-header" onClick={() => setExpandedStaged(!expandedStaged)}>
-                            {expandedStaged ? <RiArrowDownSLine size={16} /> : <RiArrowRightSLine size={16} />}
+                            <RiArrowDownSLine
+                                size={14}
+                                style={{ transform: expandedStaged ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.1s" }}
+                            />
                             <span>STAGED CHANGES</span>
                             <span className="sc-count">{staged.length}</span>
                         </div>
-                        {expandedStaged && staged.map(file => (
-                            <div key={file.path} className="sc-file-item">
-                                <span className={`sc-status-label ${file.status}`}>{file.status[0].toUpperCase()}</span>
-                                <span className="sc-file-name" onClick={() => editorStore.openDiff(file.path)}>
-                                    {file.path.split(/[\\/]/).pop()}
-                                </span>
-                                <button className="sc-action-btn" onClick={() => handleUnstage(file.path)}>
-                                    <RiSubtractLine size={14} />
-                                </button>
+                        {expandedStaged && (
+                            <div className="sc-file-list">
+                                {staged.map(file => (
+                                    <div key={file.path} className="sc-file-item">
+                                        <span className={`sc-status-label ${file.status}`}>{file.status[0].toUpperCase()}</span>
+                                        <span className="sc-file-name" onClick={() => editorStore.openDiff(file.path)}>
+                                            {file.path.split(/[\\/]/).pop()}
+                                        </span>
+                                        <button className="sc-action-btn" onClick={() => handleUnstage(file.path)}>
+                                            <RiSubtractLine size={12} />
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+                        )}
                     </div>
                 )}
 
                 {/* Changes */}
                 <div className="sc-section">
                     <div className="sc-section-header" onClick={() => setExpandedChanges(!expandedChanges)}>
-                        {expandedChanges ? <RiArrowDownSLine size={16} /> : <RiArrowRightSLine size={16} />}
+                        <RiArrowDownSLine
+                            size={14}
+                            style={{ transform: expandedChanges ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.1s" }}
+                        />
                         <span>CHANGES</span>
                         <span className="sc-count">{changes.length}</span>
                     </div>
-                    {expandedChanges && changes.map(file => (
-                        <div key={file.path} className="sc-file-item">
-                            <span className={`sc-status-label ${file.status}`}>{file.status[0].toUpperCase()}</span>
-                            <span className="sc-file-name" onClick={() => editorStore.openDiff(file.path)}>
-                                {file.path.split(/[\\/]/).pop()}
-                            </span>
-                            <button className="sc-action-btn" onClick={() => handleStage(file.path)}>
-                                <RiAddLine size={14} />
-                            </button>
+                    {expandedChanges && (
+                        <div className="sc-file-list">
+                            {changes.map(file => (
+                                <div key={file.path} className="sc-file-item">
+                                    <span className={`sc-status-label ${file.status}`}>{file.status[0].toUpperCase()}</span>
+                                    <span className="sc-file-name" onClick={() => editorStore.openDiff(file.path)}>
+                                        {file.path.split(/[\\/]/).pop()}
+                                    </span>
+                                    <button className="sc-action-btn" onClick={() => handleStage(file.path)}>
+                                        <RiAddLine size={12} />
+                                    </button>
+                                </div>
+                            ))}
                         </div>
-                    ))}
+                    )}
                 </div>
             </div>
         </div>

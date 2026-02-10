@@ -70,19 +70,37 @@ export default function AgentsPanel() {
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState("");
     const [liveTraces, setLiveTraces] = useState<Trace[]>([]);
+    const [expanded, setExpanded] = useState(false);
+    const [attachments, setAttachments] = useState<string[]>([]);
     const bottomRef = useRef<HTMLDivElement>(null);
     const abortRef = useRef<AbortController | null>(null);
+    const fileRef = useRef<HTMLInputElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView();
     }, [messages, status, liveTraces]);
 
+    // Auto-resize textarea when not expanded
+    useEffect(() => {
+        const ta = textareaRef.current;
+        if (!ta || expanded) return;
+        ta.style.height = "auto";
+        ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
+    }, [input, expanded]);
+
     const send = useCallback(async () => {
         const text = input.trim();
         if (!text || loading) return;
 
+        const contextPrefix = attachments.length > 0
+            ? `[Attached: ${attachments.join(", ")}]\n\n`
+            : "";
+
         setInput("");
-        setMessages((prev) => [...prev, { role: "user", text }]);
+        setAttachments([]);
+        setExpanded(false);
+        setMessages((prev) => [...prev, { role: "user", text: contextPrefix + text }]);
         setLoading(true);
         setStatus("");
         setLiveTraces([]);
@@ -107,7 +125,7 @@ export default function AgentsPanel() {
         };
 
         try {
-            const reply = await runAgentLoop(text, onUpdate, controller.signal);
+            const reply = await runAgentLoop(contextPrefix + text, onUpdate, controller.signal);
             setMessages((prev) => [
                 ...prev,
                 { role: "agent", text: reply, traces: traces.length > 0 ? [...traces] : undefined },
@@ -125,7 +143,7 @@ export default function AgentsPanel() {
             setLiveTraces([]);
             abortRef.current = null;
         }
-    }, [input, loading]);
+    }, [input, loading, attachments]);
 
     const handleKey = useCallback(
         (e: React.KeyboardEvent) => {
@@ -139,6 +157,18 @@ export default function AgentsPanel() {
 
     const handleStop = useCallback(() => {
         abortRef.current?.abort();
+    }, []);
+
+    const handleAttach = useCallback(() => {
+        fileRef.current?.click();
+    }, []);
+
+    const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files) return;
+        const names = Array.from(files).map((f) => f.name);
+        setAttachments((prev) => [...prev, ...names]);
+        e.target.value = "";
     }, []);
 
     return (
@@ -173,19 +203,90 @@ export default function AgentsPanel() {
                     <div ref={bottomRef} />
                 </div>
             )}
-            <div className="agent-input-row">
-                {loading ? (
-                    <button className="agent-stop" onClick={handleStop}>
-                        stop
+            <div className={`agent-input-area${expanded ? " agent-input-expanded" : ""}`}>
+                {attachments.length > 0 && (
+                    <div className="agent-attachments">
+                        {attachments.map((a, i) => (
+                            <span key={i} className="agent-attachment-tag">
+                                {a}
+                                <span
+                                    className="agent-attachment-remove"
+                                    onClick={() => setAttachments((prev) => prev.filter((_, j) => j !== i))}
+                                >
+                                    ×
+                                </span>
+                            </span>
+                        ))}
+                    </div>
+                )}
+                <div className="agent-input-main">
+                    <textarea
+                        ref={textareaRef}
+                        className="agent-input"
+                        placeholder="ask ted"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={handleKey}
+                        disabled={loading}
+                        rows={1}
+                    />
+                    <button
+                        className="agent-input-btn"
+                        onClick={() => setExpanded(!expanded)}
+                        title={expanded ? "collapse" : "expand"}
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            {expanded ? (
+                                <>
+                                    <polyline points="4 14 10 14 10 20" />
+                                    <polyline points="20 10 14 10 14 4" />
+                                    <line x1="14" y1="10" x2="21" y2="3" />
+                                    <line x1="3" y1="21" x2="10" y2="14" />
+                                </>
+                            ) : (
+                                <>
+                                    <polyline points="15 3 21 3 21 9" />
+                                    <polyline points="9 21 3 21 3 15" />
+                                    <line x1="21" y1="3" x2="14" y2="10" />
+                                    <line x1="3" y1="21" x2="10" y2="14" />
+                                </>
+                            )}
+                        </svg>
                     </button>
-                ) : null}
+                </div>
+                <div className="agent-input-bottom">
+                    <button
+                        className="agent-input-btn"
+                        onClick={handleAttach}
+                        disabled={loading}
+                        title="attach context"
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+                        </svg>
+                    </button>
+                    {loading ? (
+                        <button className="agent-stop" onClick={handleStop}>stop</button>
+                    ) : (
+                        <button
+                            className="agent-send-btn"
+                            onClick={send}
+                            disabled={!input.trim()}
+                            title="send"
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="12" y1="19" x2="12" y2="5" />
+                                <polyline points="5 12 12 5 19 12" />
+                            </svg>
+                        </button>
+                    )}
+                </div>
                 <input
-                    className="agent-input"
-                    placeholder="ask ted"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKey}
-                    disabled={loading}
+                    ref={fileRef}
+                    type="file"
+                    multiple
+                    style={{ display: "none" }}
+                    onChange={handleFileChange}
                 />
             </div>
         </div>

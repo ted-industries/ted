@@ -91,6 +91,16 @@ class GitService {
     async getCommitDetails(repoPath: string, hash: string): Promise<CommitDetails> {
         return await invoke("git_get_commit_details", { repoPath, hash });
     }
+
+    async getBlame(repoPath: string, filePath: string, line: number): Promise<BlameEntry> {
+        return await invoke("git_blame", { repoPath, filePath, line });
+    }
+}
+
+export interface BlameEntry {
+    author: string;
+    date: string; // timestamp
+    hash: string;
 }
 
 export interface CommitDetails {

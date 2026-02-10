@@ -288,6 +288,7 @@ pub fn run() {
             git::git_churn,
             git::git_clone,
             git::git_get_commit_details,
+            git::git_blame,
             lsp::lsp_start,
             lsp::lsp_send,
             lsp::lsp_stop,

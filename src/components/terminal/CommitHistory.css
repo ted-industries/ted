@@ -127,33 +127,17 @@
     position: fixed;
     z-index: 9999;
     background-color: var(--sidebar-bg);
-    border: 1px solid var(--border-color);
-    padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    /* Slightly sharper than default border */
+    padding: 10px 12px;
     width: 280px;
     pointer-events: none;
     font-family: var(--font-mono);
     display: flex;
     flex-direction: column;
     gap: 6px;
-}
-
-.ch-popup-arrow {
-    position: absolute;
-    top: 24px;
-    width: 0;
-    height: 0;
-    border-top: 6px solid transparent;
-    border-bottom: 6px solid transparent;
-}
-
-.ch-popup.right .ch-popup-arrow {
-    left: -6px;
-    border-right: 6px solid var(--border-color);
-}
-
-.ch-popup.left .ch-popup-arrow {
-    right: -6px;
-    border-left: 6px solid var(--border-color);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
 }
 
 .ch-popup-header {
@@ -168,11 +152,13 @@
     font-size: 11px;
     font-weight: 700;
     opacity: 0.9;
+    color: var(--foreground);
 }
 
 .ch-popup-date {
     font-size: 10px;
     opacity: 0.4;
+    color: var(--foreground);
 }
 
 .ch-popup-message {
@@ -187,20 +173,7 @@
     font-size: 10.5px;
     opacity: 0.5;
     font-weight: 500;
-}
-
-.ch-stat-files {
-    opacity: 0.8;
-}
-
-.ch-stat-additions {
-    color: #3FB950;
-    /* Green */
-}
-
-.ch-stat-deletions {
-    color: #F85149;
-    /* Red */
+    color: var(--foreground);
 }
 
 .ch-popup-footer {
@@ -209,28 +182,11 @@
     opacity: 0.3;
     border-top: 1px solid var(--border-color);
     padding-top: 4px;
-}
-
-.ch-popup-hash-icon {
-    font-size: 14px;
-    transform: rotate(90deg);
-    color: #58A6FF;
+    color: var(--foreground);
 }
 
 .ch-popup-hash {
-    color: #58A6FF;
-    cursor: pointer;
-}
-
-.ch-popup-sep {
-    opacity: 0.2;
-}
-
-.ch-popup-github {
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+    font-weight: 600;
 }
 
 .ch-popup-loading {

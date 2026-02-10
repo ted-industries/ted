@@ -478,3 +478,57 @@ pub fn git_get_commit_details(repo_path: String, hash: String) -> Result<CommitD
         deletions,
     })
 }
+#[derive(Serialize, Clone)]
+pub struct BlameEntry {
+    pub author: String,
+    pub date: String,
+    pub hash: String,
+}
+
+#[tauri::command]
+pub fn git_blame(repo_path: String, file_path: String, line: u32) -> Result<BlameEntry, String> {
+    let repo = Repository::discover(&repo_path).map_err(|e| e.to_string())?;
+    
+    // Absolute to relative
+    let workdir = repo.workdir().ok_or("Not a working directory")?;
+    let abs_path = std::path::Path::new(&file_path);
+    
+    // Simple path handling for Windows/Unix
+    let rel_path_buf;
+    let rel_path = if abs_path.is_absolute() {
+        match abs_path.strip_prefix(workdir) {
+            Ok(p) => p,
+            Err(_) => {
+                let abs_str = abs_path.to_string_lossy().replace("\\", "/").to_lowercase();
+                let work_str = workdir.to_string_lossy().replace("\\", "/").to_lowercase();
+                if abs_str.starts_with(&work_str) {
+                    let suffix = &abs_path.to_string_lossy()[workdir.to_string_lossy().len()..];
+                    rel_path_buf = std::path::PathBuf::from(suffix.trim_start_matches(|c| c == '\\' || c == '/'));
+                    &rel_path_buf
+                } else {
+                    return Err(format!("Path mismatch: file {:?} is not in workdir {:?}", abs_path, workdir));
+                }
+            }
+        }
+    } else {
+        abs_path
+    };
+
+    let blame = repo.blame_file(rel_path, None).map_err(|e| e.to_string())?;
+    
+    if let Some(hunk) = blame.get_line(line as usize) {
+        let commit_id = hunk.final_commit_id();
+        let commit = repo.find_commit(commit_id).map_err(|e| e.to_string())?;
+        
+        let author = commit.author();
+        let date = commit.time();
+
+        Ok(BlameEntry {
+            author: author.name().unwrap_or("Unknown").to_string(),
+            date: format!("{}", date.seconds()),
+            hash: commit_id.to_string(),
+        })
+    } else {
+        Err("Line not found in blame".to_string())
+    }
+}

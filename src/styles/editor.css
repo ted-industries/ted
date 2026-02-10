@@ -10,6 +10,15 @@
     width: 100%;
 }
 
+.cm-ghost-text {
+    color: var(--foreground);
+    opacity: 0.25;
+    font-style: italic;
+    font-size: 0.9em;
+    pointer-events: none;
+    user-select: none;
+}
+
 .editor-container .cm-editor {
     height: 100%;
     cursor: text;

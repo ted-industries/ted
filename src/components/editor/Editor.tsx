@@ -48,6 +48,7 @@ import { treeSitter } from "../../services/tree-sitter-service";
 import { telemetry } from "../../services/telemetry-service";
 import { gitService } from "../../services/git-service";
 import { gitGutterExtension, setGitDiff } from "./GitGutter";
+import { gitBlame } from "./extensions/git-blame";
 import "../../styles/editor.css";
 
 const chevronDownSvg = renderToStaticMarkup(
@@ -119,6 +120,7 @@ function buildExtensions(
     lspSync,
     highlightSelectionMatches(),
     gitGutterExtension,
+    gitBlame,
     keymap.of([
       {
         key: "Mod-s",

@@ -1,15 +1,52 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-const features = [
-  "syntax highlighting",
-  "multiple tabs",
-  "file tree explorer",
-  "command palette",
-  "integrated terminal",
-  "git integration",
+const taskGroups = [
+  {
+    title: "core",
+    tasks: [
+      { name: "tree-sitter syntax highlighting", done: true },
+      { name: "multi-pane buffer management", done: true },
+      { name: "semantic theming system", done: true },
+      { name: "high-density file tree (20px)", done: true },
+      { name: "telemetry & behavior tracking", done: true },
+      { name: "detached window support", done: false },
+    ],
+  },
+  {
+    title: "git",
+    tasks: [
+      { name: "visual commit graph & history", done: true },
+      { name: "line-level blame (ghost text)", done: true },
+      { name: "integrated status & management", done: true },
+      { name: "asynchronous git providers", done: true },
+      { name: "inline diff visualization", done: false },
+      { name: "remote sync (push/pull)", done: false },
+    ],
+  },
+  {
+    title: "agent",
+    tasks: [
+      { name: "tool-calling execution loop", done: true },
+      { name: "action trace observability", done: true },
+      { name: "file-system tools (read/write)", done: true },
+      { name: "multi-file planning", done: false },
+      { name: "semantic search (rag)", done: false },
+    ],
+  },
+  {
+    title: "planned",
+    tasks: [
+      { name: "semantic search & code graph", done: false },
+      { name: "sandboxed execution environment", done: false },
+      { name: "multi-file planning loops", done: false },
+      { name: "plugin system (wasm/ipc)", done: false },
+      { name: "remote development (ssh)", done: false },
+      { name: "lsp stability & performance", done: false },
+    ],
+  },
 ];
 
 // Simple 2D hash for smooth-ish noise without a full simplex library
@@ -127,37 +164,111 @@ function AnimatedDither() {
 }
 
 export default function HomePage() {
+  const [activeGroup, setActiveGroup] = useState<string | null>(taskGroups[0].title);
+
   return (
-    <div className="relative h-[calc(100vh-64px)] w-full bg-black text-white overflow-hidden flex items-center justify-center">
+    <div className="relative min-h-[calc(100vh-64px)] w-full bg-black text-white overflow-hidden py-12 md:py-22 flex items-center justify-center">
       <AnimatedDither />
 
-      <div className="relative z-10 flex flex-col items-center gap-16 px-6 max-w-2xl">
-        <div className="flex flex-col items-center gap-4">
-          <h1 className="text-5xl font-bold tracking-tight text-white">ted</h1>
-          <p className="text-neutral-500 text-sm font-mono">
-            a minimal code editor — coming soon
+      <div className="relative z-10 flex flex-col items-center gap-12 md:gap-20 px-6 max-w-5xl w-full">
+        {/* Hero Section */}
+        <div className="flex flex-col items-center gap-4 text-center">
+          <h1 className="text-6xl font-bold tracking-tighter text-white">ted</h1>
+          <p className="text-neutral-400 text-sm font-mono tracking-wide">
+            minimal code editor for agents
           </p>
         </div>
 
-        <div className="w-full">
-          <p className="text-neutral-600 text-xs font-mono uppercase tracking-widest mb-6 text-center">
-            planned features
-          </p>
-          <div className="grid grid-cols-2 gap-x-12 gap-y-3">
-            {features.map((f) => (
-              <div key={f} className="flex items-center gap-3">
-                <span className="w-1.5 h-1.5 bg-neutral-700 shrink-0" />
-                <span className="text-neutral-400 text-sm font-mono">{f}</span>
+        {/* Explorable Task Explorer */}
+        <div className="w-full grid grid-cols-1 md:grid-cols-12 border border-neutral-900 bg-black/50 backdrop-blur-sm min-h-[400px]">
+          {/* Sidebar / Categories */}
+          <div className="md:col-span-4 border-b md:border-b-0 md:border-r border-neutral-900 p-6 flex flex-col gap-8">
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-mono text-neutral-600 uppercase tracking-widest mb-4">
+                project segments
+              </span>
+              {taskGroups.map((group) => {
+                const completed = group.tasks.filter((t) => t.done).length;
+                const total = group.tasks.length;
+                const isActive = activeGroup === group.title;
+
+                return (
+                  <button
+                    key={group.title}
+                    onClick={() => setActiveGroup(group.title)}
+                    className={`group flex items-center justify-between py-2 text-left transition-all ${isActive ? "text-white" : "text-neutral-500 hover:text-neutral-300"
+                      }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-1 h-1 rounded-full ${isActive ? "bg-white" : "bg-neutral-800"}`} />
+                      <span className="text-sm font-mono lowercase tracking-tight">
+                        {group.title}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono opacity-40">
+                      {completed}/{total}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-auto pt-6 border-t border-neutral-900/50">
+              <Link
+                href="/docs"
+                className="text-[11px] font-mono text-neutral-500 hover:text-white transition-colors flex items-center gap-2 group"
+              >
+                read documentation
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Task Detail Pane */}
+          <div className="md:col-span-8 p-8 md:p-12 flex flex-col gap-8 bg-neutral-950/30">
+            {activeGroup && (
+              <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+                <div className="flex flex-col gap-1.5 mb-8">
+                  <h2 className="text-xl font-bold tracking-tight">
+                    {activeGroup}
+                  </h2>
+                  <div className="w-12 h-0.5 bg-neutral-800" />
+                </div>
+
+                <div className="grid grid-cols-1 gap-y-4">
+                  {taskGroups
+                    .find((g) => g.title === activeGroup)
+                    ?.tasks.map((task) => (
+                      <div key={task.name} className="flex items-start gap-4 group">
+                        <div
+                          className={`mt-1 w-4 h-4 border border-neutral-800 flex items-center justify-center shrink-0 transition-colors ${task.done ? "bg-neutral-900 border-neutral-700" : "bg-transparent group-hover:border-neutral-600"
+                            }`}
+                        >
+                          {task.done && (
+                            <div className="w-1.5 h-1.5 bg-neutral-300" />
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          <span
+                            className={`text-sm font-mono leading-tight ${task.done ? "text-neutral-200" : "text-neutral-500"
+                              }`}
+                          >
+                            {task.name}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
 
         <Link
           href="/docs"
-          className="text-neutral-600 text-xs font-mono hover:text-neutral-400 transition-colors border-b border-neutral-800 hover:border-neutral-600 pb-0.5"
+          className="text-neutral-500 text-xs font-mono hover:text-white transition-colors border-b border-neutral-800 hover:border-neutral-500 pb-1 mt-8"
         >
-          read the docs →
+          v0.4.0-alpha
         </Link>
       </div>
     </div>

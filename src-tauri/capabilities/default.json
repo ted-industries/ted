@@ -21,6 +21,24 @@
     "core:window:allow-set-resizable",
     "core:window:allow-set-title",
     "core:window:allow-start-dragging",
-    "core:window:allow-start-resize-dragging"
+    "core:window:allow-start-resize-dragging",
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "https://api.openai.com/v1/*"
+        },
+        {
+          "url": "https://api.anthropic.com/v1/*"
+        },
+        {
+          "url": "https://generativelanguage.googleapis.com/*"
+        },
+        {
+          "url": "http://localhost:11434/*"
+        }
+      ],
+      "deny": []
+    }
   ]
 }

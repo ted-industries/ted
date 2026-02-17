@@ -4,7 +4,8 @@ import { FitAddon } from "xterm-addon-fit";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { editorStore, useEditorStore } from "../../store/editor-store";
-import { RiCloseLine, RiAddLine } from "@remixicon/react";
+import { RiCloseLine, RiAddLine, RiHistoryLine } from "@remixicon/react";
+import CommitHistory from "./CommitHistory";
 import "xterm/css/xterm.css";
 import "./TerminalPanel.css";
 
@@ -24,27 +25,31 @@ function TerminalInstance({ id, isActive }: TerminalInstanceProps) {
         if (!containerRef.current) return;
 
         // Initialize xterm
+        // Get computed styles for theme colors
+        const computedStyle = getComputedStyle(document.documentElement);
+        const getVar = (name: string) => computedStyle.getPropertyValue(name).trim();
+
         const term = new Terminal({
             theme: {
-                background: "#1a1a1a",
-                foreground: "#d4d4d4",
-                cursor: "#aeafad",
-                selectionBackground: "#ffffff15",
-                black: "#1a1a1a",
-                red: "#f44747",
-                green: "#6a9955",
-                yellow: "#d7ba7d",
-                blue: "#569cd6",
-                magenta: "#c586c0",
-                cyan: "#4fc1ff",
-                white: "#d4d4d4",
-                brightBlack: "#808080",
-                brightRed: "#f44747",
-                brightGreen: "#6a9955",
-                brightYellow: "#d7ba7d",
-                brightBlue: "#569cd6",
-                brightMagenta: "#c586c0",
-                brightCyan: "#4fc1ff",
+                background: getVar("--background"),
+                foreground: getVar("--foreground"),
+                cursor: getVar("--foreground"),
+                selectionBackground: getVar("--selection"),
+                black: getVar("--background"),
+                red: getVar("--syntax-keyword"),
+                green: getVar("--syntax-string"),
+                yellow: getVar("--syntax-variable"),
+                blue: getVar("--syntax-type"),
+                magenta: getVar("--syntax-function"),
+                cyan: getVar("--syntax-operator"),
+                white: getVar("--foreground"),
+                brightBlack: getVar("--sidebar-fg"),
+                brightRed: getVar("--syntax-keyword"),
+                brightGreen: getVar("--syntax-string"),
+                brightYellow: getVar("--syntax-variable"),
+                brightBlue: getVar("--syntax-type"),
+                brightMagenta: getVar("--syntax-function"),
+                brightCyan: getVar("--syntax-operator"),
                 brightWhite: "#ffffff",
             },
             fontFamily: "'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace",
@@ -125,25 +130,30 @@ function TerminalInstance({ id, isActive }: TerminalInstanceProps) {
 
     // Handle focus/visibility changes
     useEffect(() => {
+        let isMounted = true;
         if (isActive && xtermRef.current && fitAddonRef.current && initializedRef.current) {
             requestAnimationFrame(() => {
+                if (!isMounted) return;
                 try {
-                    fitAddonRef.current?.fit();
-                    xtermRef.current?.focus();
-                    const term = xtermRef.current;
-                    if (term && term.cols > 0 && term.rows > 0) {
-                        invoke("resize_terminal", {
-                            id,
-                            cols: term.cols,
-                            rows: term.rows,
-                        });
+                    if (containerRef.current && containerRef.current.offsetParent !== null) {
+                        fitAddonRef.current?.fit();
+                        xtermRef.current?.focus();
+                        const term = xtermRef.current;
+                        if (term && term.cols > 0 && term.rows > 0) {
+                            invoke("resize_terminal", {
+                                id,
+                                cols: term.cols,
+                                rows: term.rows,
+                            });
+                        }
                     }
                 } catch (e) {
                     console.warn("Refocus error:", e);
                 }
             });
         }
-    }, [isActive]);
+        return () => { isMounted = false; };
+    }, [isActive, id]);
 
     return (
         <div
@@ -168,6 +178,7 @@ export default function TerminalPanel() {
     const activeTerminalId = useEditorStore((s) => s.activeTerminalId);
     const terminalOpen = useEditorStore((s) => s.terminalOpen);
     const terminalHeight = useEditorStore((s) => s.terminalHeight);
+    const historyOpen = useEditorStore((s) => s.historyOpen);
     const isDraggingRef = useRef(false);
 
     const handleMouseDown = (_: React.MouseEvent) => {
@@ -203,26 +214,45 @@ export default function TerminalPanel() {
             <div className="terminal-header">
                 <div className="terminal-tabs-wrapper">
                     <div className="terminal-tabs">
-                        {terminals.map((t) => (
-                            <div
-                                key={t.id}
-                                className={`terminal-tab ${activeTerminalId === t.id ? "active" : ""}`}
-                                onClick={() => editorStore.setActiveTerminal(t.id)}
-                            >
-                                <span className="terminal-tab-name">{t.name}</span>
-                                <button
-                                    className="terminal-tab-close"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        editorStore.closeTerminal(t.id);
-                                    }}
-                                >
+                        {!historyOpen ? (
+                            <>
+                                {terminals.map((t) => (
+                                    <div
+                                        key={t.id}
+                                        className={`terminal-tab ${activeTerminalId === t.id ? "active" : ""}`}
+                                        onClick={() => editorStore.setActiveTerminal(t.id)}
+                                    >
+                                        <span className="terminal-tab-name">{t.name}</span>
+                                        <button
+                                            className="terminal-tab-close"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                editorStore.closeTerminal(t.id);
+                                            }}
+                                        >
+                                            <RiCloseLine size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                                <button className="terminal-add-btn" onClick={() => editorStore.newTerminal()} title="New Terminal">
+                                    <RiAddLine size={16} />
+                                </button>
+                            </>
+                        ) : (
+                            <div className="terminal-tab active">
+                                <span className="terminal-tab-name">Commit History</span>
+                                <button className="terminal-tab-close" onClick={() => editorStore.setHistoryOpen(false)}>
                                     <RiCloseLine size={14} />
                                 </button>
                             </div>
-                        ))}
-                        <button className="terminal-add-btn" onClick={() => editorStore.newTerminal()}>
-                            <RiAddLine size={16} />
+                        )}
+                        <button
+                            className={`terminal-add-btn ${historyOpen ? "active" : ""}`}
+                            onClick={() => editorStore.toggleHistory()}
+                            title="Commit History"
+                            style={{ marginLeft: historyOpen ? '0' : '8px' }}
+                        >
+                            <RiHistoryLine size={15} />
                         </button>
                     </div>
                 </div>
@@ -233,13 +263,17 @@ export default function TerminalPanel() {
                 </div>
             </div>
             <div className="terminal-body">
-                {terminals.map((t) => (
-                    <TerminalInstance
-                        key={t.id}
-                        id={t.id}
-                        isActive={activeTerminalId === t.id}
-                    />
-                ))}
+                {historyOpen ? (
+                    <CommitHistory />
+                ) : (
+                    terminals.map((t) => (
+                        <TerminalInstance
+                            key={t.id}
+                            id={t.id}
+                            isActive={activeTerminalId === t.id}
+                        />
+                    ))
+                )}
             </div>
         </div>
     );

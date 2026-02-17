@@ -1,5 +1,8 @@
 import { useSyncExternalStore } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { telemetry } from "../services/telemetry-service";
+import { gitService } from "../services/git-service";
+import { applyTheme } from "../services/theme/mod";
 
 export interface TabState {
   path: string;
@@ -10,6 +13,8 @@ export interface TabState {
   scrollTop: number;
   scrollLeft: number;
   cursorPos: number;
+  isDiff?: boolean;
+  originalContent?: string;
 }
 
 export interface TerminalState {
@@ -36,12 +41,29 @@ interface EditorStoreState {
   terminalHeight: number;
   terminals: TerminalState[];
   activeTerminalId: string | null;
+  historyOpen: boolean;
   userSettings: {
     sidebarWidth: number;
     fontSize: number;
     lineNumbers: boolean;
     indentGuides: boolean;
     volume: number;
+    uiBlur: boolean;
+    autoSave: boolean;
+    theme: string;
+    llm: {
+      provider: "ollama" | "openai" | "anthropic" | "google";
+      model: string;
+      baseUrl?: string;
+      apiKey?: string;
+    };
+    lsp: {
+      enabled: boolean;
+      servers?: Record<
+        string,
+        { command: string; args: string[]; enabled?: boolean }
+      >;
+    };
   };
   projectSettings: {
     sidebarWidth?: number;
@@ -49,6 +71,22 @@ interface EditorStoreState {
     lineNumbers?: boolean;
     indentGuides?: boolean;
     volume?: number;
+    uiBlur?: boolean;
+    autoSave?: boolean;
+    theme?: string;
+    llm?: {
+      provider?: "ollama" | "openai" | "anthropic" | "google";
+      model?: string;
+      baseUrl?: string;
+      apiKey?: string;
+    };
+    lsp?: {
+      enabled?: boolean;
+      servers?: Record<
+        string,
+        { command?: string; args?: string[]; enabled?: boolean }
+      >;
+    };
   };
   settings: {
     sidebarWidth: number;
@@ -56,6 +94,22 @@ interface EditorStoreState {
     lineNumbers: boolean;
     indentGuides: boolean;
     volume: number;
+    uiBlur: boolean;
+    autoSave: boolean;
+    theme: string;
+    llm: {
+      provider: "ollama" | "openai" | "anthropic" | "google";
+      model: string;
+      baseUrl?: string;
+      apiKey?: string;
+    };
+    lsp: {
+      enabled: boolean;
+      servers?: Record<
+        string,
+        { command: string; args: string[]; enabled?: boolean }
+      >;
+    };
   };
   logs: ActionLog[];
 }
@@ -74,12 +128,25 @@ let state: EditorStoreState = {
   terminalHeight: 300,
   terminals: [],
   activeTerminalId: null,
+  historyOpen: false,
   userSettings: {
     sidebarWidth: 240,
     fontSize: 15,
     lineNumbers: true,
     indentGuides: true,
     volume: 50,
+    uiBlur: false,
+    autoSave: false,
+    theme: "ted",
+    llm: {
+      provider: "ollama",
+      model: "mistral",
+      baseUrl: "http://localhost:11434",
+      apiKey: "",
+    },
+    lsp: {
+      enabled: true,
+    },
   },
   projectSettings: {},
   settings: {
@@ -88,6 +155,18 @@ let state: EditorStoreState = {
     lineNumbers: true,
     indentGuides: true,
     volume: 50,
+    uiBlur: false,
+    autoSave: false,
+    theme: "ted",
+    llm: {
+      provider: "ollama",
+      model: "mistral",
+      baseUrl: "http://localhost:11434",
+      apiKey: "",
+    },
+    lsp: {
+      enabled: true,
+    },
   },
   logs: [],
 };
@@ -100,7 +179,11 @@ function emit() {
   for (const l of listeners) l();
 }
 
-function dispatch(type: string, partial: Partial<EditorStoreState>, payload?: any) {
+function dispatch(
+  type: string,
+  partial: Partial<EditorStoreState>,
+  payload?: any,
+) {
   const log: ActionLog = {
     id: crypto.randomUUID(),
     type,
@@ -115,13 +198,36 @@ function dispatch(type: string, partial: Partial<EditorStoreState>, payload?: an
     nextState.settings = {
       ...nextState.userSettings,
       ...nextState.projectSettings,
+      theme:
+        nextState.projectSettings.theme ??
+        nextState.userSettings.theme,
+      llm: {
+        ...nextState.userSettings.llm,
+        ...nextState.projectSettings.llm,
+        // Ensure required fields are always present if project settings are partial
+        provider:
+          nextState.projectSettings.llm?.provider ??
+          nextState.userSettings.llm.provider,
+        model:
+          nextState.projectSettings.llm?.model ??
+          nextState.userSettings.llm.model,
+      },
+      lsp: {
+        enabled:
+          nextState.projectSettings.lsp?.enabled ??
+          nextState.userSettings.lsp.enabled,
+        servers: nextState.userSettings.lsp.servers,
+      },
     };
 
     if (userSettingsPath && partial.userSettings) {
       persistSettings(userSettingsPath, nextState.userSettings);
     }
     if (nextState.explorerPath && partial.projectSettings) {
-      persistSettings(`${nextState.explorerPath}/.ted/settings.json`, nextState.projectSettings);
+      persistSettings(
+        `${nextState.explorerPath}/.ted/settings.json`,
+        nextState.projectSettings,
+      );
     }
   }
 
@@ -131,7 +237,10 @@ function dispatch(type: string, partial: Partial<EditorStoreState>, payload?: an
 
 async function persistSettings(path: string, settings: any) {
   try {
-    await invoke("write_file", { path, content: JSON.stringify(settings, null, 2) });
+    await invoke("write_file", {
+      path,
+      content: JSON.stringify(settings, null, 2),
+    });
   } catch (err) {
     console.error("Failed to persist settings to", path, err);
   }
@@ -148,11 +257,20 @@ export const editorStore = {
   async initialize() {
     try {
       userSettingsPath = await invoke("get_user_config_dir");
-      const content: string = await invoke("read_file", { path: userSettingsPath });
+      const content: string = await invoke("read_file", {
+        path: userSettingsPath,
+      });
       const parsed = JSON.parse(content);
-      dispatch("INIT_USER_SETTINGS", { userSettings: { ...state.userSettings, ...parsed } });
+
+      const theme = parsed.theme || "ted";
+      applyTheme(theme);
+
+      dispatch("INIT_USER_SETTINGS", {
+        userSettings: { ...state.userSettings, ...parsed },
+      });
     } catch (err) {
       console.log("No existing user settings found, using defaults.");
+      applyTheme("ted");
     }
   },
 
@@ -185,10 +303,57 @@ export const editorStore = {
       scrollLeft: 0,
       cursorPos: 0,
     };
-    dispatch("OPEN_TAB", {
-      tabs: [...state.tabs, tab],
-      activeTabPath: path,
-    }, { path, name });
+    dispatch(
+      "OPEN_TAB",
+      {
+        tabs: [...state.tabs, tab],
+        activeTabPath: path,
+      },
+      { path, name },
+    );
+
+    telemetry.log("file_open", { path, name });
+  },
+
+  async openDiff(path: string) {
+    const diffPath = `diff:${path}`;
+    if (state.tabs.find((t) => t.path === diffPath)) {
+      this.setActiveTab(diffPath);
+      return;
+    }
+
+    const tab = state.tabs.find((t) => t.path === path);
+    const content = tab
+      ? tab.content
+      : await invoke<string>("read_file", { path });
+    const originalContent = await gitService.readFile(path, "HEAD");
+    const name = tab
+      ? tab.name
+      : await invoke<string>("get_basename", { path });
+
+    const diffTab: TabState = {
+      path: diffPath,
+      name: `Diff: ${name}`,
+      content,
+      savedContent: content,
+      originalContent,
+      isDiff: true,
+      isDirty: false,
+      scrollTop: 0,
+      scrollLeft: 0,
+      cursorPos: 0,
+    };
+
+    dispatch(
+      "OPEN_DIFF_TAB",
+      {
+        tabs: [...state.tabs, diffTab],
+        activeTabPath: diffPath,
+      },
+      { path },
+    );
+
+    telemetry.log("diff_open", { path });
   },
 
   closeTab(path: string) {
@@ -200,10 +365,12 @@ export const editorStore = {
       activeTabPath = newIdx >= 0 ? tabs[newIdx].path : null;
     }
     dispatch("CLOSE_TAB", { tabs, activeTabPath }, { path });
+    telemetry.log("file_close", { path });
   },
 
   setActiveTab(path: string) {
     dispatch("SET_ACTIVE_TAB", { activeTabPath: path });
+    telemetry.log("tab_switch", { path });
   },
 
   updateTabContent(path: string, content: string) {
@@ -247,9 +414,16 @@ export const editorStore = {
     if (path) {
       try {
         const projectSettingsPath = `${path}/.ted/settings.json`;
-        const content: string = await invoke("read_file", { path: projectSettingsPath });
+        const content: string = await invoke("read_file", {
+          path: projectSettingsPath,
+        });
         const parsed = JSON.parse(content);
         dispatch("LOAD_PROJECT_SETTINGS", { projectSettings: parsed });
+
+        // Apply project theme if exists
+        if (parsed.theme) {
+          applyTheme(parsed.theme);
+        }
       } catch {
         console.log("No project settings found for", path);
       }
@@ -261,7 +435,9 @@ export const editorStore = {
   },
 
   toggleExplorer() {
-    dispatch("TOGGLE_EXPLORER", { explorerCollapsed: !state.explorerCollapsed });
+    dispatch("TOGGLE_EXPLORER", {
+      explorerCollapsed: !state.explorerCollapsed,
+    });
   },
 
   setCommandPaletteOpen(open: boolean) {
@@ -269,7 +445,9 @@ export const editorStore = {
   },
 
   toggleCommandPalette() {
-    dispatch("TOGGLE_COMMAND_PALETTE", { commandPaletteOpen: !state.commandPaletteOpen });
+    dispatch("TOGGLE_COMMAND_PALETTE", {
+      commandPaletteOpen: !state.commandPaletteOpen,
+    });
   },
 
   setSettingsOpen(open: boolean) {
@@ -283,9 +461,11 @@ export const editorStore = {
   updateSettings(update: any, level: "user" | "project" = "user") {
     if (level === "user") {
       const userSettings = { ...state.userSettings, ...update };
+      if (update.theme) applyTheme(update.theme);
       dispatch("UPDATE_USER_SETTINGS", { userSettings }, { update });
     } else {
       const projectSettings = { ...state.projectSettings, ...update };
+      if (update.theme) applyTheme(update.theme);
       dispatch("UPDATE_PROJECT_SETTINGS", { projectSettings }, { update });
     }
   },
@@ -324,10 +504,11 @@ export const editorStore = {
   },
 
   closeTerminal(id: string) {
-    const terminals = state.terminals.filter(t => t.id !== id);
+    const terminals = state.terminals.filter((t) => t.id !== id);
     let activeTerminalId = state.activeTerminalId;
     if (activeTerminalId === id) {
-      activeTerminalId = terminals.length > 0 ? terminals[terminals.length - 1].id : null;
+      activeTerminalId =
+        terminals.length > 0 ? terminals[terminals.length - 1].id : null;
     }
     const terminalOpen = terminals.length === 0 ? false : state.terminalOpen;
     dispatch("CLOSE_TERMINAL", { terminals, activeTerminalId, terminalOpen });
@@ -335,7 +516,22 @@ export const editorStore = {
 
   setTerminalHeight(height: number) {
     dispatch("SET_TERMINAL_HEIGHT", { terminalHeight: height });
-  }
+  },
+
+  toggleHistory() {
+    const nextOpen = !state.historyOpen;
+    if (nextOpen && !state.terminalOpen) {
+      this.setTerminalOpen(true);
+    }
+    dispatch("TOGGLE_HISTORY", { historyOpen: nextOpen });
+  },
+
+  setHistoryOpen(open: boolean) {
+    if (open && !state.terminalOpen) {
+      this.setTerminalOpen(true);
+    }
+    dispatch("SET_HISTORY_OPEN", { historyOpen: open });
+  },
 };
 
 export function useEditorStore<T>(selector: (s: EditorStoreState) => T): T {

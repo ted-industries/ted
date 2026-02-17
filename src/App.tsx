@@ -4,12 +4,17 @@ import { open } from "@tauri-apps/plugin-dialog";
 import Sidebar from "./components/sidebar/Sidebar";
 import TabBar from "./components/tabs/TabBar";
 import Editor from "./components/editor/Editor";
+import DiffEditor from "./components/editor/DiffEditor";
 import Titlebar from "./components/titlebar/Titlebar";
 import CommandPalette from "./components/palette/CommandPalette";
 import Welcome from "./components/welcome/Welcome";
 import SettingsPopup from "./components/settings/SettingsPopup";
 import TerminalPanel from "./components/terminal/TerminalPanel";
+import SuggestionToast from "./components/agent/SuggestionToast";
 import { editorStore, useEditorStore } from "./store/editor-store";
+import { ruleEngine } from "./services/agent/rule-engine";
+import { llmAgent } from "./services/agent/llm-agent";
+import { lspManager } from "./services/lsp/lsp-manager";
 import "./App.css";
 
 function App() {
@@ -19,7 +24,24 @@ function App() {
   const [sidebarWidth, setSidebarWidth] = useState(storeSidebarWidth);
   const isDraggingRef = useRef(false);
 
-  // Sync local state when store changes (e.g. from settings popup)
+  // Initialize Rule Engine, LLM Agent & LSP
+  useEffect(() => {
+    ruleEngine.start();
+    llmAgent.start();
+
+    // Apply LSP server config overrides from settings
+    const settings = editorStore.getState().settings;
+    if (settings.lsp?.servers) {
+      lspManager.updateConfigs(settings.lsp.servers);
+    }
+
+    return () => {
+      ruleEngine.stop();
+      llmAgent.stop();
+      lspManager.dispose();
+    };
+  }, []);
+
   useEffect(() => {
     if (!isDraggingRef.current) {
       setSidebarWidth(storeSidebarWidth);
@@ -164,7 +186,7 @@ function App() {
         e.preventDefault();
         const s = editorStore.getState();
         if (s.tabs.length > 0) {
-          const idx = s.tabs.findIndex(t => t.path === s.activeTabPath);
+          const idx = s.tabs.findIndex((t) => t.path === s.activeTabPath);
           const nextIdx = e.shiftKey
             ? (idx - 1 + s.tabs.length) % s.tabs.length
             : (idx + 1) % s.tabs.length;
@@ -195,10 +217,7 @@ function App() {
             <div className="app-sidebar" style={{ width: `${sidebarWidth}px` }}>
               <Sidebar />
             </div>
-            <div
-              className="app-resize-handle"
-              onMouseDown={handleMouseDown}
-            />
+            <div className="app-resize-handle" onMouseDown={handleMouseDown} />
           </>
         )}
         <div className="app-main">
@@ -207,7 +226,11 @@ function App() {
               <>
                 <TabBar />
                 <div className="app-editor">
-                  <Editor />
+                  {activeTabPath.startsWith("diff:") ? (
+                    <DiffEditor />
+                  ) : (
+                    <Editor />
+                  )}
                 </div>
               </>
             ) : (
@@ -219,6 +242,7 @@ function App() {
       <TerminalPanel />
       <CommandPalette />
       <SettingsPopup />
+      <SuggestionToast />
     </div>
   );
 }

@@ -1,0 +1,207 @@
+.commit-history {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background-color: var(--sidebar-bg);
+}
+
+.ch-main-container {
+    position: relative;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* No horizontal scroll */
+    display: flex;
+}
+
+.ch-graph-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.ch-graph-node {
+    opacity: 0.8;
+}
+
+.ch-graph-link {
+    stroke-width: 1.5px;
+    opacity: 0.4;
+}
+
+.ch-list {
+    flex: 1;
+    padding: 0;
+    min-width: 0;
+    /* Important for wrapping */
+    /* Indent list more to leave space for graph */
+    /* The lanes will grow, but we can start with a fixed offset */
+}
+
+.ch-item {
+    display: flex;
+    align-items: flex-start;
+    /* Align to top for wrapping */
+    gap: 12px;
+    padding-left: 60px;
+    /* Space for the graph lanes */
+    padding-right: 16px;
+    min-height: 20px;
+    /* High density matching Explorer */
+    cursor: default;
+    transition: background-color 0.1s;
+    border-bottom: 1px solid transparent;
+}
+
+.ch-item:hover {
+    background-color: var(--line-highlight);
+}
+
+.ch-item-left {
+    flex-shrink: 0;
+    width: 60px;
+    padding-top: 4px;
+    /* Align with first line of text */
+}
+
+.ch-hash {
+    font-size: 10px;
+    font-weight: 700;
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    color: var(--sidebar-fg);
+    opacity: 0.4;
+}
+
+.ch-item-main {
+    flex: 1;
+    min-width: 0;
+    padding: 3px 0;
+}
+
+.ch-message {
+    font-size: 11.5px;
+    color: var(--foreground);
+    opacity: 0.8;
+    white-space: normal;
+    /* Allow wrapping */
+    word-break: break-word;
+    display: block;
+    line-height: 1.4;
+}
+
+.ch-item:hover .ch-message {
+    opacity: 1;
+}
+
+.ch-item-right {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-top: 4px;
+}
+
+.ch-author {
+    font-size: 11px;
+    color: var(--sidebar-fg);
+    opacity: 0.5;
+    max-width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ch-date {
+    font-size: 10px;
+    color: var(--sidebar-fg);
+    opacity: 0.3;
+    width: 100px;
+    text-align: right;
+}
+
+/* Popup Styles */
+.ch-popup {
+    position: fixed;
+    z-index: 9999;
+    background-color: var(--sidebar-bg);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    /* Slightly sharper than default border */
+    padding: 10px 12px;
+    width: 280px;
+    pointer-events: none;
+    font-family: var(--font-mono);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+}
+
+.ch-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+
+.ch-popup-author {
+    font-size: 11px;
+    font-weight: 700;
+    opacity: 0.9;
+    color: var(--foreground);
+}
+
+.ch-popup-date {
+    font-size: 10px;
+    opacity: 0.4;
+    color: var(--foreground);
+}
+
+.ch-popup-message {
+    font-size: 11.5px;
+    color: var(--foreground);
+    white-space: pre-wrap;
+    line-height: 1.4;
+    opacity: 0.85;
+}
+
+.ch-popup-stats {
+    font-size: 10.5px;
+    opacity: 0.5;
+    font-weight: 500;
+    color: var(--foreground);
+}
+
+.ch-popup-footer {
+    display: flex;
+    font-size: 10px;
+    opacity: 0.3;
+    border-top: 1px solid var(--border-color);
+    padding-top: 4px;
+    color: var(--foreground);
+}
+
+.ch-popup-hash {
+    font-weight: 600;
+}
+
+.ch-popup-loading {
+    font-size: 11px;
+    opacity: 0.4;
+    padding: 8px 0;
+}
+
+.ch-loading,
+.ch-empty {
+    padding: 32px;
+    text-align: center;
+    color: var(--sidebar-fg);
+    opacity: 0.4;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}

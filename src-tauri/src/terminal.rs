@@ -1,9 +1,9 @@
-use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtyPair, PtySize, PtySystem};
+use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtyPair, PtySize};
+use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use tauri::{AppHandle, Emitter, Runtime};
-use std::collections::HashMap;
 
 pub struct TerminalSession {
     pub writer: Arc<Mutex<Box<dyn Write + Send>>>,
@@ -21,7 +21,7 @@ pub fn spawn_terminal<R: Runtime>(
     id: String,
 ) -> Result<(), String> {
     let pty_system = native_pty_system();
-    
+
     // In portable-pty 0.8, the method is 'openpty' (no underscore)
     let pty_pair = pty_system
         .openpty(PtySize {
@@ -38,19 +38,28 @@ pub fn spawn_terminal<R: Runtime>(
     let shell = "bash";
 
     let mut cmd = CommandBuilder::new(shell);
-    
-    let _child = pty_pair.slave.spawn_command(cmd).map_err(|e| e.to_string())?;
 
-    let reader = pty_pair.master.try_clone_reader().map_err(|e| e.to_string())?;
+    let _child = pty_pair
+        .slave
+        .spawn_command(cmd)
+        .map_err(|e| e.to_string())?;
+
+    let reader = pty_pair
+        .master
+        .try_clone_reader()
+        .map_err(|e| e.to_string())?;
     let writer = pty_pair.master.take_writer().map_err(|e| e.to_string())?;
 
     let writer = Arc::new(Mutex::new(writer));
     let sessions = state.sessions.clone();
-    
-    sessions.lock().unwrap().insert(id.clone(), TerminalSession {
-        writer: writer.clone(),
-        pty_pair,
-    });
+
+    sessions.lock().unwrap().insert(
+        id.clone(),
+        TerminalSession {
+            writer: writer.clone(),
+            pty_pair,
+        },
+    );
 
     let app_clone = app.clone();
     let id_clone = id.clone();
@@ -79,7 +88,9 @@ pub fn write_to_terminal(
     let sessions = state.sessions.lock().unwrap();
     if let Some(session) = sessions.get(&id) {
         let mut writer = session.writer.lock().unwrap();
-        writer.write_all(data.as_bytes()).map_err(|e| e.to_string())?;
+        writer
+            .write_all(data.as_bytes())
+            .map_err(|e| e.to_string())?;
         writer.flush().map_err(|e| e.to_string())?;
     }
     Ok(())
@@ -94,12 +105,16 @@ pub fn resize_terminal(
 ) -> Result<(), String> {
     let sessions = state.sessions.lock().unwrap();
     if let Some(session) = sessions.get(&id) {
-        session.pty_pair.master.resize(PtySize {
-            rows,
-            cols,
-            pixel_width: 0,
-            pixel_height: 0,
-        }).map_err(|e| e.to_string())?;
+        session
+            .pty_pair
+            .master
+            .resize(PtySize {
+                rows,
+                cols,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
+            .map_err(|e| e.to_string())?;
     }
     Ok(())
 }

@@ -1,8 +1,10 @@
 {
   "name": "ted",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.4.0-alpha",
   "type": "module",
+  "author": "tomlin7",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -26,6 +28,7 @@
     "@codemirror/lang-yaml": "^6.1.2",
     "@codemirror/language": "^6.12.1",
     "@codemirror/lint": "^6.9.3",
+    "@codemirror/merge": "^6.11.2",
     "@codemirror/search": "^6.6.0",
     "@codemirror/state": "^6.5.4",
     "@codemirror/view": "^6.39.12",
@@ -34,19 +37,25 @@
     "@replit/codemirror-indentation-markers": "^6.5.3",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2.6.0",
+    "@tauri-apps/plugin-http": "~2",
     "@tauri-apps/plugin-opener": "^2",
     "codemirror": "^6.0.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "web-tree-sitter": "^0.26.5",
     "xterm": "^5.3.0",
-    "xterm-addon-fit": "^0.8.0"
+    "xterm-addon-fit": "^0.8.0",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@types/node": "^25.2.2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
     "typescript": "~5.8.3",
-    "vite": "^7.0.4",
-    "@tauri-apps/cli": "^2"
+    "vite": "^7.0.4"
   }
 }

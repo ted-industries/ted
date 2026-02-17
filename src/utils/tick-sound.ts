@@ -7,9 +7,10 @@ function getAudioContext(): AudioContext {
   return audioCtx;
 }
 
-export function playTick() {
+export function playTick(volume = 50) {
   const ctx = getAudioContext();
   const t = ctx.currentTime;
+  const volScale = volume / 100;
 
   // Noise pop — short filtered burst
   const len = Math.floor(ctx.sampleRate * 0.012);
@@ -27,7 +28,7 @@ export function playTick() {
   filter.Q.value = 0.8;
 
   const noiseGain = ctx.createGain();
-  noiseGain.gain.setValueAtTime(0.09, t);
+  noiseGain.gain.setValueAtTime(0.09 * volScale, t);
   noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.012);
 
   noise.connect(filter);
@@ -41,7 +42,7 @@ export function playTick() {
   osc.frequency.exponentialRampToValueAtTime(60, t + 0.02);
 
   const oscGain = ctx.createGain();
-  oscGain.gain.setValueAtTime(0.1, t);
+  oscGain.gain.setValueAtTime(0.1 * volScale, t);
   oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.025);
 
   osc.connect(oscGain);

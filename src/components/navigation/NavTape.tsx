@@ -1,28 +1,29 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { RiArrowLeftSLine, RiArrowRightSLine } from "@remixicon/react";
 import { playTick } from "../../utils/tick-sound";
+import { useEditorStore } from "../../store/editor-store";
 import "./NavTape.css";
 
 interface NavTapeProps {
   items: string[];
   activeIndex: number;
+  smoothIndex?: number;
   onChange: (index: number) => void;
 }
 
 export default function NavTape({
   items,
   activeIndex,
+  smoothIndex = activeIndex,
   onChange,
 }: NavTapeProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [isHovering, setIsHovering] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const [offset, setOffset] = useState(0);
+  const volume = useEditorStore((s) => s.settings.volume);
   const itemWidth = 120;
   const lastTickIndexRef = useRef(activeIndex);
-  const animFrameRef = useRef<number>(0);
-  const targetOffsetRef = useRef(0);
-  const currentOffsetRef = useRef(0);
   const spinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getOffsetForIndex = useCallback(
@@ -34,53 +35,18 @@ export default function NavTape({
     [itemWidth],
   );
 
-  // Initialize
+  // Sync offset from smoothIndex (provided by Sidebar)
   useEffect(() => {
-    const off = getOffsetForIndex(activeIndex);
+    const off = getOffsetForIndex(smoothIndex);
     setOffset(off);
-    currentOffsetRef.current = off;
-    targetOffsetRef.current = off;
-  }, []);
 
-
-
-  const checkTick = useCallback(
-    (off: number) => {
-      const vp = viewportRef.current;
-      const viewportCenter = vp ? vp.offsetWidth / 2 : 100;
-      const currentIndex = Math.round(
-        (viewportCenter - off - itemWidth / 2) / itemWidth,
-      );
-      if (currentIndex !== lastTickIndexRef.current) {
-        lastTickIndexRef.current = currentIndex;
-        playTick();
-      }
-    },
-    [itemWidth],
-  );
-
-  // Animation loop
-  useEffect(() => {
-    let running = true;
-    const animate = () => {
-      if (!running) return;
-      const diff = targetOffsetRef.current - currentOffsetRef.current;
-      if (Math.abs(diff) > 0.3) {
-        currentOffsetRef.current += diff * 0.15;
-        checkTick(currentOffsetRef.current);
-        setOffset(currentOffsetRef.current);
-      } else if (Math.abs(diff) > 0.01) {
-        currentOffsetRef.current = targetOffsetRef.current;
-        setOffset(currentOffsetRef.current);
-      }
-      animFrameRef.current = requestAnimationFrame(animate);
-    };
-    animFrameRef.current = requestAnimationFrame(animate);
-    return () => {
-      running = false;
-      cancelAnimationFrame(animFrameRef.current);
-    };
-  }, [checkTick]);
+    // Tick sound based on smoothIndex crossings
+    const currentIndex = Math.round(smoothIndex);
+    if (currentIndex !== lastTickIndexRef.current) {
+      lastTickIndexRef.current = currentIndex;
+      playTick(volume);
+    }
+  }, [smoothIndex, getOffsetForIndex, volume]);
 
   // Mark spinning
   const markSpinning = useCallback(() => {
@@ -91,16 +57,23 @@ export default function NavTape({
     }, 600);
   }, []);
 
-  // Animate to new activeIndex when changed externally
+  // Handle resize to keep centered
   useEffect(() => {
-    targetOffsetRef.current = getOffsetForIndex(activeIndex);
-    markSpinning();
-  }, [activeIndex, getOffsetForIndex, markSpinning]);
+    const vp = viewportRef.current;
+    if (!vp) return;
+
+    const observer = new ResizeObserver(() => {
+      setOffset(getOffsetForIndex(smoothIndex));
+    });
+
+    observer.observe(vp);
+    return () => observer.disconnect();
+  }, [smoothIndex, getOffsetForIndex]);
 
   const lastScrollTime = useRef(0);
 
   const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
+    (e: WheelEvent) => {
       e.preventDefault();
       e.stopPropagation();
 
@@ -117,36 +90,44 @@ export default function NavTape({
         const newIndex = Math.min(items.length - 1, activeIndex + 1);
         if (newIndex !== activeIndex) {
           onChange(newIndex);
-          playTick();
+          playTick(volume);
         }
       } else {
         const newIndex = Math.max(0, activeIndex - 1);
         if (newIndex !== activeIndex) {
           onChange(newIndex);
-          playTick();
+          playTick(volume);
         }
       }
     },
-    [items.length, activeIndex, onChange, markSpinning],
+    [items.length, activeIndex, onChange, markSpinning, volume],
   );
+
+  // Attach wheel listener natively with { passive: false } so preventDefault works
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, [handleWheel]);
 
   const goLeft = useCallback(() => {
     const newIndex = Math.max(0, activeIndex - 1);
     if (newIndex !== activeIndex) {
       markSpinning();
       onChange(newIndex);
-      playTick();
+      playTick(volume);
     }
-  }, [activeIndex, onChange, markSpinning]);
+  }, [activeIndex, onChange, markSpinning, volume]);
 
   const goRight = useCallback(() => {
     const newIndex = Math.min(items.length - 1, activeIndex + 1);
     if (newIndex !== activeIndex) {
       markSpinning();
       onChange(newIndex);
-      playTick();
+      playTick(volume);
     }
-  }, [activeIndex, items.length, onChange, markSpinning]);
+  }, [activeIndex, items.length, onChange, markSpinning, volume]);
 
   const active = isSpinning || isHovering;
 
@@ -160,7 +141,7 @@ export default function NavTape({
         <RiArrowLeftSLine size={14} />
       </button>
 
-      <div className="tape-viewport" ref={viewportRef} onWheel={handleWheel}>
+      <div className="tape-viewport" ref={viewportRef}>
         <div className="tape-vignette tape-vignette-left" />
         <div className="tape-vignette tape-vignette-right" />
 

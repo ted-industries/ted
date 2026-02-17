@@ -1,0 +1,77 @@
+.suggestion-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--sidebar-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    z-index: 9999;
+    max-width: 320px;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.suggestion-icon {
+    font-size: 20px;
+}
+
+.suggestion-content {
+    flex: 1;
+}
+
+.suggestion-message {
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--foreground);
+}
+
+.suggestion-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn,
+.dismiss-btn {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    border: none;
+}
+
+.action-btn {
+    background: var(--accent);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+}
+
+.action-btn:hover {
+    background: var(--selection);
+}
+
+.dismiss-btn {
+    background: transparent;
+    color: var(--sidebar-fg);
+}
+
+.dismiss-btn:hover {
+    background: var(--selection);
+    color: var(--foreground);
+}

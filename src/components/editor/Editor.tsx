@@ -17,9 +17,19 @@ import {
   bracketMatching,
   indentUnit,
 } from "@codemirror/language";
-import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
+import {
+  defaultKeymap,
+  history,
+  historyKeymap,
+  indentWithTab,
+} from "@codemirror/commands";
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
-import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
+import {
+  autocompletion,
+  completionKeymap,
+  closeBrackets,
+  closeBracketsKeymap,
+} from "@codemirror/autocomplete";
 import { commentKeymap } from "@codemirror/comment";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import { invoke } from "@tauri-apps/api/core";
@@ -27,6 +37,18 @@ import { RiArrowDownSLine, RiArrowRightSLine } from "@remixicon/react";
 import { tedDark } from "./theme";
 import { editorStore, useEditorStore } from "../../store/editor-store";
 import { getLanguageExtension } from "../../utils/languages";
+import { behaviorTracking } from "./extensions/behavior-tracking";
+import { filePathFacet } from "./extensions/lsp-filepath";
+import { lspCompletionSource } from "./extensions/lsp-completion";
+import { lspHoverTooltip } from "./extensions/lsp-hover";
+import { lspGoToKeymap } from "./extensions/lsp-goto";
+import { lspDiagnosticsExtension } from "./extensions/lsp-diagnostics";
+import { lspSync } from "./extensions/lsp-sync";
+import { treeSitter } from "../../services/tree-sitter-service";
+import { telemetry } from "../../services/telemetry-service";
+import { gitService } from "../../services/git-service";
+import { gitGutterExtension, setGitDiff } from "./GitGutter";
+import { gitBlame } from "./extensions/git-blame";
 import "../../styles/editor.css";
 
 const chevronDownSvg = renderToStaticMarkup(
@@ -49,22 +71,30 @@ function buildExtensions(
   langExt: Extension | null,
   saveFile: (path: string, content: string) => void,
   autoSaveTimerRef: React.RefObject<ReturnType<typeof setTimeout> | null>,
-  settings: { fontSize: number; lineNumbers: boolean; indentGuides: boolean },
+  settings: {
+    fontSize: number;
+    lineNumbers: boolean;
+    indentGuides: boolean;
+    autoSave: boolean;
+  },
 ): Extension[] {
   const exts: Extension[] = [
+    filePathFacet.of(tabPath),
     tedDark,
     EditorView.theme({
       "&": { fontSize: `${settings.fontSize}px` },
     }),
     settings.lineNumbers ? lineNumbers() : [],
-    settings.indentGuides ? indentationMarkers({
-      colors: {
-        light: "#ffffff10",
-        dark: "#ffffff10",
-        activeLight: "#ffffff20",
-        activeDark: "#ffffff20",
-      }
-    }) : [],
+    settings.indentGuides
+      ? indentationMarkers({
+        colors: {
+          light: "var(--border)",
+          dark: "var(--border)",
+          activeLight: "var(--foreground)",
+          activeDark: "var(--foreground)",
+        },
+      })
+      : [],
     highlightActiveLine(),
     highlightActiveLineGutter(),
     bracketMatching(),
@@ -79,8 +109,18 @@ function buildExtensions(
     indentOnInput(),
     indentUnit.of("    "),
     closeBrackets(),
-    autocompletion(),
+    autocompletion({
+      override: [lspCompletionSource],
+      activateOnTyping: true,
+      maxRenderedOptions: 50,
+    }),
+    lspHoverTooltip(),
+    lspGoToKeymap(),
+    lspDiagnosticsExtension(),
+    lspSync,
     highlightSelectionMatches(),
+    gitGutterExtension,
+    gitBlame,
     keymap.of([
       {
         key: "Mod-s",
@@ -98,21 +138,28 @@ function buildExtensions(
       ...foldKeymap,
       ...completionKeymap,
       ...commentKeymap,
-      indentWithTab,
+      indentWithTab as any,
     ]),
     EditorView.updateListener.of((update: ViewUpdate) => {
       if (update.docChanged) {
         const content = update.state.doc.toString();
         editorStore.updateTabContent(tabPath, content);
 
+        // Notify Tree-sitter worker of changes
+        telemetry.log("debug_editor_update", { length: content.length });
+        treeSitter.update(update);
+
         if (autoSaveTimerRef.current) {
           clearTimeout(autoSaveTimerRef.current);
         }
-        autoSaveTimerRef.current = setTimeout(() => {
-          saveFile(tabPath, content);
-        }, 1500);
+        if (settings.autoSave) {
+          autoSaveTimerRef.current = setTimeout(() => {
+            saveFile(tabPath, content);
+          }, 1500);
+        }
       }
     }),
+    behaviorTracking,
   ];
 
   if (langExt) {
@@ -168,6 +215,34 @@ export default function Editor() {
 
     if (!activeTab) return;
 
+    // Load Tree-sitter language
+    const dot = activeTab.name.lastIndexOf(".");
+    if (dot !== -1) {
+      const ext = activeTab.name.slice(dot + 1).toLowerCase();
+      // Simple mapping for now - enhance as needed
+      const langMap: Record<string, string> = {
+        ts: "typescript",
+        tsx: "tsx",
+        js: "javascript",
+        jsx: "javascript",
+        rs: "rust",
+        py: "python",
+        json: "json",
+        html: "html",
+        css: "css",
+        c: "c",
+        h: "c",
+        cpp: "cpp",
+        hpp: "cpp",
+        cc: "cpp",
+        cxx: "cpp",
+      };
+      const lang = langMap[ext];
+      if (lang) {
+        treeSitter.loadLanguage(lang, activeTab.content);
+      }
+    }
+
     const langExt = getLanguageExtension(activeTab.name);
     const extensions = buildExtensions(
       activeTab.path,
@@ -201,10 +276,39 @@ export default function Editor() {
     };
   }, [activeTabPath, saveFile, settings]);
 
+  // Git Gutter Update
+  const explorerPath = useEditorStore((s) => s.explorerPath);
+  useEffect(() => {
+    if (!viewRef.current || !activeTab || activeTab.isDiff || !explorerPath)
+      return;
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const diffs = await gitService.getLineDiff(
+          explorerPath,
+          activeTab.path,
+        );
+        if (!cancelled && viewRef.current) {
+          viewRef.current.dispatch({
+            effects: setGitDiff.of(diffs),
+          });
+        }
+      } catch (e) {
+        // Silently fail if not a git repo or other minor issue
+      }
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [activeTab?.path, activeTab?.content, explorerPath]);
+
   const hasActiveTab = activeTab !== null;
 
   return (
-    <div className="editor-root">
+    <div className="editor-root" onContextMenu={(e) => e.preventDefault()}>
       {!hasActiveTab && (
         <div className="editor-welcome">
           <div className="editor-welcome-inner">

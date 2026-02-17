@@ -11,6 +11,7 @@ import Welcome from "./components/welcome/Welcome";
 import SettingsPopup from "./components/settings/SettingsPopup";
 import TerminalPanel from "./components/terminal/TerminalPanel";
 import SuggestionToast from "./components/agent/SuggestionToast";
+import Browser from "./components/browser/Browser";
 import { editorStore, useEditorStore } from "./store/editor-store";
 import { ruleEngine } from "./services/agent/rule-engine";
 import { llmAgent } from "./services/agent/llm-agent";
@@ -20,6 +21,8 @@ import "./App.css";
 function App() {
   const explorerCollapsed = useEditorStore((s) => s.explorerCollapsed);
   const activeTabPath = useEditorStore((s) => s.activeTabPath);
+  const tabs = useEditorStore((s) => s.tabs);
+  const activeTab = tabs.find((t) => t.path === activeTabPath);
   const storeSidebarWidth = useEditorStore((s) => s.settings.sidebarWidth);
   const [sidebarWidth, setSidebarWidth] = useState(storeSidebarWidth);
   const isDraggingRef = useRef(false);
@@ -226,7 +229,9 @@ function App() {
               <>
                 <TabBar />
                 <div className="app-editor">
-                  {activeTabPath.startsWith("diff:") ? (
+                  {activeTab?.type === "browser" ? (
+                    <Browser />
+                  ) : activeTabPath.startsWith("diff:") ? (
                     <DiffEditor />
                   ) : (
                     <Editor />

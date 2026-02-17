@@ -15,6 +15,8 @@ export interface TabState {
   cursorPos: number;
   isDiff?: boolean;
   originalContent?: string;
+  type?: "editor" | "diff" | "browser";
+  url?: string;
 }
 
 export interface TerminalState {
@@ -288,7 +290,7 @@ export const editorStore = {
     this.openTab(path, "Untitled", "");
   },
 
-  openTab(path: string, name: string, content: string) {
+  openTab(path: string, name: string, content: string, type: "editor" | "browser" = "editor", url?: string) {
     if (state.tabs.find((t) => t.path === path)) {
       this.setActiveTab(path);
       return;
@@ -302,6 +304,8 @@ export const editorStore = {
       scrollTop: 0,
       scrollLeft: 0,
       cursorPos: 0,
+      type,
+      url,
     };
     dispatch(
       "OPEN_TAB",
@@ -312,7 +316,13 @@ export const editorStore = {
       { path, name },
     );
 
-    telemetry.log("file_open", { path, name });
+    telemetry.log("file_open", { path, name, type });
+  },
+
+  openBrowserTab(url: string) {
+    const id = crypto.randomUUID();
+    const path = `browser://${id}`;
+    this.openTab(path, "Browser", "", "browser", url);
   },
 
   async openDiff(path: string) {

@@ -40,6 +40,25 @@ pub struct FileEntry {
 }
 
 #[tauri::command]
+async fn open_browser_window(handle: tauri::AppHandle, target_url: String) -> Result<(), String> {
+    let window_label = format!("browser-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
+    
+    let url = tauri::Url::parse(&target_url).map_err(|e| e.to_string())?;
+
+    tauri::WebviewWindowBuilder::new(
+        &handle,
+        &window_label,
+        tauri::WebviewUrl::External(url)
+    )
+    .title("Browser")
+    .inner_size(1024.0, 768.0)
+    .build()
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
 fn log_telemetry_event(handle: tauri::AppHandle, event: String) -> Result<(), String> {
     use std::io::Write;
     use tauri::path::BaseDirectory;
@@ -295,6 +314,7 @@ pub fn run() {
             lsp::lsp_list,
             ripgrep_search,
             search_replace,
+            open_browser_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

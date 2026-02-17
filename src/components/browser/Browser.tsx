@@ -1,9 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import {
     RiArrowLeftLine,
     RiArrowRightLine,
+    RiGlobalLine,
     RiRefreshLine,
-    RiGlobalLine
+    RiExternalLinkLine
 } from "@remixicon/react";
 import { useEditorStore } from "../../store/editor-store";
 import "./browser.css";
@@ -15,7 +17,6 @@ export default function Browser() {
 
     const [url, setUrl] = useState(activeTab?.url || "https://google.com");
     const [inputUrl, setInputUrl] = useState(url);
-    const iframeRef = useRef<HTMLIFrameElement>(null);
 
     useEffect(() => {
         if (activeTab?.url) {
@@ -33,16 +34,17 @@ export default function Browser() {
         setInputUrl(target);
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter") {
-            handleNavigate();
+    const handleOpenNative = async () => {
+        try {
+            await invoke("open_browser_window", { targetUrl: url });
+        } catch (error) {
+            console.error("Failed to open browser window:", error);
         }
     };
 
-    const handleRefresh = () => {
-        if (iframeRef.current) {
-            // eslint-disable-next-line no-self-assign
-            iframeRef.current.src = iframeRef.current.src;
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter") {
+            handleNavigate();
         }
     };
 
@@ -51,39 +53,54 @@ export default function Browser() {
             <div className="browser-toolbar">
                 <button
                     className="browser-nav-btn"
-                    onClick={() => window.history.back()}
+                    onClick={() => { }} // Navigation inside iframe is limited due to CORS
                     title="Back"
+                    disabled
+                    style={{ opacity: 0.5, cursor: "not-allowed" }}
                 >
                     <RiArrowLeftLine size={16} />
                 </button>
                 <button
                     className="browser-nav-btn"
-                    onClick={() => window.history.forward()}
+                    onClick={() => { }} // Navigation inside iframe is limited due to CORS
                     title="Forward"
+                    disabled
+                    style={{ opacity: 0.5, cursor: "not-allowed" }}
                 >
                     <RiArrowRightLine size={16} />
                 </button>
                 <button
                     className="browser-nav-btn"
-                    onClick={handleRefresh}
+                    onClick={() => {
+                        const iframe = document.querySelector(".browser-iframe") as HTMLIFrameElement;
+                        if (iframe) iframe.src = iframe.src;
+                    }}
                     title="Refresh"
                 >
                     <RiRefreshLine size={16} />
                 </button>
+
                 <div className="browser-address-bar">
-                    <RiGlobalLine size={14} style={{ marginRight: 8, opacity: 0.7 }} />
+                    <RiGlobalLine size={14} style={{ marginRight: 8, opacity: 0.5 }} />
                     <input
                         className="browser-address-input"
                         value={inputUrl}
                         onChange={(e) => setInputUrl(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Search or enter website name"
+                        placeholder="Type a URL..."
                     />
                 </div>
+
+                <button
+                    className="browser-nav-btn"
+                    onClick={handleOpenNative}
+                    title="Open in Native Window"
+                >
+                    <RiExternalLinkLine size={16} />
+                </button>
             </div>
             <div className="browser-content">
                 <iframe
-                    ref={iframeRef}
                     src={url}
                     className="browser-iframe"
                     title="Browser"

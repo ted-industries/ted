@@ -1,6 +1,7 @@
 mod git;
 mod lsp;
 mod terminal;
+mod agent_browser;
 
 use lsp::LspState;
 use serde::Serialize;
@@ -315,6 +316,14 @@ pub fn run() {
             ripgrep_search,
             search_replace,
             open_browser_window,
+            agent_browser::agent_spawn,
+            agent_browser::agent_execute,
+            agent_browser::agent_click,
+            agent_browser::agent_type,
+            agent_browser::agent_get_content,
+            agent_browser::agent_scroll,
+            agent_browser::agent_hover,
+            agent_browser::agent_close,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

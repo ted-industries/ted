@@ -8,6 +8,7 @@ import {
     RiExternalLinkLine
 } from "@remixicon/react";
 import { useEditorStore } from "../../store/editor-store";
+import AgentDebug from "../agent/AgentDebug";
 import "./browser.css";
 
 export default function Browser() {
@@ -27,7 +28,7 @@ export default function Browser() {
 
     const handleNavigate = () => {
         let target = inputUrl;
-        if (!target.startsWith("http://") && !target.startsWith("https://")) {
+        if (!target.startsWith("http://") && !target.startsWith("https://") && !target.startsWith("agent:")) {
             target = `https://${target}`;
         }
         setUrl(target);
@@ -100,12 +101,16 @@ export default function Browser() {
                 </button>
             </div>
             <div className="browser-content">
-                <iframe
-                    src={url}
-                    className="browser-iframe"
-                    title="Browser"
-                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                />
+                {url === "agent:debug" ? (
+                    <AgentDebug />
+                ) : (
+                    <iframe
+                        src={url}
+                        className="browser-iframe"
+                        title="Browser"
+                        sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                    />
+                )}
             </div>
         </div>
     );

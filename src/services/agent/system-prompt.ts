@@ -78,7 +78,7 @@ Find files matching a glob pattern.
 \`\`\`
 
 ### run_terminal_cmd
-Suggest a terminal command for the user to run.
+Execute a terminal command. Use this to run tests, git commands, or file operations.
 
 \`\`\`tool
 {"tool": "run_terminal_cmd", "args": {"command": "npm test"}}

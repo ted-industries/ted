@@ -128,7 +128,15 @@ export async function executeTool(call: ToolCall, cwd: string): Promise<string> 
         }
 
         if (t === "run_terminal_cmd") {
-            return `Terminal commands are not yet supported in the ted agent. Please run manually: ${a.command}`;
+            const res: { stdout: string; stderr: string; exit_code: number } = await invoke("run_shell_cmd", {
+                command: a.command,
+                cwd,
+            });
+
+            if (res.exit_code !== 0) {
+                return `Command failed (exit code ${res.exit_code}):\n${res.stderr}\n${res.stdout}`;
+            }
+            return res.stdout ? truncate(res.stdout, 10000) : "Command completed with no output.";
         }
 
         if (t === "file_search") {

@@ -238,6 +238,38 @@ fn ripgrep_search(query: String, cwd: String, case_sensitive: bool, regex: bool,
     Ok(results)
 }
 
+#[derive(Serialize)]
+struct ShellResult {
+    stdout: String,
+    stderr: String,
+    exit_code: i32,
+}
+
+#[tauri::command]
+async fn run_shell_cmd(command: String, cwd: String) -> Result<ShellResult, String> {
+    let output = if cfg!(target_os = "windows") {
+        tokio::process::Command::new("cmd")
+            .args(["/C", &command])
+            .current_dir(&cwd)
+            .output()
+            .await
+    } else {
+        tokio::process::Command::new("sh")
+            .arg("-c")
+            .arg(&command)
+            .current_dir(&cwd)
+            .output()
+            .await
+    }
+    .map_err(|e| format!("Failed to execute command: {}", e))?;
+
+    Ok(ShellResult {
+        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
+        stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+        exit_code: output.status.code().unwrap_or(-1),
+    })
+}
+
 #[tauri::command]
 fn search_replace(file_path: String, search: String, replace: String, all: bool) -> Result<u32, String> {
     let content = fs::read_to_string(&file_path).map_err(|e| e.to_string())?;
@@ -314,6 +346,7 @@ pub fn run() {
             lsp::lsp_stop,
             lsp::lsp_list,
             ripgrep_search,
+            run_shell_cmd,
             search_replace,
             open_browser_window,
             agent_browser::agent_spawn,

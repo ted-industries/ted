@@ -50,7 +50,11 @@ pub async fn exec_background_cmd(
         c
     };
 
-    cmd.current_dir(&cwd);
+
+
+    if !cwd.is_empty() {
+        cmd.current_dir(&cwd);
+    }
     cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());
 

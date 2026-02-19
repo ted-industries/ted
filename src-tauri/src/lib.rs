@@ -178,8 +178,11 @@ fn ripgrep_search(query: String, cwd: String, case_sensitive: bool, regex: bool,
     let mut cmd = std::process::Command::new("rg");
     cmd.arg("--json")
         .arg("--max-count").arg("100")  // max matches per file
-        .arg("--max-filesize").arg("1M")
-        .current_dir(&cwd);
+        .arg("--max-filesize").arg("1M");
+    
+    if !cwd.is_empty() {
+        cmd.current_dir(&cwd);
+    }
 
     if !case_sensitive {
         cmd.arg("--ignore-case");
@@ -249,21 +252,22 @@ struct ShellResult {
 
 #[tauri::command]
 async fn run_shell_cmd(command: String, cwd: String) -> Result<ShellResult, String> {
-    let output = if cfg!(target_os = "windows") {
-        tokio::process::Command::new("cmd")
-            .args(["/C", &command])
-            .current_dir(&cwd)
-            .output()
-            .await
+    let mut cmd = if cfg!(target_os = "windows") {
+        let mut c = tokio::process::Command::new("cmd");
+        c.args(["/C", &command]);
+        c
     } else {
-        tokio::process::Command::new("sh")
-            .arg("-c")
-            .arg(&command)
-            .current_dir(&cwd)
-            .output()
-            .await
+        let mut c = tokio::process::Command::new("sh");
+        c.arg("-c").arg(&command);
+        c
+    };
+
+    if !cwd.is_empty() {
+        cmd.current_dir(&cwd);
     }
-    .map_err(|e| format!("Failed to execute command: {}", e))?;
+    
+    let output = cmd.output().await
+        .map_err(|e| format!("Failed to execute command: {}", e))?;
 
     Ok(ShellResult {
         stdout: String::from_utf8_lossy(&output.stdout).to_string(),

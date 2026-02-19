@@ -114,6 +114,7 @@ interface EditorStoreState {
     };
   };
   logs: ActionLog[];
+  agentHistory: { role: "user" | "assistant" | "system"; content: string }[];
 }
 
 type Listener = () => void;
@@ -171,6 +172,7 @@ let state: EditorStoreState = {
     },
   },
   logs: [],
+  agentHistory: [],
 };
 
 const MAX_LOGS = 1000;
@@ -569,6 +571,14 @@ export const editorStore = {
 
     // Dispatch a custom event that the UI can listen to
     window.dispatchEvent(new CustomEvent("agent-request", { detail: msg }));
+  },
+
+  updateAgentHistory(history: { role: "user" | "assistant" | "system"; content: string }[]) {
+    dispatch("UPDATE_AGENT_HISTORY", { agentHistory: history });
+  },
+
+  clearAgentHistory() {
+    dispatch("UPDATE_AGENT_HISTORY", { agentHistory: [] });
   },
 };
 

@@ -28,7 +28,7 @@ export default function Welcome() {
             <div className="welcome-content">
                 <div className="welcome-header">
                     <div className="welcome-logo">
-                        <img src="/tauri.svg" alt="ted" />
+                        <img src="/ted.svg" alt="ted" />
                     </div>
                     <div className="welcome-title-group">
                         <h1>Welcome to ted</h1>

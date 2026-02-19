@@ -135,6 +135,9 @@ export async function runAgentLoop(
         });
 
         messages.push({ role: "user", content: `Tool result for ${toolCall.tool}:\n${truncResult}` });
+
+        // Wait a bit to avoid rate limits
+        await new Promise((resolve) => setTimeout(resolve, 2000));
     }
 
     if (!finalResponse) {

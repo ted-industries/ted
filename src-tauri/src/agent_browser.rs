@@ -136,40 +136,82 @@ pub async fn agent_type(handle: tauri::AppHandle, label: String, selector: Strin
 }
 
 // Robust content extraction using title-hacking for data return
+
+    
 #[tauri::command]
 pub async fn agent_get_content(handle: tauri::AppHandle, label: String) -> Result<String, String> {
     let window = get_window(&handle, &label).ok_or("Window not found")?;
     
-    // 1. Inject script to set title to content
-    // We prefix with AGENT_RES: to detect it
+    // Script to extract content via URL Hash
+    // We modify window.location.hash which is accessible via window.url() in Rust.
+    // This bypasses CSP and Title Sync issues.
     let script = r#"
         (function() {
-            const content = document.body.innerText;
-            // Limit length to avoid OS issues, maybe truncate
-            const safeContent = content.substring(0, 5000).replace(/\n/g, " "); 
-            document.title = "AGENT_RES:" + safeContent;
+            try {
+                if (!document.body) return;
+                
+                const content = document.body.innerText || "";
+                // Limit length to ~4000 to avoid URL length issues
+                const safeContent = content.substring(0, 4000); 
+                const payload = encodeURIComponent(safeContent);
+                
+                // Use history API to avoid scrolling to hash or triggering listeners if possible
+                // But simple hash set is more robust across frames
+                // window.location.hash = "AGENT_RES=" + payload;
+                
+                // Construct new URL with hash
+                const newUrl = new URL(window.location.href);
+                newUrl.hash = "AGENT_RES=" + payload;
+                
+                // Replace state to avoid history pollution
+                history.replaceState(null, '', newUrl.toString());
+            } catch (e) {
+                // Report error via hash
+                const newUrl = new URL(window.location.href);
+                newUrl.hash = "AGENT_RES=__ERROR__" + encodeURIComponent(e.toString());
+                history.replaceState(null, '', newUrl.toString());
+            }
         })();
     "#;
     
-    window.eval(script).map_err(|e| e.to_string())?;
-
-    // 2. Poll for title change
     let start = Instant::now();
-    let timeout = Duration::from_secs(5);
+    let timeout = Duration::from_secs(20);
     
     while start.elapsed() < timeout {
-        let title = window.title().unwrap_or_default();
-        if title.starts_with("AGENT_RES:") {
-            // Restore title? Optional.
-            // window.set_title("Agent Browser").unwrap();
-            
-            let content = title.trim_start_matches("AGENT_RES:").to_string();
-            return Ok(content);
+        // Continuously inject
+        if let Err(e) = window.eval(script) {
+             eprintln!("eval error: {}", e);
         }
-        tokio::time::sleep(Duration::from_millis(100)).await;
+
+        // Check URL
+        if let Ok(url) = window.url() {
+            let url_str = url.to_string();
+            if let Some(pos) = url_str.find("#AGENT_RES=") {
+                let raw = &url_str[pos + "#AGENT_RES=".len()..];
+                
+                if raw.starts_with("__ERROR__") {
+                    let err_msg = urlencoding::decode(&raw.trim_start_matches("__ERROR__"))
+                        .map(|s| s.into_owned())
+                        .unwrap_or_else(|_| raw.to_string());
+                    return Err(format!("JS Error collecting content: {}", err_msg));
+                }
+
+                // Decode
+                let decoded = urlencoding::decode(raw)
+                    .map(|s| s.into_owned())
+                    .unwrap_or_else(|_| raw.to_string());
+                
+                // Cleanup hash?
+                let _ = window.eval("history.replaceState(null, '', window.location.pathname + window.location.search);");
+                
+                return Ok(decoded);
+            }
+        }
+        
+        tokio::time::sleep(Duration::from_millis(500)).await;
     }
 
-    Err("Timeout waiting for content".to_string())
+    Err("Timeout waiting for content. URL hash did not update.".to_string())
 }
 
 #[tauri::command]

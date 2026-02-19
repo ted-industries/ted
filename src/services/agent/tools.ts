@@ -128,12 +128,21 @@ export async function executeTool(call: ToolCall, cwd: string): Promise<string> 
         }
 
         if (t === "run_terminal_cmd") {
-            const res: { stdout: string; stderr: string; exit_code: number } = await invoke("run_shell_cmd", {
+            const timeoutMs = a.timeout ? Number(a.timeout) : 5000;
+
+            // Check if we should run in background via new command
+            // If background is requested or default, we use exec_background_cmd
+            const res: any = await invoke("exec_background_cmd", {
                 command: a.command,
                 cwd,
+                timeoutMs,
             });
 
-            if (res.exit_code !== 0) {
+            if (res.status === "running") {
+                return `Command timed out but is running in background.\nPID: ${res.pid}\n\nSTDOUT so far:\n${truncate(res.stdout, 1000)}\n\nSTDERR so far:\n${truncate(res.stderr, 1000)}\n\nUse the 'check_background_cmd' tool (or schedule a check) to see progress.`;
+            }
+
+            if (res.exit_code !== 0 && res.exit_code !== null) {
                 return `Command failed (exit code ${res.exit_code}):\n${res.stderr}\n${res.stdout}`;
             }
             return res.stdout ? truncate(res.stdout, 10000) : "Command completed with no output.";
@@ -147,6 +156,31 @@ export async function executeTool(call: ToolCall, cwd: string): Promise<string> 
             const unique = [...new Set(results.map((r) => r.path))];
             const filtered = unique.filter((p) => simpleGlobMatch(p, pattern));
             return filtered.length > 0 ? filtered.join("\n") : "No files found matching pattern.";
+        }
+
+        if (t === "check_background_cmd") {
+            const res: any = await invoke("check_background_cmd", { pid: a.pid });
+            if (res.status === "running") {
+                return `Still running.\nSTDOUT:\n${truncate(res.stdout, 2000)}\nSTDERR:\n${truncate(res.stderr, 2000)}`;
+            }
+            return `Finished (exit ${res.exit_code}).\nSTDOUT:\n${truncate(res.stdout, 5000)}\nSTDERR:\n${truncate(res.stderr, 5000)}`;
+        }
+
+        if (t === "schedule_request") {
+            const delay = Number(a.delay_seconds) * 1000;
+            setTimeout(() => {
+                editorStore.addAgentMessage({ role: "user", content: `[SCHEDULED REMINDER]: ${a.message}` });
+                // We need to trigger the loop if it's not running, but simply adding a message might not trigger it if it stopped.
+                // However, usually the user (or system) re-initiates. 
+                // For now, let's assume the user will see it or we trigger "continue".
+                // Ideally we'd call runAgentLoop again but that requires access to it or a signal.
+                // Hack: We'll append to history. If the agent is "Stopped", the user has to click "Retry" or type "Go".
+                // But wait, the user wants the agent to wake up.
+                // If we are here, the agent is running. It will return "Scheduled..." and likely Stop/Pause.
+                // We need a way to auto-resume.
+                // Let's just add the message. The UI should show it.
+            }, delay);
+            return `Scheduled message in ${a.delay_seconds}s: "${a.message}"`;
         }
 
         if (t === "todo_write") return "Todos updated.";

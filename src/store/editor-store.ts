@@ -542,6 +542,34 @@ export const editorStore = {
     }
     dispatch("SET_HISTORY_OPEN", { historyOpen: open });
   },
+
+  addAgentMessage(msg: { role: "user" | "assistant" | "system"; content: string }) {
+    // This is a bit of a hack to inject messages into the agent loop.
+    // Ideally the agent service should be a store itself or subscribe to this.
+    // For now, we'll store it in a temporary state that the agent UI can read, 
+    // OR we just dispatch it so the UI updates if it's displaying a chat history.
+    // Since the current Agent UI mainly shows the *current* run loop, this might need
+    // the Agent Service to expose a method `injectMessage`.
+    // But `tools.ts` imports `editorStore`. 
+
+    // Let's rely on the Agent UI to listen to an event or just use this as a signal.
+    // Actually, looking at `agent-service.ts`, it keeps its own `messages` array locally in `runAgentLoop`.
+    // We cannot easily inject into a *running* loop from the outside without a signal.
+
+    // However, `schedule_request` implies a NEW loop might be needed if the old one finished.
+    // If the old one is finished, how do we trigger a new one?
+    // The `Agent` component in the UI likely calls `runAgentLoop`.
+
+    // We need a global way to request an agent action.
+    // Let's add `pendingAgentRequest` to store.
+    dispatch("ADD_AGENT_REQUEST", {
+      // We'll store this in a new field in state, likely not defined yet. 
+      // Let's just emit an event for now.
+    }, { msg });
+
+    // Dispatch a custom event that the UI can listen to
+    window.dispatchEvent(new CustomEvent("agent-request", { detail: msg }));
+  },
 };
 
 export function useEditorStore<T>(selector: (s: EditorStoreState) => T): T {

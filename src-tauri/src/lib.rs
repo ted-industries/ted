@@ -2,6 +2,7 @@ mod git;
 mod lsp;
 mod terminal;
 mod agent_browser;
+mod background_cmd;
 
 use lsp::LspState;
 use serde::Serialize;
@@ -11,6 +12,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use tauri::Manager;
 use terminal::TerminalState;
+use background_cmd::ProcessState;
 
 const IGNORED_DIRS: &[&str] = &[
     "node_modules",
@@ -316,6 +318,9 @@ pub fn run() {
         .manage(LspState {
             sessions: Arc::new(Mutex::new(HashMap::new())),
         })
+        .manage(ProcessState {
+             processes: Arc::new(Mutex::new(HashMap::new())),
+        })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
@@ -357,6 +362,9 @@ pub fn run() {
             agent_browser::agent_scroll,
             agent_browser::agent_hover,
             agent_browser::agent_close,
+            background_cmd::exec_background_cmd,
+            background_cmd::check_background_cmd,
+            background_cmd::kill_background_cmd,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

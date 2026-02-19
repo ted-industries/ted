@@ -1,6 +1,6 @@
 use tauri::{Manager, Emitter};
 use std::time::{Duration, Instant};
-use std::thread;
+
 
 // Helper to find a window by label
 fn get_window(handle: &tauri::AppHandle, label: &str) -> Option<tauri::WebviewWindow> {

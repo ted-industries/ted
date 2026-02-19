@@ -79,9 +79,24 @@ Find files matching a glob pattern.
 
 ### run_terminal_cmd
 Execute a terminal command. Use this to run tests, git commands, or file operations.
+Optional \`timeout\` (ms). If it times out, it runs in background and returns a PID.
 
 \`\`\`tool
-{"tool": "run_terminal_cmd", "args": {"command": "npm test"}}
+{"tool": "run_terminal_cmd", "args": {"command": "npm install", "timeout": 5000}}
+\`\`\`
+
+### check_background_cmd
+Check status of a background command.
+
+\`\`\`tool
+{"tool": "check_background_cmd", "args": {"pid": "..."}}
+\`\`\`
+
+### schedule_request
+Schedule a message to be sent to yourself in the future (e.g., to check status).
+
+\`\`\`tool
+{"tool": "schedule_request", "args": {"delay_seconds": 10, "message": "Check status of PID ..."}}
 \`\`\`
 
 ## Browser Tools

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { runAgentLoop, AgentUpdate } from "../../services/agent/agent-service";
+import { editorStore, useEditorStore } from "../../store/editor-store";
 import "./AgentsPanel.css";
 
 interface Trace {
@@ -89,6 +90,8 @@ export default function AgentsPanel() {
         ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
     }, [input, expanded]);
 
+
+
     const send = useCallback(async () => {
         const text = input.trim();
         if (!text || loading) return;
@@ -97,10 +100,12 @@ export default function AgentsPanel() {
             ? `[Attached: ${attachments.join(", ")}]\n\n`
             : "";
 
+        const fullMessage = contextPrefix + text;
+
         setInput("");
         setAttachments([]);
         setExpanded(false);
-        setMessages((prev) => [...prev, { role: "user", text: contextPrefix + text }]);
+        setMessages((prev) => [...prev, { role: "user", text: fullMessage }]);
         setLoading(true);
         setStatus("");
         setLiveTraces([]);
@@ -125,11 +130,25 @@ export default function AgentsPanel() {
         };
 
         try {
-            const reply = await runAgentLoop(contextPrefix + text, onUpdate, controller.signal);
+            // Pass the current store history
+            // We use editorStore.getState() to get the freshest value without closure staleness if we used the hook value inside useCallback without dep
+            const currentHistory = editorStore.getState().agentHistory || [];
+
+            const { text: reply, history: newHistory } = await runAgentLoop(
+                fullMessage,
+                currentHistory,
+                onUpdate,
+                controller.signal
+            );
+
             setMessages((prev) => [
                 ...prev,
                 { role: "agent", text: reply, traces: traces.length > 0 ? [...traces] : undefined },
             ]);
+
+            // Update store with new history
+            editorStore.updateAgentHistory(newHistory);
+
         } catch (e: any) {
             if (e.message !== "Aborted") {
                 setMessages((prev) => [
@@ -143,7 +162,7 @@ export default function AgentsPanel() {
             setLiveTraces([]);
             abortRef.current = null;
         }
-    }, [input, loading, attachments]);
+    }, [input, loading, attachments]); // Removed agentHistory from deps, getting from getState()
 
     const handleKey = useCallback(
         (e: React.KeyboardEvent) => {
@@ -265,6 +284,22 @@ export default function AgentsPanel() {
                             <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
                         </svg>
                     </button>
+                    {/* HIDING THIS FOR NOW: need some better placement, figure out later
+                    
+                    <button
+                        className="agent-input-btn"
+                        onClick={() => {
+                            editorStore.clearAgentHistory();
+                            setMessages([]);
+                        }}
+                        disabled={loading}
+                        title="clear history"
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                    </button> */}
                     {loading ? (
                         <button className="agent-stop" onClick={handleStop}>stop</button>
                     ) : (

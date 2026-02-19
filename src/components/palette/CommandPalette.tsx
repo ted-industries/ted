@@ -105,6 +105,14 @@ export default function CommandPalette() {
             id: "reload-window",
             label: "developer: reload window",
             action: () => window.location.reload(),
+        },
+        {
+            id: "open-browser",
+            label: "browser: open new tab",
+            shortcut: "Ctrl+Shift+B",
+            action: () => {
+                editorStore.openBrowserTab("https://www.google.com");
+            },
         }
     ], []);
 

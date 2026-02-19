@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-    RiCheckLine,
     RiAddLine,
     RiSubtractLine,
-    RiArrowRightSLine,
     RiArrowDownSLine,
     RiGitBranchLine,
     RiRefreshLine

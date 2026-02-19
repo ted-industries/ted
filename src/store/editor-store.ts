@@ -15,6 +15,8 @@ export interface TabState {
   cursorPos: number;
   isDiff?: boolean;
   originalContent?: string;
+  type?: "editor" | "diff" | "browser";
+  url?: string;
 }
 
 export interface TerminalState {
@@ -112,6 +114,7 @@ interface EditorStoreState {
     };
   };
   logs: ActionLog[];
+  agentHistory: { role: "user" | "assistant" | "system"; content: string }[];
 }
 
 type Listener = () => void;
@@ -169,6 +172,7 @@ let state: EditorStoreState = {
     },
   },
   logs: [],
+  agentHistory: [],
 };
 
 const MAX_LOGS = 1000;
@@ -288,7 +292,7 @@ export const editorStore = {
     this.openTab(path, "Untitled", "");
   },
 
-  openTab(path: string, name: string, content: string) {
+  openTab(path: string, name: string, content: string, type: "editor" | "browser" = "editor", url?: string) {
     if (state.tabs.find((t) => t.path === path)) {
       this.setActiveTab(path);
       return;
@@ -302,6 +306,8 @@ export const editorStore = {
       scrollTop: 0,
       scrollLeft: 0,
       cursorPos: 0,
+      type,
+      url,
     };
     dispatch(
       "OPEN_TAB",
@@ -312,7 +318,13 @@ export const editorStore = {
       { path, name },
     );
 
-    telemetry.log("file_open", { path, name });
+    telemetry.log("file_open", { path, name, type });
+  },
+
+  openBrowserTab(url: string) {
+    const id = crypto.randomUUID();
+    const path = `browser://${id}`;
+    this.openTab(path, "Browser", "", "browser", url);
   },
 
   async openDiff(path: string) {
@@ -531,6 +543,42 @@ export const editorStore = {
       this.setTerminalOpen(true);
     }
     dispatch("SET_HISTORY_OPEN", { historyOpen: open });
+  },
+
+  addAgentMessage(msg: { role: "user" | "assistant" | "system"; content: string }) {
+    // This is a bit of a hack to inject messages into the agent loop.
+    // Ideally the agent service should be a store itself or subscribe to this.
+    // For now, we'll store it in a temporary state that the agent UI can read, 
+    // OR we just dispatch it so the UI updates if it's displaying a chat history.
+    // Since the current Agent UI mainly shows the *current* run loop, this might need
+    // the Agent Service to expose a method `injectMessage`.
+    // But `tools.ts` imports `editorStore`. 
+
+    // Let's rely on the Agent UI to listen to an event or just use this as a signal.
+    // Actually, looking at `agent-service.ts`, it keeps its own `messages` array locally in `runAgentLoop`.
+    // We cannot easily inject into a *running* loop from the outside without a signal.
+
+    // However, `schedule_request` implies a NEW loop might be needed if the old one finished.
+    // If the old one is finished, how do we trigger a new one?
+    // The `Agent` component in the UI likely calls `runAgentLoop`.
+
+    // We need a global way to request an agent action.
+    // Let's add `pendingAgentRequest` to store.
+    dispatch("ADD_AGENT_REQUEST", {
+      // We'll store this in a new field in state, likely not defined yet. 
+      // Let's just emit an event for now.
+    }, { msg });
+
+    // Dispatch a custom event that the UI can listen to
+    window.dispatchEvent(new CustomEvent("agent-request", { detail: msg }));
+  },
+
+  updateAgentHistory(history: { role: "user" | "assistant" | "system"; content: string }[]) {
+    dispatch("UPDATE_AGENT_HISTORY", { agentHistory: history });
+  },
+
+  clearAgentHistory() {
+    dispatch("UPDATE_AGENT_HISTORY", { agentHistory: [] });
   },
 };
 

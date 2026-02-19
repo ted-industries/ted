@@ -26,7 +26,7 @@ export default function Titlebar() {
     return (
         <div className="titlebar">
             <div data-tauri-drag-region className="titlebar-left">
-                <img data-tauri-drag-region src="/tauri.svg" alt="ted" className="titlebar-icon" />
+                <img data-tauri-drag-region src="/ted.svg" alt="ted" className="titlebar-icon" />
                 <span data-tauri-drag-region className="titlebar-title">ted</span>
             </div>
             <div data-tauri-drag-region className="titlebar-spacer" />

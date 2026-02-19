@@ -1,6 +1,8 @@
 mod git;
 mod lsp;
 mod terminal;
+mod agent_browser;
+mod background_cmd;
 
 use lsp::LspState;
 use serde::Serialize;
@@ -10,6 +12,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use tauri::Manager;
 use terminal::TerminalState;
+use background_cmd::ProcessState;
 
 const IGNORED_DIRS: &[&str] = &[
     "node_modules",
@@ -37,6 +40,25 @@ pub struct FileEntry {
     pub name: String,
     pub path: String,
     pub is_dir: bool,
+}
+
+#[tauri::command]
+async fn open_browser_window(handle: tauri::AppHandle, target_url: String) -> Result<(), String> {
+    let window_label = format!("browser-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
+    
+    let url = tauri::Url::parse(&target_url).map_err(|e| e.to_string())?;
+
+    tauri::WebviewWindowBuilder::new(
+        &handle,
+        &window_label,
+        tauri::WebviewUrl::External(url)
+    )
+    .title("Browser")
+    .inner_size(1024.0, 768.0)
+    .build()
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -156,8 +178,11 @@ fn ripgrep_search(query: String, cwd: String, case_sensitive: bool, regex: bool,
     let mut cmd = std::process::Command::new("rg");
     cmd.arg("--json")
         .arg("--max-count").arg("100")  // max matches per file
-        .arg("--max-filesize").arg("1M")
-        .current_dir(&cwd);
+        .arg("--max-filesize").arg("1M");
+    
+    if !cwd.is_empty() {
+        cmd.current_dir(&cwd);
+    }
 
     if !case_sensitive {
         cmd.arg("--ignore-case");
@@ -218,6 +243,39 @@ fn ripgrep_search(query: String, cwd: String, case_sensitive: bool, regex: bool,
     Ok(results)
 }
 
+#[derive(Serialize)]
+struct ShellResult {
+    stdout: String,
+    stderr: String,
+    exit_code: i32,
+}
+
+#[tauri::command]
+async fn run_shell_cmd(command: String, cwd: String) -> Result<ShellResult, String> {
+    let mut cmd = if cfg!(target_os = "windows") {
+        let mut c = tokio::process::Command::new("cmd");
+        c.args(["/C", &command]);
+        c
+    } else {
+        let mut c = tokio::process::Command::new("sh");
+        c.arg("-c").arg(&command);
+        c
+    };
+
+    if !cwd.is_empty() {
+        cmd.current_dir(&cwd);
+    }
+    
+    let output = cmd.output().await
+        .map_err(|e| format!("Failed to execute command: {}", e))?;
+
+    Ok(ShellResult {
+        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
+        stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+        exit_code: output.status.code().unwrap_or(-1),
+    })
+}
+
 #[tauri::command]
 fn search_replace(file_path: String, search: String, replace: String, all: bool) -> Result<u32, String> {
     let content = fs::read_to_string(&file_path).map_err(|e| e.to_string())?;
@@ -264,6 +322,9 @@ pub fn run() {
         .manage(LspState {
             sessions: Arc::new(Mutex::new(HashMap::new())),
         })
+        .manage(ProcessState {
+             processes: Arc::new(Mutex::new(HashMap::new())),
+        })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
@@ -294,7 +355,20 @@ pub fn run() {
             lsp::lsp_stop,
             lsp::lsp_list,
             ripgrep_search,
+            run_shell_cmd,
             search_replace,
+            open_browser_window,
+            agent_browser::agent_spawn,
+            agent_browser::agent_execute,
+            agent_browser::agent_click,
+            agent_browser::agent_type,
+            agent_browser::agent_get_content,
+            agent_browser::agent_scroll,
+            agent_browser::agent_hover,
+            agent_browser::agent_close,
+            background_cmd::exec_background_cmd,
+            background_cmd::check_background_cmd,
+            background_cmd::kill_background_cmd,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,6 +1,9 @@
-# ted
+<div align="center">
+  <img src="./public/app-icon.png" width="120" height="120" alt="ted icon" />
+  <h1>ted</h1>
+</div>
 
-minimal code editor for agents
+minimalist code editor for agents
 
 ---
 

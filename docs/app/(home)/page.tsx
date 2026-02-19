@@ -172,10 +172,17 @@ export default function HomePage() {
 
       <div className="relative z-10 flex flex-col items-center gap-12 md:gap-20 px-6 max-w-5xl w-full">
         {/* Hero Section */}
-        <div className="flex flex-col items-center gap-4 text-center">
+        <div className="flex flex-col items-center gap-6 text-center">
+          <img
+            src="/app-icon.png"
+            alt="ted icon"
+            width={120}
+            height={120}
+            className="rounded-3xl shadow-2xl shadow-black/50"
+          />
           <h1 className="text-6xl font-bold tracking-tighter text-white">ted</h1>
           <p className="text-neutral-400 text-sm font-mono tracking-wide">
-            minimal code editor for agents
+            minimalist code editor for agents
           </p>
         </div>
 

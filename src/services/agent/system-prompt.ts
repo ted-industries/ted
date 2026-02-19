@@ -78,10 +78,79 @@ Find files matching a glob pattern.
 \`\`\`
 
 ### run_terminal_cmd
-Suggest a terminal command for the user to run.
+Execute a terminal command. Use this to run tests, git commands, or file operations.
+Optional \`timeout\` (ms). If it times out, it runs in background and returns a PID.
 
 \`\`\`tool
-{"tool": "run_terminal_cmd", "args": {"command": "npm test"}}
+{"tool": "run_terminal_cmd", "args": {"command": "npm install", "timeout": 5000}}
+\`\`\`
+
+### check_background_cmd
+Check status of a background command.
+
+\`\`\`tool
+{"tool": "check_background_cmd", "args": {"pid": "..."}}
+\`\`\`
+
+### schedule_request
+Schedule a message to be sent to yourself in the future (e.g., to check status).
+
+\`\`\`tool
+{"tool": "schedule_request", "args": {"delay_seconds": 10, "message": "Check status of PID ..."}}
+\`\`\`
+
+## Browser Tools
+
+Use these tools to verify your changes, test web UI, or read documentation.
+When you open a browser, you get a \`label\` (e.g., "agent-uuid"). Use this label for subsequent commands.
+
+### browser_open
+Open a new browser window. Returns the window \`label\`.
+
+\`\`\`tool
+{"tool": "browser_open", "args": {"url": "https://localhost:3000"}}
+\`\`\`
+
+### browser_click
+Click an element.
+
+\`\`\`tool
+{"tool": "browser_click", "args": {"label": "window-label", "selector": "button#submit"}}
+\`\`\`
+
+### browser_type
+Type text into an element.
+
+\`\`\`tool
+{"tool": "browser_type", "args": {"label": "window-label", "selector": "input[name='q']", "text": "search query"}}
+\`\`\`
+
+### browser_scroll
+Scroll an element into view.
+
+\`\`\`tool
+{"tool": "browser_scroll", "args": {"label": "window-label", "selector": "footer"}}
+\`\`\`
+
+### browser_hover
+Hover over an element (dispatch mouseenter/mouseover).
+
+\`\`\`tool
+{"tool": "browser_hover", "args": {"label": "window-label", "selector": ".tooltip-trigger"}}
+\`\`\`
+
+### browser_read
+Read the text content of the page.
+
+\`\`\`tool
+{"tool": "browser_read", "args": {"label": "window-label"}}
+\`\`\`
+
+### browser_close
+Close the browser window.
+
+\`\`\`tool
+{"tool": "browser_close", "args": {"label": "window-label"}}
 \`\`\`
 
 ## Guidelines

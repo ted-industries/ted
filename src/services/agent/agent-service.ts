@@ -81,9 +81,10 @@ const MAX_ITERATIONS = 15;
 
 export async function runAgentLoop(
     userMessage: string,
+    history: ChatMessage[],
     onUpdate: AgentUpdateCallback,
     signal?: AbortSignal,
-): Promise<string> {
+): Promise<{ text: string; history: ChatMessage[] }> {
     const config = editorStore.getState().settings.llm as LLMConfig;
     const provider = providers[config.provider];
     if (!provider) throw new Error("No LLM provider configured");
@@ -91,8 +92,18 @@ export async function runAgentLoop(
     const cwd = editorStore.getState().explorerPath || "";
     const context = buildEditorContext();
 
+    // Context is only added to the LATEST message if it's the first time or if requested?
+    // Actually, usually we want context to be available. 
+    // But if we append context to every user message in history, token count explodes.
+    // Strategy: 
+    // 1. System Prompt
+    // 2. History (without huge contexts)
+    // 3. Current User Message + Context
+
+    // We assume 'history' passed in matches `ChatMessage[]`.
     const messages: ChatMessage[] = [
         { role: "system", content: SYSTEM_PROMPT },
+        ...history,
         {
             role: "user",
             content: context
@@ -102,6 +113,20 @@ export async function runAgentLoop(
     ];
 
     let finalResponse = "";
+
+    // We only want to append the interaction to the history we return
+    // The history we return should NOT include the system prompt, but should include the new user msg + assistant response.
+    // The `messages` array above includes system prompt.
+    // We'll track the *new blocks* added.
+
+    // Actually, `messages` mutates as we go. We can just slice off the system prompt at the end?
+    // But verify if intermediate tool calls are part of "history".
+    // Usually, for a chat history UI, we might collapse tool calls.
+    // But for LLM context, it needs them if they happened *in this turn*.
+    // For *next turn*, do we keep tool calls?
+    // Anthropic recommends keeping them. OpenAI requires them if they were part of the chain.
+    // However, eventually context limit hits.
+    // For now, let's keep everything in the returned history for this session.
 
     for (let i = 0; i < MAX_ITERATIONS; i++) {
         if (signal?.aborted) throw new Error("Aborted");
@@ -113,6 +138,8 @@ export async function runAgentLoop(
 
         if (!toolCall) {
             finalResponse = response;
+            // Add final response to messages
+            messages.push({ role: "assistant", content: response });
             break;
         }
 
@@ -135,13 +162,23 @@ export async function runAgentLoop(
         });
 
         messages.push({ role: "user", content: `Tool result for ${toolCall.tool}:\n${truncResult}` });
+
+        // Wait a bit to avoid rate limits
+        await new Promise((resolve) => setTimeout(resolve, 2000));
     }
 
     if (!finalResponse) {
         finalResponse = "Reached maximum iterations. The task may be partially complete.";
+        messages.push({ role: "assistant", content: finalResponse });
     }
 
-    return stripToolBlocks(finalResponse);
+    // Return history without system prompt
+    const newHistory = messages.filter(m => m.role !== "system");
+
+    return {
+        text: stripToolBlocks(finalResponse),
+        history: newHistory
+    };
 }
 
 // ---------------------------------------------------------------------------

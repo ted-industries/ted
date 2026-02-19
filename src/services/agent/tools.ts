@@ -4,6 +4,7 @@
 
 import { invoke } from "@tauri-apps/api/core";
 import { editorStore } from "../../store/editor-store";
+import { agentDriver } from "../agent-driver";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -142,7 +143,44 @@ export async function executeTool(call: ToolCall, cwd: string): Promise<string> 
 
         if (t === "todo_write") return "Todos updated.";
 
-        return `Unknown tool: ${t}. Available: read_file, edit_file, grep, codebase_search, list_dir, file_search, delete_file, run_terminal_cmd`;
+        // --- Browser Tools ---
+
+        if (t === "browser_open") {
+            const label = await agentDriver.spawn(a.url);
+            return `Browser opened with label: ${label}`;
+        }
+
+        if (t === "browser_click") {
+            await agentDriver.click(a.label, a.selector);
+            return `Clicked ${a.selector}`;
+        }
+
+        if (t === "browser_type") {
+            await agentDriver.type(a.label, a.selector, a.text);
+            return `Typed into ${a.selector}`;
+        }
+
+        if (t === "browser_scroll") {
+            await agentDriver.scroll(a.label, a.selector);
+            return `Scrolled to ${a.selector}`;
+        }
+
+        if (t === "browser_hover") {
+            await agentDriver.hover(a.label, a.selector);
+            return `Hovered over ${a.selector}`;
+        }
+
+        if (t === "browser_read") {
+            const content = await agentDriver.getContent(a.label);
+            return truncate(content, 10000);
+        }
+
+        if (t === "browser_close") {
+            await agentDriver.close(a.label);
+            return `Browser window ${a.label} closed.`;
+        }
+
+        return `Unknown tool: ${t}. Available: read_file, edit_file, grep, codebase_search, list_dir, file_search, delete_file, run_terminal_cmd, browser_open, browser_click, browser_type, browser_input, browser_read, browser_close`;
     } catch (e: any) {
         return `Tool error: ${e.message || e}`;
     }

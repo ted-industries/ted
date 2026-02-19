@@ -84,6 +84,60 @@ Suggest a terminal command for the user to run.
 {"tool": "run_terminal_cmd", "args": {"command": "npm test"}}
 \`\`\`
 
+## Browser Tools
+
+Use these tools to verify your changes, test web UI, or read documentation.
+When you open a browser, you get a \`label\` (e.g., "agent-uuid"). Use this label for subsequent commands.
+
+### browser_open
+Open a new browser window. Returns the window \`label\`.
+
+\`\`\`tool
+{"tool": "browser_open", "args": {"url": "https://localhost:3000"}}
+\`\`\`
+
+### browser_click
+Click an element.
+
+\`\`\`tool
+{"tool": "browser_click", "args": {"label": "window-label", "selector": "button#submit"}}
+\`\`\`
+
+### browser_type
+Type text into an element.
+
+\`\`\`tool
+{"tool": "browser_type", "args": {"label": "window-label", "selector": "input[name='q']", "text": "search query"}}
+\`\`\`
+
+### browser_scroll
+Scroll an element into view.
+
+\`\`\`tool
+{"tool": "browser_scroll", "args": {"label": "window-label", "selector": "footer"}}
+\`\`\`
+
+### browser_hover
+Hover over an element (dispatch mouseenter/mouseover).
+
+\`\`\`tool
+{"tool": "browser_hover", "args": {"label": "window-label", "selector": ".tooltip-trigger"}}
+\`\`\`
+
+### browser_read
+Read the text content of the page.
+
+\`\`\`tool
+{"tool": "browser_read", "args": {"label": "window-label"}}
+\`\`\`
+
+### browser_close
+Close the browser window.
+
+\`\`\`tool
+{"tool": "browser_close", "args": {"label": "window-label"}}
+\`\`\`
+
 ## Guidelines
 
 1. Start by understanding the codebase. Read relevant files, search for patterns.

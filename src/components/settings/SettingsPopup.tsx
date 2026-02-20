@@ -106,8 +106,8 @@ export default function SettingsPopup() {
                     </div>
 
                     <div className="settings-sidebar-footer">
-                        <span className="shortcut-hint">Ctrl-Shift-E</span>
-                        <span className="hint-text">Focus Navbar</span>
+                        {/* <span className="shortcut-hint">Ctrl-Shift-E</span> */}
+                        <span className="hint-text">profile</span>
                     </div>
                 </div>
 

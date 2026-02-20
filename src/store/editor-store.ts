@@ -31,19 +31,45 @@ export interface ActionLog {
   timestamp: number;
 }
 
-interface EditorStoreState {
+export interface WorkspaceState {
+  id: string;
+  name: string; // usually folder name or "Untitled"
   tabs: TabState[];
   activeTabPath: string | null;
   explorerPath: string | null;
   projectName: string | null;
   explorerCollapsed: boolean;
+  historyOpen: boolean;
+  terminalOpen: boolean;
+  // We can keep terminals global or per-workspace. 
+  // VS Code keeps terminals usually per window/workspace so let's try to keep them per workspace if possible,
+  // but for now to keep it simple and given the task is mostly about file tabs, let's keep terminals global?
+  // Actually, standard behavior is per-workspace terminals. Let's start with just Tabs/Explorer state per workspace.
+}
+
+interface EditorStoreState {
+  // Global / Window level state
+  workspaces: Record<string, WorkspaceState>;
+  activeWorkspaceId: string;
+
+  // Active Workspace State (flattened for easy access by components)
+  tabs: TabState[];
+  activeTabPath: string | null;
+  explorerPath: string | null;
+  projectName: string | null;
+  explorerCollapsed: boolean;
+
+  // UI State (Global)
   commandPaletteOpen: boolean;
   settingsOpen: boolean;
+
+  // Terminal State (Global for now, to avoid complexity)
   terminalOpen: boolean;
   terminalHeight: number;
   terminals: TerminalState[];
   activeTerminalId: string | null;
   historyOpen: boolean;
+
   userSettings: {
     sidebarWidth: number;
     fontSize: number;
@@ -119,12 +145,31 @@ interface EditorStoreState {
 
 type Listener = () => void;
 
+const DEFAULT_WORKSPACE_ID = "default";
+
 let state: EditorStoreState = {
+  workspaces: {
+    [DEFAULT_WORKSPACE_ID]: {
+      id: DEFAULT_WORKSPACE_ID,
+      name: "Untitled",
+      tabs: [],
+      activeTabPath: null,
+      explorerPath: null,
+      projectName: null,
+      explorerCollapsed: false,
+      historyOpen: false,
+      terminalOpen: false
+    }
+  },
+  activeWorkspaceId: DEFAULT_WORKSPACE_ID,
+
+  // Initialize flattened state from default workspace
   tabs: [],
   activeTabPath: null,
   explorerPath: null,
   projectName: null,
   explorerCollapsed: false,
+
   commandPaletteOpen: false,
   settingsOpen: false,
   terminalOpen: false,
@@ -197,6 +242,46 @@ function dispatch(
 
   const nextLogs = [log, ...state.logs].slice(0, MAX_LOGS);
   let nextState = { ...state, ...partial, logs: nextLogs };
+
+  // Sync current flattened state back to the active workspace entry
+  // We do this for ALL actions except those that explicitly handle workspace switching/closing
+  // (which handle the state transition themselves)
+  if (type !== "SWITCH_WORKSPACE" && type !== "CLOSE_WORKSPACE") {
+    // Optimization: Only update workspace if relevant fields changed
+    const relevantKeys: (keyof WorkspaceState)[] = [
+      "tabs",
+      "activeTabPath",
+      "explorerPath",
+      "projectName",
+      "explorerCollapsed",
+      "historyOpen",
+      "terminalOpen"
+    ];
+    // We check if any of the keys in `partial` match the relevant keys
+    // Note: `partial` might contain keys not in WorkspaceState, so we cast to check presence
+    const shouldSync = relevantKeys.some((k) => k in partial);
+
+    if (shouldSync) {
+      const activeId = nextState.activeWorkspaceId;
+      if (nextState.workspaces[activeId]) {
+        // We update the workspace record with the new state values
+        // This ensures that if we switch away and back, we have the latest state
+        nextState.workspaces = {
+          ...nextState.workspaces,
+          [activeId]: {
+            ...nextState.workspaces[activeId],
+            tabs: nextState.tabs,
+            activeTabPath: nextState.activeTabPath,
+            explorerPath: nextState.explorerPath,
+            projectName: nextState.projectName,
+            explorerCollapsed: nextState.explorerCollapsed,
+            historyOpen: nextState.historyOpen,
+            terminalOpen: nextState.terminalOpen
+          }
+        };
+      }
+    }
+  }
 
   if (partial.userSettings || partial.projectSettings) {
     nextState.settings = {
@@ -284,6 +369,112 @@ export const editorStore = {
     return () => {
       listeners.delete(listener);
     };
+  },
+
+  // Workspace Actions
+  createWorkspace(path?: string) {
+    const id = crypto.randomUUID();
+    const name = path ? path.split(/[\\/]/).pop() || "Untitled" : "Untitled";
+
+    const newWorkspace: WorkspaceState = {
+      id,
+      name,
+      tabs: [],
+      activeTabPath: null,
+      explorerPath: path || null,
+      projectName: name,
+      explorerCollapsed: false,
+      historyOpen: false,
+      terminalOpen: false
+    };
+
+    // If we have a path, we should probably switch to it immediately?
+    // User flow: Click "+" -> New Workspace.
+
+    dispatch("CREATE_WORKSPACE", {
+      workspaces: { ...state.workspaces, [id]: newWorkspace }
+    });
+
+    this.switchWorkspace(id);
+
+    if (path) {
+      this.setExplorerPath(path);
+    }
+  },
+
+  switchWorkspace(id: string) {
+    if (id === state.activeWorkspaceId) return;
+    const target = state.workspaces[id];
+    if (!target) return;
+
+    // Save current state is handled by the pre-dispatch logic in `dispatch` 
+    // BUT since we are doing a "SWITCH_WORKSPACE", we suppressed the auto-update there 
+    // so we can do it cleanly here if we wanted, OR we rely on the previous state.
+
+    // Let's do it manually to be safe and explicit.
+    const currentId = state.activeWorkspaceId;
+    const currentWorkspaceUpdated = {
+      ...state.workspaces[currentId],
+      tabs: state.tabs,
+      activeTabPath: state.activeTabPath,
+      explorerPath: state.explorerPath,
+      projectName: state.projectName,
+      explorerCollapsed: state.explorerCollapsed,
+      historyOpen: state.historyOpen,
+      terminalOpen: state.terminalOpen
+    };
+
+    const newWorkspaces = {
+      ...state.workspaces,
+      [currentId]: currentWorkspaceUpdated
+    };
+
+    dispatch("SWITCH_WORKSPACE", {
+      workspaces: newWorkspaces,
+      activeWorkspaceId: id,
+      // Load target state
+      tabs: target.tabs,
+      activeTabPath: target.activeTabPath,
+      explorerPath: target.explorerPath,
+      projectName: target.projectName,
+      explorerCollapsed: target.explorerCollapsed,
+      historyOpen: target.historyOpen,
+      terminalOpen: target.terminalOpen
+    });
+  },
+
+  closeWorkspace(id: string) {
+    // Don't close if it's the only one
+    const ids = Object.keys(state.workspaces);
+    if (ids.length <= 1) return;
+
+    const { [id]: removed, ...remainingWorkspaces } = state.workspaces;
+
+    let nextActiveId = state.activeWorkspaceId;
+    let extraStateUpdates = {};
+
+    if (id === state.activeWorkspaceId) {
+      // Switch to another one (e.g. the last one or previous one)
+      const newIds = Object.keys(remainingWorkspaces);
+      nextActiveId = newIds[newIds.length - 1];
+      const target = remainingWorkspaces[nextActiveId];
+
+      extraStateUpdates = {
+        tabs: target.tabs,
+        activeTabPath: target.activeTabPath,
+        explorerPath: target.explorerPath,
+        projectName: target.projectName,
+        explorerCollapsed: target.explorerCollapsed,
+        historyOpen: target.historyOpen,
+        terminalOpen: target.terminalOpen
+      };
+    }
+
+    dispatch("CLOSE_WORKSPACE", {
+      workspaces: remainingWorkspaces,
+      activeWorkspaceId: nextActiveId,
+      ...extraStateUpdates
+    });
   },
 
   newFile() {
@@ -421,7 +612,31 @@ export const editorStore = {
   },
 
   async setExplorerPath(path: string | null) {
-    dispatch("SET_EXPLORER_PATH", { explorerPath: path, projectSettings: {} });
+    // Update workspace name if opening a folder
+    const updates: Partial<EditorStoreState> = { explorerPath: path, projectSettings: {} };
+
+    if (path) {
+      const name = path.split(/[\\/]/).pop() || "Untitled";
+      updates.projectName = name;
+
+      // Also update the workspace record immediately if possible/needed,
+      // but our dispatch middleware handles it.
+      // However, we want to update the `name` field of the workspace too.
+      if (state.activeWorkspaceId && state.workspaces[state.activeWorkspaceId]) {
+        const ws = state.workspaces[state.activeWorkspaceId];
+        updates.workspaces = {
+          ...state.workspaces,
+          [state.activeWorkspaceId]: {
+            ...ws,
+            name: name,
+            explorerPath: path,
+            projectName: name
+          }
+        };
+      }
+    }
+
+    dispatch("SET_EXPLORER_PATH", updates);
 
     if (path) {
       try {
@@ -441,6 +656,7 @@ export const editorStore = {
       }
     }
   },
+
 
   setProjectName(name: string | null) {
     dispatch("SET_PROJECT_NAME", { projectName: name });

@@ -62,6 +62,40 @@ class ExtensionRegistryService {
         await extensionHost.loadFromPath(installDir);
     }
 
+    async fetchReadme(ext: any): Promise<string> {
+        try {
+            // If it's a local instance with a known path
+            if (ext.path) {
+                const readmePath = `${ext.path}/README.md`;
+                return await invoke("read_file", { path: readmePath });
+            }
+
+            // If it's a registry extension, fetch from repo
+            if (ext.repository) {
+                let rawUrl = "";
+                if (ext.repository.includes("github.com")) {
+                    // https://github.com/owner/repo/tree/main/path -> https://raw.githubusercontent.com/owner/repo/main/path/README.md
+                    if (ext.repository.includes("/tree/")) {
+                        rawUrl = ext.repository
+                            .replace("github.com", "raw.githubusercontent.com")
+                            .replace("/tree/", "/") + "/README.md";
+                    } else {
+                        // Standard repo
+                        rawUrl = ext.repository.replace("github.com", "raw.githubusercontent.com") + "/main/README.md";
+                    }
+                }
+
+                if (rawUrl) {
+                    const res = await fetch(rawUrl);
+                    if (res.ok) return await res.text();
+                }
+            }
+        } catch (e) {
+            console.warn("Failed to fetch README:", e);
+        }
+        return "No README available for this extension.";
+    }
+
     private async getInstallDir(name: string): Promise<string> {
         const configDir: string = await invoke("get_user_config_dir");
         const parent = configDir.replace(/[\\/][^\\/]+$/, "");

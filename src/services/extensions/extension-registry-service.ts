@@ -25,28 +25,36 @@ class ExtensionRegistryService {
     async installExtension(ext: RegistryExtension) {
         const installDir = await this.getInstallDir(ext.name);
 
-        // 1. Create directory via Tauri
-        await invoke("create_dir", { path: installDir });
+        // 1. Clean up existing install
+        await invoke("delete_dir", { path: installDir });
 
-        // 2. Resolve URLs for files
-        // For production, we assume a structured registry path on GitHub
-        // e.g. https://raw.githubusercontent.com/ted-industries/extensions/main/registry/extensions/<name>/
-        const baseUrl = ext.repository
-            .replace("github.com", "raw.githubusercontent.com")
-            .replace("/tree/main/", "/main/");
+        // 2. Handle potential monorepo path
+        // URL format: https://github.com/owner/repo/tree/main/path/to/ext
+        if (ext.repository.includes("/tree/")) {
+            const parts = ext.repository.split("/tree/");
+            const repoUrl = parts[0];
+            const subparts = parts[1].split("/");
+            // const branch = subparts[0]; // e.g., 'main'
+            const subPath = subparts.slice(1).join("/"); // e.g., 'registry/extensions/hello-world'
 
-        // We need the manifest and the main entry point
-        const files = ["package.json", ext.main];
+            // Clone root repo to a temp location
+            const configDir: string = await invoke("get_user_config_dir");
+            const tempDir = `${configDir.replace(/[\\/][^\\/]+$/, "")}/temp_clone_${Math.random().toString(36).substring(7)}`;
 
-        for (const filename of files) {
-            const fileUrl = `${baseUrl}/${filename}`;
-            const response = await fetch(fileUrl);
-            if (!response.ok) throw new Error(`Failed to download ${filename}`);
-            const content = await response.text();
-
-            await invoke("write_file", {
-                path: `${installDir}/${filename}`,
-                content
+            try {
+                await invoke("git_clone", { url: repoUrl, path: tempDir });
+                await invoke("move_dir", {
+                    src: `${tempDir}/${subPath}`,
+                    dst: installDir
+                });
+            } finally {
+                await invoke("delete_dir", { path: tempDir });
+            }
+        } else {
+            // Standalone repository clone
+            await invoke("git_clone", {
+                url: ext.repository,
+                path: installDir
             });
         }
 

@@ -22,6 +22,7 @@ export interface ExtensionInstance {
 export interface ExtensionModule {
     activate?: (api: TedAPI) => void | Promise<void>;
     deactivate?: () => void | Promise<void>;
+    default?: any;
 }
 
 /** Tracks everything an extension registered so we can clean up on unload */

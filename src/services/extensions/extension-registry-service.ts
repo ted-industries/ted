@@ -13,67 +13,13 @@ export interface RegistryExtension {
     downloads: number;
 }
 
-const REGISTRY_URL = "https://registry.ted.tomlin7.com/extensions.json";
-
-const MOCK_REGISTRY: RegistryExtension[] = [
-    {
-        name: "ted-hello-world",
-        displayName: "Hello World",
-        description: "A sample starter extension for ted. Registers a command that shows a basic notification and log.",
-        version: "1.0.0",
-        main: "extension.js",
-        author: "Ted Industries",
-        repository: "https://github.com/ted-industries/ted-hello-world",
-        tags: ["sample", "starter", "notification"],
-        downloads: 1200,
-    },
-    {
-        name: "ted-git-blame",
-        displayName: "Git Blame",
-        description: "Show git blame information in the editor status bar for the current active line.",
-        version: "1.0.0",
-        main: "index.js",
-        author: "Tomlin7",
-        repository: "https://github.com/tomlin7/ted-git-blame",
-        tags: ["git", "blame", "source-control"],
-        downloads: 850,
-    },
-    {
-        name: "ted-word-count",
-        displayName: "Word Count",
-        description: "Displays a live word and character count for the active file in the status bar.",
-        version: "1.0.0",
-        main: "main.js",
-        author: "Ted Industries",
-        repository: "https://github.com/ted-industries/ted-word-count",
-        tags: ["statusbar", "writing", "utility"],
-        downloads: 450,
-    },
-    {
-        name: "ted-recent-files",
-        displayName: "Quick Open Recent",
-        description: "Registers a command to list and quickly open recently accessed files with fuzzy search.",
-        version: "1.0.1",
-        main: "extension.js",
-        author: "Ted Industries",
-        repository: "https://github.com/ted-industries/ted-recent-files",
-        tags: ["navigation", "productivity", "files"],
-        downloads: 2100,
-    }
-];
+const REGISTRY_URL = "https://registry.ted.tomlin7.com/v1";
 
 class ExtensionRegistryService {
     async fetchRegistry(): Promise<RegistryExtension[]> {
-        try {
-            const response = await fetch(REGISTRY_URL);
-            if (!response.ok) throw new Error("Failed to fetch registry");
-            const data = await response.json();
-            return data.length > 0 ? data : MOCK_REGISTRY;
-        } catch (err) {
-            console.error("[Registry] Failed to fetch remote registry, using fallback:", err);
-            // Fallback to a minimal list if the server is down or during dev
-            return MOCK_REGISTRY;
-        }
+        const response = await fetch(REGISTRY_URL);
+        if (!response.ok) throw new Error(`Registry error: ${response.statusText}`);
+        return await response.json();
     }
 
     async installExtension(ext: RegistryExtension) {

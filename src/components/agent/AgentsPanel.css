@@ -6,15 +6,60 @@
     color: var(--agent-fg);
     font-size: 12px;
     user-select: none;
+    position: relative;
 }
 
-.agent-header {
-    padding: 4px 8px;
+.agent-more-container {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: flex;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.agent-panel:hover .agent-more-container,
+.agent-more-container:focus-within {
+    opacity: 1;
+}
+
+/* Ensure it stays visible when dropdown is open */
+.agent-more-container-open {
+    opacity: 1 !important;
+}
+
+.agent-more-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #1a1a1a;
+    border: 1px solid #333333;
+    border-radius: 4px;
+    padding: 4px;
+    width: 120px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    margin-top: 4px;
+}
+
+.agent-dropdown-item {
+    padding: 6px 8px;
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-    color: var(--agent-fg);
-    flex-shrink: 0;
+    color: #888888;
+    cursor: pointer;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.agent-dropdown-item:hover {
+    background: #ffffff08;
+    color: #cccccc;
+}
+
+.agent-dropdown-item svg {
+    opacity: 0.7;
 }
 
 .agent-messages {

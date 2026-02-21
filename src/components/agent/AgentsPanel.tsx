@@ -73,10 +73,12 @@ export default function AgentsPanel() {
     const [liveTraces, setLiveTraces] = useState<Trace[]>([]);
     const [expanded, setExpanded] = useState(false);
     const [attachments, setAttachments] = useState<string[]>([]);
+    const [menuOpen, setMenuOpen] = useState(false);
     const bottomRef = useRef<HTMLDivElement>(null);
     const abortRef = useRef<AbortController | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView();
@@ -89,6 +91,20 @@ export default function AgentsPanel() {
         ta.style.height = "auto";
         ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
     }, [input, expanded]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setMenuOpen(false);
+            }
+        };
+        if (menuOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [menuOpen]);
 
 
 
@@ -192,8 +208,39 @@ export default function AgentsPanel() {
 
     return (
         <div className="agent-panel">
+            <div className={`agent-more-container${menuOpen ? " agent-more-container-open" : ""}`} ref={menuRef}>
+                <button
+                    className="agent-input-btn"
+                    onClick={() => setMenuOpen(!menuOpen)}
+                    title="more"
+                >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="1" />
+                        <circle cx="12" cy="5" r="1" />
+                        <circle cx="12" cy="19" r="1" />
+                    </svg>
+                </button>
+                {menuOpen && (
+                    <div className="agent-more-dropdown">
+                        <div
+                            className="agent-dropdown-item"
+                            onClick={() => {
+                                editorStore.clearAgentHistory();
+                                setMessages([]);
+                                setMenuOpen(false);
+                            }}
+                        >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6" />
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                            clear history
+                        </div>
+                    </div>
+                )}
+            </div>
             {messages.length === 0 && !loading ? (
-                <div className="agent-empty">agent</div>
+                <div className="agent-empty">ask anything</div>
             ) : (
                 <div className="agent-messages">
                     {messages.map((m, i) => (
@@ -284,22 +331,6 @@ export default function AgentsPanel() {
                             <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
                         </svg>
                     </button>
-                    {/* HIDING THIS FOR NOW: need some better placement, figure out later
-                    
-                    <button
-                        className="agent-input-btn"
-                        onClick={() => {
-                            editorStore.clearAgentHistory();
-                            setMessages([]);
-                        }}
-                        disabled={loading}
-                        title="clear history"
-                    >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="3 6 5 6 21 6" />
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        </svg>
-                    </button> */}
                     {loading ? (
                         <button className="agent-stop" onClick={handleStop}>stop</button>
                     ) : (

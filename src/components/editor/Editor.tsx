@@ -49,6 +49,8 @@ import { telemetry } from "../../services/telemetry-service";
 import { gitService } from "../../services/git-service";
 import { gitGutterExtension, setGitDiff } from "./GitGutter";
 import { gitBlame } from "./extensions/git-blame";
+import { breakpointGutterExtension, setBreakpointsEffect } from "./BreakpointGutter";
+import { useDebugStore } from "../../store/debug-store";
 import "../../styles/editor.css";
 
 const chevronDownSvg = renderToStaticMarkup(
@@ -84,6 +86,7 @@ function buildExtensions(
     EditorView.theme({
       "&": { fontSize: `${settings.fontSize}px` },
     }),
+    breakpointGutterExtension,
     settings.lineNumbers ? lineNumbers() : [],
     settings.indentGuides
       ? indentationMarkers({
@@ -304,6 +307,20 @@ export default function Editor() {
       clearTimeout(timer);
     };
   }, [activeTab?.path, activeTab?.content, explorerPath]);
+
+  // Breakpoint Gutter Sync
+  const debugBreakpoints = useDebugStore((s) => s.breakpoints);
+  useEffect(() => {
+    if (!viewRef.current || !activeTab) return;
+
+    const relevantBreakpoints = debugBreakpoints
+      .filter((bp) => bp.source?.path === activeTab.path)
+      .map((bp) => bp.line);
+
+    viewRef.current.dispatch({
+      effects: setBreakpointsEffect.of(relevantBreakpoints),
+    });
+  }, [debugBreakpoints, activeTab?.path]);
 
   const hasActiveTab = activeTab !== null;
 

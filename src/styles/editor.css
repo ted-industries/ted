@@ -104,3 +104,31 @@
     border-bottom: 3px solid transparent;
     margin-top: 8px;
 }
+
+/* Breakpoint Gutter */
+.cm-breakpoint-gutter {
+    width: 16px;
+    cursor: pointer;
+    margin-left: 4px;
+}
+
+.cm-breakpoint-gutter .cm-gutterElement {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cm-breakpoint-marker {
+    width: 9px;
+    height: 9px;
+    background-color: #e51400;
+    border-radius: 50%;
+    opacity: 0.8;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+    transition: transform 0.1s ease;
+}
+
+.cm-breakpoint-marker:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}

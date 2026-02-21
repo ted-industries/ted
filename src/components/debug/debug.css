@@ -1,0 +1,109 @@
+.debug-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: var(--agent-bg);
+    color: var(--agent-fg);
+    font-size: 12px;
+    user-select: none;
+    overflow-y: auto;
+}
+
+.debug-section {
+    border-bottom: 1px solid var(--border);
+}
+
+.debug-section-header {
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.03);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #555555;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.debug-section-header:hover {
+    color: #888888;
+}
+
+.debug-section-content {
+    padding: 4px 0;
+}
+
+.debug-item {
+    padding: 4px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.debug-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.debug-item-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.debug-item-value {
+    color: #888888;
+    font-family: inherit;
+}
+
+.debug-toolbar {
+    padding: 8px;
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    justify-content: center;
+}
+
+.debug-btn {
+    background: none;
+    border: none;
+    color: #888888;
+    padding: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.debug-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    color: #cccccc;
+}
+
+.debug-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.debug-btn-start {
+    color: #4caf50;
+}
+
+.debug-btn-stop {
+    color: #f44336;
+}
+
+.debug-btn-step {
+    color: #2196f3;
+}
+
+.debug-empty {
+    padding: 20px;
+    color: #555555;
+    text-align: center;
+    font-style: italic;
+}

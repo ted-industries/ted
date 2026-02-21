@@ -100,6 +100,47 @@ fn create_dir(path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn delete_dir(path: String) -> Result<(), String> {
+    if Path::new(&path).exists() {
+        fs::remove_dir_all(&path).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+fn copy_dir_recursive(src: &Path, dst: &Path) -> std::io::Result<()> {
+    fs::create_dir_all(dst)?;
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let entry_type = entry.file_type()?;
+        let dst_path = dst.join(entry.file_name());
+        if entry_type.is_dir() {
+            copy_dir_recursive(&entry.path(), &dst_path)?;
+        } else {
+            fs::copy(&entry.path(), &dst_path)?;
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn move_dir(src: String, dst: String) -> Result<(), String> {
+    let src_path = Path::new(&src);
+    let dst_path = Path::new(&dst);
+
+    if !src_path.exists() {
+        return Err("Source path does not exist".into());
+    }
+
+    // Attempt direct rename first
+    if fs::rename(src_path, dst_path).is_err() {
+        // Fallback to copy and delete (needed for cross-device moves)
+        copy_dir_recursive(src_path, dst_path).map_err(|e| e.to_string())?;
+        fs::remove_dir_all(src_path).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
 fn write_file(path: String, content: String) -> Result<(), String> {
     if let Some(parent) = Path::new(&path).parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
@@ -312,7 +353,7 @@ fn get_user_config_dir(handle: tauri::AppHandle) -> Result<String, String> {
     use tauri::path::BaseDirectory;
     handle
         .path()
-        .resolve("settings.json", BaseDirectory::Config)
+        .resolve("settings.json", BaseDirectory::AppConfig)
         .map(|p: std::path::PathBuf| p.to_string_lossy().to_string())
         .map_err(|e: tauri::Error| e.to_string())
 }
@@ -336,6 +377,8 @@ pub fn run() {
             read_file,
             write_file,
             create_dir,
+            delete_dir,
+            move_dir,
             list_dir,
             get_basename,
             get_user_config_dir,

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { RiSearchLine, RiExternalLinkLine, RiPlug2Fill, RiFolderOpenLine, RiAddFill } from "@remixicon/react";
+import { RiSearchLine, RiExternalLinkLine, RiPlug2Fill, RiAddFill, RiFolderLine } from "@remixicon/react";
+import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { open } from "@tauri-apps/plugin-dialog";
 import { extensionHost, useExtensionHost } from "../../services/extensions/extension-host";
 import { extensionRegistryService, RegistryExtension } from "../../services/extensions/extension-registry-service";
@@ -239,6 +240,13 @@ function InstalledItem({ inst, onToggle }: {
                     <span className="item-tag">{inst.status}</span>
                 </div>
                 <div className="item-actions">
+                    <button
+                        className="item-path-btn"
+                        onClick={() => revealItemInDir(inst.path)}
+                        title={inst.path}
+                    >
+                        <RiFolderLine size={13} />
+                    </button>
                     <div className="item-status" title={isActive ? "active" : "disabled"}>
                         <button
                             className={`item-toggle-btn ${isActive ? 'active' : ''}`}

@@ -284,6 +284,22 @@
     background: var(--agent-user-fg);
 }
 
+.item-path-btn {
+    background: transparent;
+    border: none;
+    color: var(--agent-trace);
+    opacity: 0.5;
+    cursor: pointer;
+    display: flex;
+    padding: 0;
+    transition: all 0.1s;
+}
+
+.item-path-btn:hover {
+    color: var(--foreground);
+    opacity: 1;
+}
+
 .item-repo-link {
     color: var(--agent-trace);
     opacity: 0.5;

@@ -55,13 +55,8 @@
 
 .marketplace-nav-item.active {
     opacity: 1;
-    color: var(--agent-user-fg);
-    border-bottom-color: var(--agent-user-fg);
-}
-
-.marketplace-title svg {
-    opacity: 0.5;
-    flex-shrink: 0;
+    color: var(--foreground);
+    border-bottom-color: var(--foreground);
 }
 
 .marketplace-search {
@@ -95,19 +90,10 @@
     box-sizing: border-box;
 }
 
-.marketplace-search input::placeholder {
-    color: var(--agent-trace);
-    opacity: 0.8;
-}
-
-.marketplace-search input:focus {
-    background: var(--active-tab-bg);
-    box-shadow: 0 0 0 1px var(--agent-trace);
-}
-
 .marketplace-content {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     position: relative;
     background-color: var(--agent-bg);
     background-image:
@@ -118,71 +104,276 @@
     background-size: 80px 80px, 80px 80px, 20px 20px, 20px 20px;
 }
 
+.marketplace-content.detail-mode {
+    background-image: none;
+}
+
+/* Detail View Styles */
+.marketplace-detail {
+    display: flex;
+    flex-direction: column;
+    padding: 60px 40px;
+    max-width: 1100px;
+    margin: 0 auto;
+    background: transparent;
+}
+
+.detail-back {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--agent-trace);
+    cursor: pointer;
+    margin-bottom: 40px;
+    font-size: 10px;
+    text-transform: uppercase;
+    font-weight: 700;
+    transition: color 0.1s;
+}
+
+.detail-back:hover {
+    color: var(--foreground);
+}
+
+.detail-main {
+    display: flex;
+    gap: 60px;
+}
+
+.detail-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.detail-header {
+    margin-bottom: 24px;
+}
+
+.detail-name {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--foreground);
+    margin-bottom: 8px;
+}
+
+.detail-version {
+    font-size: 12px;
+    color: var(--agent-trace);
+}
+
+.detail-desc {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--foreground);
+    opacity: 0.9;
+    margin-bottom: 32px;
+    white-space: pre-wrap;
+}
+
+.stats-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--foreground);
+}
+
+.stat-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    color: var(--agent-trace);
+    letter-spacing: 0.8px;
+}
+
+.detail-markdown {
+    margin-top: 40px;
+    border-top: 1px solid var(--border);
+    padding-top: 40px;
+}
+
+.markdown-body {
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--foreground);
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 {
+    margin: 32px 0 16px;
+    color: var(--foreground);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+}
+
+.markdown-body p {
+    margin-bottom: 16px;
+    opacity: 0.8;
+}
+
+.markdown-body code {
+    background: var(--agent-user-bg);
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.markdown-body pre {
+    background: var(--agent-user-bg);
+    padding: 16px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+.markdown-body ul {
+    padding-left: 20px;
+    margin-bottom: 16px;
+    opacity: 0.8;
+}
+
+.markdown-body a {
+    color: var(--foreground);
+    text-decoration: underline;
+    opacity: 0.8;
+}
+
+.markdown-body a:hover {
+    opacity: 1;
+}
+
+.detail-meta {
+    width: 260px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    padding-left: 40px;
+    border-left: 1px solid var(--border);
+}
+
+.meta-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.meta-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--agent-trace);
+}
+
+.meta-value {
+    font-size: 12px;
+    color: var(--foreground);
+}
+
+.meta-link {
+    color: var(--foreground);
+    text-decoration: underline;
+    opacity: 0.7;
+}
+
+.meta-link:hover {
+    opacity: 1;
+}
+
+.detail-actions {
+    margin-bottom: 20px;
+}
+
+.detail-btn {
+    height: 32px;
+    width: 100%;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: all 0.1s;
+}
+
+.detail-btn.primary {
+    background: var(--foreground);
+    color: var(--background);
+    border-color: var(--foreground);
+}
+
+.detail-btn.secondary {
+    background: transparent;
+    color: var(--foreground);
+}
+
+.detail-btn:hover {
+    opacity: 0.8;
+    transform: translateY(-1px);
+}
+
+/* Grid View Styles */
 .marketplace-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    grid-auto-rows: max-content;
-    align-content: start;
-    gap: 20px;
-    padding: 20px;
-    min-height: 100%;
-    box-sizing: border-box;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+    padding: 40px;
 }
 
 .marketplace-item {
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
     background: var(--agent-bg);
     border: 1px solid var(--border);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
     gap: 16px;
-    height: 160px;
-    /* Fixed height for consistent technical cards */
-    box-sizing: border-box;
-    transition: all 0.1s ease;
-    position: relative;
+    transition: all 0.1s;
+    cursor: pointer;
 }
 
 .marketplace-item:hover {
     border-color: var(--agent-trace);
+    transform: translateY(-2px);
 }
 
 .marketplace-item.disabled {
-    opacity: 0.5;
-}
-
-.marketplace-item.disabled .item-name {
-    text-decoration: line-through;
-    opacity: 0.5;
+    opacity: 0.6;
 }
 
 .item-header {
     display: flex;
-    align-items: baseline;
     justify-content: space-between;
-    gap: 12px;
+    align-items: baseline;
 }
 
 .item-name {
-    color: var(--foreground);
     font-weight: 700;
-    font-size: 12px;
+    color: var(--foreground);
+    font-size: 13px;
 }
 
 .item-version {
     color: var(--agent-trace);
-    font-size: 9px;
-    opacity: 0.6;
+    font-size: 10px;
 }
 
 .item-desc {
+    font-size: 12px;
     color: var(--agent-fg);
-    opacity: 0.7;
-    line-height: 1.4;
-    font-size: 11px;
+    opacity: 0.8;
+    line-height: 1.5;
     display: -webkit-box;
     -webkit-line-clamp: 3;
-    line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -190,108 +381,84 @@
 .item-footer {
     margin-top: auto;
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    align-items: center;
 }
 
 .item-tags {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
-    opacity: 0.4;
 }
 
 .item-tag {
     font-size: 9px;
-    color: var(--agent-fg);
-    opacity: 0.8;
-    text-transform: lowercase;
+    color: var(--agent-trace);
+    background: var(--agent-user-bg);
+    padding: 2px 6px;
+    border-radius: 2px;
 }
-
 
 .item-actions {
     display: flex;
     align-items: center;
     gap: 12px;
-    flex-shrink: 0;
 }
 
 .item-install-btn {
     background: transparent;
-    color: var(--foreground);
     border: 1px solid var(--border);
-    padding: 2px 8px;
-    font-size: 10px;
-    font-family: inherit;
+    color: var(--foreground);
+    padding: 2px 10px;
+    font-size: 11px;
     cursor: pointer;
-    text-transform: lowercase;
-    transition: all 0.05s;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    transition: all 0.1s;
 }
 
 .item-install-btn:hover:not(:disabled) {
     background: var(--foreground);
     color: var(--background);
-    border-color: var(--foreground);
-}
-
-.item-install-btn:disabled {
-    opacity: 0.2;
-    cursor: default;
-}
-
-.item-status {
-    color: var(--agent-trace);
-    font-size: 10px;
-    text-transform: lowercase;
-    display: flex;
-    align-items: center;
-    gap: 6px;
 }
 
 .item-toggle-btn {
-    background: transparent;
-    border: 1px solid var(--border);
     width: 24px;
     height: 12px;
-    padding: 0;
+    background: transparent;
+    border: 1px solid var(--border);
     cursor: pointer;
     position: relative;
-    transition: all 0.1s;
 }
 
 .item-toggle-btn::after {
     content: "";
     position: absolute;
-    left: 2px;
     top: 2px;
+    left: 2px;
     width: 6px;
     height: 6px;
     background: var(--agent-trace);
 }
 
 .item-toggle-btn.active {
-    border-color: var(--agent-user-fg);
+    border-color: var(--foreground);
 }
 
 .item-toggle-btn.active::after {
     left: auto;
     right: 2px;
-    background: var(--agent-user-fg);
+    background: var(--foreground);
 }
 
 .item-path-btn {
     background: transparent;
     border: none;
     color: var(--agent-trace);
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: pointer;
     display: flex;
-    padding: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
     transition: all 0.1s;
 }
 
@@ -300,27 +467,45 @@
     opacity: 1;
 }
 
-.item-repo-link {
-    color: var(--agent-trace);
-    opacity: 0.5;
+.marketplace-header .item-install-btn {
+    margin-left: 8px;
+    height: 24px;
+    padding: 0 12px;
+    border-radius: 2px;
     display: flex;
+    align-items: center;
+    background: var(--agent-user-bg);
+    border-color: transparent;
+    font-size: 10px;
+    opacity: 0.8;
 }
 
-.item-repo-link:hover {
-    color: var(--foreground);
+.marketplace-header .item-install-btn:hover {
     opacity: 1;
+    background: var(--active-tab-bg);
+    color: var(--foreground);
 }
 
 .marketplace-loading,
 .marketplace-error,
 .marketplace-empty {
-    padding: 100px 32px;
-    color: var(--agent-fg);
-    text-transform: lowercase;
-    letter-spacing: 1.5px;
+    padding: 100px;
     text-align: center;
-    font-size: 13px;
-    font-weight: 500;
-    opacity: 0.9;
+    color: var(--agent-trace);
+    font-size: 14px;
     grid-column: 1 / -1;
+}
+
+@media (max-width: 900px) {
+    .detail-main {
+        flex-direction: column;
+    }
+
+    .detail-meta {
+        width: 100%;
+        padding-left: 0;
+        border-left: none;
+        border-top: 1px solid var(--border);
+        padding-top: 32px;
+    }
 }

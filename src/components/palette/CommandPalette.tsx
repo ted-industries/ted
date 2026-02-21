@@ -18,6 +18,30 @@ export default function CommandPalette() {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
+    const [mode, setMode] = useState<{
+        type: "command" | "quickpick" | "input",
+        options?: any,
+        resolve?: (val: any) => void
+    }>({ type: "command" });
+
+    useEffect(() => {
+        const onQuickPick = (e: any) => {
+            const { items, options, resolve } = e.detail;
+            setMode({ type: "quickpick", options: { items, options }, resolve });
+            editorStore.setCommandPaletteOpen(true);
+        };
+        const onInputBox = (e: any) => {
+            const { options, resolve } = e.detail;
+            setMode({ type: "input", options, resolve });
+            editorStore.setCommandPaletteOpen(true);
+        };
+        window.addEventListener("ted:quickpick", onQuickPick);
+        window.addEventListener("ted:inputbox", onInputBox);
+        return () => {
+            window.removeEventListener("ted:quickpick", onQuickPick);
+            window.removeEventListener("ted:inputbox", onInputBox);
+        }
+    }, []);
 
     const commands = useMemo<Command[]>(() => [
         {
@@ -136,29 +160,45 @@ export default function CommandPalette() {
 
     // Merge extension commands into the palette
     const extCommands = useExtensionHost(() => extensionHost.getCommands());
-    const allCommands = useMemo(() => {
+    const allItems = useMemo(() => {
+        if (mode.type === "quickpick") {
+            return mode.options.items.map((item: any, i: number) => ({
+                id: `qp-${i}`,
+                label: mode.options.options?.getLabel ? mode.options.options.getLabel(item) : String(item),
+                action: () => mode.resolve?.(item),
+                data: item
+            }));
+        }
+
+        const base: Command[] = commands.map(c => ({ ...c, category: "core" }));
         const ext: Command[] = extCommands.map((c) => ({
             id: c.id,
             label: `extension: ${c.label}`,
             action: () => c.handler(),
             category: "extension",
         }));
-        return [...commands, ...ext];
-    }, [commands, extCommands]);
+        return [...base, ...ext];
+    }, [commands, extCommands, mode]);
 
-    const filteredCommands = useMemo(() => {
-        if (!query) return allCommands;
+    const filteredItems = useMemo(() => {
+        if (!query) return allItems;
         const lowerQuery = query.toLowerCase();
-        return allCommands.filter((c) =>
+        return allItems.filter((c: any) =>
             c.label.toLowerCase().includes(lowerQuery)
         );
-    }, [query, allCommands]);
+    }, [query, allItems]);
 
     useEffect(() => {
         if (isOpen) {
             setQuery("");
             setSelectedIndex(0);
             setTimeout(() => inputRef.current?.focus(), 50);
+        } else {
+            // If closed without resolving (e.g. Esc), resolve with undefined
+            if (mode.type !== "command" && mode.resolve) {
+                mode.resolve(undefined);
+            }
+            setMode({ type: "command" });
         }
     }, [isOpen]);
 
@@ -170,16 +210,24 @@ export default function CommandPalette() {
                 editorStore.setCommandPaletteOpen(false);
             } else if (e.key === "ArrowDown") {
                 e.preventDefault();
-                setSelectedIndex((i) => (filteredCommands.length > 0 ? (i + 1) % filteredCommands.length : 0));
+                setSelectedIndex((i) => (filteredItems.length > 0 ? (i + 1) % filteredItems.length : 0));
             } else if (e.key === "ArrowUp") {
                 e.preventDefault();
-                setSelectedIndex((i) => (filteredCommands.length > 0 ? (i - 1 + filteredCommands.length) % filteredCommands.length : 0));
+                setSelectedIndex((i) => (filteredItems.length > 0 ? (i - 1 + filteredItems.length) % filteredItems.length : 0));
             } else if (e.key === "Enter") {
                 e.preventDefault();
-                const cmd = filteredCommands[selectedIndex];
-                if (cmd) {
-                    telemetry.log("command_executed", { id: cmd.id, label: cmd.label });
-                    cmd.action();
+                if (mode.type === "input") {
+                    mode.resolve?.(query);
+                    editorStore.setCommandPaletteOpen(false);
+                    return;
+                }
+                const item = filteredItems[selectedIndex];
+                if (item) {
+                    if (mode.type === "command") {
+                        telemetry.log("command_executed", { id: item.id, label: item.label });
+                    }
+                    item.action();
+                    // We don't set mode to command here, useEffect on isOpen does it
                     editorStore.setCommandPaletteOpen(false);
                 }
             }
@@ -187,7 +235,7 @@ export default function CommandPalette() {
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, filteredCommands, selectedIndex]);
+    }, [isOpen, filteredItems, selectedIndex, mode, query]);
 
     if (!isOpen) return null;
 
@@ -198,31 +246,33 @@ export default function CommandPalette() {
                     ref={inputRef}
                     type="text"
                     className="palette-input"
-                    placeholder="Execute a command..."
+                    placeholder={mode.type === "input" ? (mode.options?.prompt || "Enter value...") :
+                        mode.type === "quickpick" ? (mode.options?.options?.placeHolder || "Select an item...") :
+                            "Execute a command..."}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     spellCheck={false}
                 />
-                <div className="palette-list" ref={listRef}>
-                    {filteredCommands.length > 0 ? (
-                        filteredCommands.map((command, index) => (
+                <div className="palette-list" ref={listRef} style={{ display: mode.type === "input" ? "none" : "block" }}>
+                    {filteredItems.length > 0 ? (
+                        filteredItems.map((item: any, index: number) => (
                             <div
-                                key={command.id}
+                                key={item.id}
                                 className={`palette-item ${index === selectedIndex ? "selected" : ""}`}
                                 onClick={() => {
-                                    command.action();
+                                    item.action();
                                     editorStore.setCommandPaletteOpen(false);
                                 }}
                                 onMouseEnter={() => setSelectedIndex(index)}
                             >
-                                <span className="palette-item-label">{command.label}</span>
-                                {command.shortcut && (
-                                    <span className="palette-item-shortcut">{command.shortcut}</span>
+                                <span className="palette-item-label">{item.label}</span>
+                                {(item as any).shortcut && (
+                                    <span className="palette-item-shortcut">{(item as any).shortcut}</span>
                                 )}
                             </div>
                         ))
                     ) : (
-                        <div className="palette-no-results">No commands found</div>
+                        <div className="palette-no-results">No matches found</div>
                     )}
                 </div>
                 {/* <div className="palette-footer">

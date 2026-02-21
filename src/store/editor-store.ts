@@ -589,6 +589,7 @@ export const editorStore = {
     const tab = state.tabs.find((t) => t.path === path);
     if (!tab) return;
     updateTab(path, { content, isDirty: content !== tab.savedContent });
+    window.dispatchEvent(new CustomEvent("ted:contentChanged", { detail: { path, content } }));
 
     if (path === "ted://settings.json") {
       try {

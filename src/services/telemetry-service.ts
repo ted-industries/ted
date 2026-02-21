@@ -115,6 +115,9 @@ class TelemetryService {
     // Notify listeners immediately for low-latency rule evaluation
     this.listeners.forEach((l) => l(event));
 
+    // Broadcast to extensions
+    window.dispatchEvent(new CustomEvent(`ted:${type}`, { detail: payload }));
+
     if (this.buffer.length >= this.MAX_BUFFER_SIZE) {
       this.flush();
     }

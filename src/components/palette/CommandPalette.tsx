@@ -45,6 +45,18 @@ export default function CommandPalette() {
             action: () => window.dispatchEvent(new CustomEvent("ted:save-file-as")),
         },
         {
+            id: "open-folder",
+            label: "file: open folder...",
+            shortcut: "Ctrl+Shift+O",
+            action: () => window.dispatchEvent(new CustomEvent("ted:open-folder")),
+        },
+        {
+            id: "close-folder",
+            label: "file: close folder...",
+            shortcut: "Ctrl+K Ctrl+O",
+            action: () => window.dispatchEvent(new CustomEvent("ted:close-folder")),
+        },
+        {
             id: "close-active-tab",
             label: "file: close active tab",
             shortcut: "Ctrl+W",
@@ -114,6 +126,11 @@ export default function CommandPalette() {
             action: () => {
                 editorStore.openBrowserTab("https://www.google.com");
             },
+        },
+        {
+            id: "open-marketplace",
+            label: "extensions: open marketplace",
+            action: () => editorStore.openMarketplace(),
         }
     ], []);
 

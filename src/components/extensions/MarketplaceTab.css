@@ -1,0 +1,209 @@
+.marketplace-tab {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--agent-bg);
+    color: var(--agent-fg);
+    font-size: 11px;
+    font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", monospace;
+    user-select: none;
+}
+
+.marketplace-header {
+    display: flex;
+    align-items: center;
+    height: 36px;
+    padding: 0 16px;
+    background: var(--agent-bg);
+    border-bottom: 1px solid var(--border);
+    gap: 24px;
+}
+
+.marketplace-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--agent-user-fg);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+.marketplace-title svg {
+    opacity: 0.5;
+}
+
+.marketplace-title h2 {
+    margin: 0;
+    font-size: inherit;
+}
+
+.marketplace-search {
+    position: relative;
+    flex: 1;
+    max-width: 400px;
+    height: 24px;
+}
+
+.marketplace-search svg {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.2;
+    pointer-events: none;
+}
+
+.marketplace-search input {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    padding: 0 0 0 24px;
+    color: var(--foreground);
+    font-size: 11px;
+    font-family: inherit;
+    outline: none;
+}
+
+.marketplace-search input::placeholder {
+    color: var(--agent-trace);
+    opacity: 0.5;
+}
+
+.marketplace-content {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.marketplace-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.marketplace-item {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+    gap: 8px;
+    min-height: 120px;
+    transition: background 0.1s ease;
+}
+
+.marketplace-item:hover {
+    background: var(--line-highlight);
+}
+
+.item-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.item-name {
+    color: var(--foreground);
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.item-version {
+    color: var(--agent-trace);
+    font-size: 9px;
+    opacity: 0.6;
+}
+
+.item-desc {
+    color: var(--agent-fg);
+    opacity: 0.6;
+    line-height: 1.5;
+    font-size: 11px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.item-footer {
+    margin-top: auto;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.item-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    opacity: 0.4;
+}
+
+.item-tag {
+    font-size: 9px;
+}
+
+.item-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.item-install-btn {
+    background: transparent;
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    font-size: 10px;
+    font-family: inherit;
+    cursor: pointer;
+    text-transform: lowercase;
+    transition: all 0.1s;
+}
+
+.item-install-btn:hover:not(:disabled) {
+    background: var(--foreground);
+    color: var(--background);
+    border-color: var(--foreground);
+}
+
+.item-install-btn:disabled {
+    opacity: 0.2;
+    cursor: default;
+}
+
+.item-status {
+    color: var(--agent-trace);
+    font-size: 10px;
+    text-transform: lowercase;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.item-repo-link {
+    color: var(--agent-trace);
+    opacity: 0.5;
+    display: flex;
+}
+
+.item-repo-link:hover {
+    color: var(--foreground);
+    opacity: 1;
+}
+
+.marketplace-loading,
+.marketplace-error,
+.marketplace-empty {
+    padding: 32px;
+    color: var(--agent-trace);
+    text-transform: lowercase;
+    letter-spacing: 0.5px;
+}

@@ -1,4 +1,4 @@
-import { RiFileAddLine, RiFolderOpenLine, RiCommandLine, RiSettings4Line, RiTerminalBoxLine } from "@remixicon/react";
+import { RiFile2Fill, RiFileAddFill, RiFolderOpenFill, RiCommandFill, RiTerminalBoxFill, RiSettings2Fill, RiPlug2Fill } from "@remixicon/react";
 import { editorStore } from "../../store/editor-store";
 import "./Welcome.css";
 
@@ -11,6 +11,9 @@ export default function Welcome() {
             case "open-file":
                 window.dispatchEvent(new CustomEvent("ted:open-file"));
                 break;
+            case "open-folder":
+                window.dispatchEvent(new CustomEvent("ted:open-folder"));
+                break;
             case "command-palette":
                 editorStore.toggleCommandPalette();
                 break;
@@ -19,6 +22,9 @@ export default function Welcome() {
                 break;
             case "settings":
                 editorStore.toggleSettings();
+                break;
+            case "extensions":
+                editorStore.openMarketplace();
                 break;
         }
     };
@@ -44,28 +50,35 @@ export default function Welcome() {
                     <div className="action-list">
                         <div className="action-item" onClick={() => handleAction("new-file")}>
                             <div className="action-left">
-                                <RiFileAddLine size={16} />
+                                <RiFileAddFill size={16} />
                                 <span>New File</span>
                             </div>
                             <span className="action-shortcut">Ctrl-N</span>
                         </div>
                         <div className="action-item" onClick={() => handleAction("open-file")}>
                             <div className="action-left">
-                                <RiFolderOpenLine size={16} />
+                                <RiFile2Fill size={16} />
                                 <span>Open File...</span>
                             </div>
                             <span className="action-shortcut">Ctrl-O</span>
                         </div>
+                        <div className="action-item" onClick={() => handleAction("open-folder")}>
+                            <div className="action-left">
+                                <RiFolderOpenFill size={16} />
+                                <span>Open Folder...</span>
+                            </div>
+                            <span className="action-shortcut">Ctrl-Shift-O</span>
+                        </div>
                         <div className="action-item" onClick={() => handleAction("command-palette")}>
                             <div className="action-left">
-                                <RiCommandLine size={16} />
+                                <RiCommandFill size={16} />
                                 <span>Open Command Palette</span>
                             </div>
                             <span className="action-shortcut">Ctrl-Shift-P</span>
                         </div>
                         <div className="action-item" onClick={() => handleAction("terminal")}>
                             <div className="action-left">
-                                <RiTerminalBoxLine size={16} />
+                                <RiTerminalBoxFill size={16} />
                                 <span>Integrated Terminal</span>
                             </div>
                             <span className="action-shortcut">Ctrl-J</span>
@@ -80,10 +93,16 @@ export default function Welcome() {
                     <div className="action-list">
                         <div className="action-item" onClick={() => handleAction("settings")}>
                             <div className="action-left">
-                                <RiSettings4Line size={16} />
+                                <RiSettings2Fill size={16} />
                                 <span>Open Settings</span>
                             </div>
                             <span className="action-shortcut">Ctrl-,</span>
+                        </div>
+                        <div className="action-item" onClick={() => handleAction("extensions")}>
+                            <div className="action-left">
+                                <RiPlug2Fill size={16} />
+                                <span>Explore Extensions</span>
+                            </div>
                         </div>
                     </div>
                 </div>

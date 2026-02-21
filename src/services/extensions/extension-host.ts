@@ -17,10 +17,24 @@ type Listener = () => void;
 /** Read a JS file from disk and return an importable blob URL */
 async function loadModuleFromDisk(filePath: string): Promise<any> {
     const source: string = await invoke("read_file", { path: filePath });
-    const blob = new Blob([source], { type: "text/javascript" });
+    // Wrap in a function to support CommonJS-style module.exports
+    const wrappedSource = `
+        const module = { exports: {} };
+        const exports = module.exports;
+        (function(module, exports) {
+            ${source}
+        })(module, exports);
+        export default module.exports;
+        export const activate = module.exports.activate;
+        export const deactivate = module.exports.deactivate;
+    `;
+    const blob = new Blob([wrappedSource], { type: "text/javascript" });
     const url = URL.createObjectURL(blob);
     try {
-        return await import(/* @vite-ignore */ url);
+        const mod = await import(/* @vite-ignore */ url);
+        // If the extension used ES exports, they'll be in mod.
+        // If they used module.exports, they'll be in mod.default.
+        return mod;
     } finally {
         URL.revokeObjectURL(url);
     }
@@ -150,8 +164,11 @@ class ExtensionHost {
 
             // Create scoped API and activate
             const api = createTedAPI(manifest.name, cleanup);
-            if (typeof mod.activate === "function") {
-                await mod.activate(api);
+
+            // Check ESM export first, then CJS default export
+            const activate = mod.activate || mod.default?.activate;
+            if (typeof activate === "function") {
+                await activate(api);
             }
 
             instance.status = "active";
@@ -170,8 +187,9 @@ class ExtensionHost {
         if (!instance) return;
 
         try {
-            if (instance.module?.deactivate) {
-                await instance.module.deactivate();
+            const deactivate = instance.module?.deactivate || instance.module?.default?.deactivate;
+            if (deactivate) {
+                await deactivate();
             }
         } catch (err) {
             console.error(`[ExtensionHost] Error deactivating "${id}":`, err);
@@ -228,8 +246,9 @@ class ExtensionHost {
             instance.module = mod;
 
             const api = createTedAPI(id, cleanup);
-            if (typeof mod.activate === "function") {
-                await mod.activate(api);
+            const activate = mod.activate || mod.default?.activate;
+            if (typeof activate === "function") {
+                await activate(api);
             }
             instance.status = "active";
         } catch (err) {

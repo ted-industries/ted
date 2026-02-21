@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { RiSearchLine, RiExternalLinkLine, RiPlug2Fill, RiFolderOpenLine } from "@remixicon/react";
+import { RiSearchLine, RiExternalLinkLine, RiPlug2Fill, RiFolderOpenLine, RiAddFill } from "@remixicon/react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { extensionHost, useExtensionHost } from "../../services/extensions/extension-host";
 import { extensionRegistryService, RegistryExtension } from "../../services/extensions/extension-registry-service";
@@ -97,7 +97,7 @@ export default function MarketplaceTab() {
         <div className="marketplace-tab">
             <div className="marketplace-header">
                 <div className="marketplace-title">
-                    <RiPlug2Fill size={14} />
+                    <RiPlug2Fill size={15} />
                     <div className="marketplace-nav">
                         <div
                             className={`marketplace-nav-item ${view === "browse" ? "active" : ""}`}
@@ -114,7 +114,7 @@ export default function MarketplaceTab() {
                     </div>
                 </div>
                 <div className="marketplace-search">
-                    <RiSearchLine size={14} />
+                    <RiSearchLine size={15} />
                     <input
                         type="text"
                         placeholder={`search ${view}...`}
@@ -124,8 +124,8 @@ export default function MarketplaceTab() {
                 </div>
                 {view === "installed" && (
                     <button className="item-install-btn" onClick={handleLoadLocal}>
-                        <RiFolderOpenLine size={12} style={{ marginRight: 4 }} />
-                        load local...
+                        <RiAddFill size={15} style={{ marginRight: 4 }} />
+                        load local
                     </button>
                 )}
             </div>

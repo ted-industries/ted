@@ -95,6 +95,11 @@ fn read_file(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
+fn create_dir(path: String) -> Result<(), String> {
+    fs::create_dir_all(&path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn write_file(path: String, content: String) -> Result<(), String> {
     if let Some(parent) = Path::new(&path).parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
@@ -330,6 +335,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             read_file,
             write_file,
+            create_dir,
             list_dir,
             get_basename,
             get_user_config_dir,

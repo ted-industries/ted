@@ -7,6 +7,8 @@ import {
   RiArrowLeftRightLine,
   RiFolderOpenLine,
   RiGitRepositoryLine,
+  RiFolderOpenFill,
+  RiGitRepositoryFill,
 } from "@remixicon/react";
 import { editorStore, useEditorStore } from "../../store/editor-store";
 import { gitService } from "../../services/git-service"; // Removed unused FileStatus
@@ -272,18 +274,18 @@ export default function Explorer() {
             {!isCloning ? (
               <>
                 <button className="explorer-open-btn" onClick={handleOpenFolder}>
-                  <RiFolderOpenLine size={14} />
+                  <RiFolderOpenFill size={14} />
                   Open Folder
                 </button>
                 <button className="explorer-open-btn" onClick={handleCloneStart}>
-                  <RiGitRepositoryLine size={14} />
+                  <RiGitRepositoryFill size={14} />
                   Clone Repository
                 </button>
               </>
             ) : (
               <div className="explorer-clone-input-container">
                 <div className="explorer-clone-input-wrapper">
-                  <RiGitRepositoryLine size={14} className="clone-icon" />
+                  <RiGitRepositoryFill size={14} className="clone-icon" />
                   <input
                     ref={cloneInputRef}
                     type="text"

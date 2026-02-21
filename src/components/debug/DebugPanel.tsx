@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDebugStore } from "../../store/debug-store";
 import {
     RiPlayFill,
@@ -12,6 +12,7 @@ import {
     RiPauseFill
 } from "@remixicon/react";
 import { dapService } from "../../services/dap/dap-service";
+import { useEditorStore } from "../../store/editor-store";
 import "./debug.css";
 
 interface SectionProps {
@@ -34,17 +35,88 @@ function DebugSection({ title, children, defaultOpen = true }: SectionProps) {
 }
 
 export default function DebugPanel() {
-    const { isActive, isPaused, variables, stackFrames, breakpoints, setSessionActive, setPaused, clearSession } = useDebugStore();
+    const {
+        isActive, isPaused, variables, stackFrames, breakpoints,
+        setSessionActive, setPaused, clearSession, setStackFrames, setVariables, setScopes
+    } = useDebugStore();
+    const activeTab = useEditorStore(s => s.tabs.find(t => t.path === s.activeTabPath));
+    const [isConnecting, setIsConnecting] = useState(false);
+
+    useEffect(() => {
+        // Handle stop event
+        dapService.onEvent("stopped", async (ev) => {
+            const threadId = ev.body.threadId;
+            setPaused(true);
+
+            // Fetch stack trace
+            const stackRes = await dapService.getStackTrace(threadId);
+            if (stackRes.success && stackRes.body.stackFrames) {
+                setStackFrames(stackRes.body.stackFrames);
+
+                // Fetch scopes for the top frame
+                const topFrame = stackRes.body.stackFrames[0];
+                const scopesRes = await dapService.getScopes(topFrame.id);
+                if (scopesRes.success && scopesRes.body.scopes) {
+                    setScopes(scopesRes.body.scopes);
+
+                    // Fetch variables for each scope
+                    for (const scope of scopesRes.body.scopes) {
+                        const varsRes = await dapService.getVariables(scope.variablesReference);
+                        if (varsRes.success) {
+                            setVariables(scope.variablesReference, varsRes.body.variables);
+                        }
+                    }
+                }
+            }
+        });
+
+        dapService.onEvent("terminated", () => {
+            clearSession();
+            setSessionActive(false);
+        });
+
+        dapService.onEvent("exited", () => {
+            clearSession();
+            setSessionActive(false);
+        });
+    }, []);
 
     const handleStart = async () => {
+        setIsConnecting(true);
         try {
-            // In a real app, this URL would come from settings or a launch config
-            await dapService.connect("ws://localhost:8088");
+            await dapService.connect("localhost", 5678);
             await dapService.initialize("ted-debug");
-            await dapService.launch({ program: "main.py" }); // Mock launch
+
+            // Sync current breakpoints before configurationDone
+            const filePaths = Array.from(new Set(breakpoints.map(bp => bp.source?.path).filter(Boolean)));
+            for (const path of filePaths as string[]) {
+                const lines = breakpoints.filter(bp => bp.source?.path === path).map(bp => bp.line);
+                await dapService.setBreakpoints(path, lines);
+            }
+
+            await dapService.attach({
+                name: "Ted Attach",
+                type: "python",
+                request: "attach",
+                connect: {
+                    host: "localhost",
+                    port: 5678
+                },
+                pathMappings: [
+                    {
+                        localRoot: "${workspaceFolder}",
+                        remoteRoot: "."
+                    }
+                ]
+            });
+
+            await dapService.configurationDone();
             setSessionActive(true);
         } catch (err) {
             console.error("Failed to start debug session:", err);
+            alert("Connection failed. Ensure your DAP server is running on port 5678.");
+        } finally {
+            setIsConnecting(false);
         }
     };
 
@@ -74,8 +146,13 @@ export default function DebugPanel() {
         <div className="debug-panel">
             <div className="debug-toolbar">
                 {!isActive ? (
-                    <button className="debug-btn debug-btn-start" title="Start Debugging (Mock)" onClick={handleStart}>
-                        <RiPlayFill size={16} />
+                    <button
+                        className="debug-btn debug-btn-start"
+                        title="Start Debugging"
+                        onClick={handleStart}
+                        disabled={isConnecting}
+                    >
+                        {isConnecting ? <span className="debug-loading" /> : <RiPlayFill size={16} />}
                     </button>
                 ) : (
                     <>

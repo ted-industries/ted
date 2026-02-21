@@ -78,32 +78,34 @@ function TerminalInstance({ id, isActive, explorerPath }: TerminalInstanceProps)
             // Only proceed if we have valid dimensions
             if (width > 0 && height > 0) {
                 try {
-                    fitAddon.fit();
-                    const { cols, rows } = term;
+                    if (containerRef.current?.offsetParent) {
+                        fitAddon.fit();
+                        const { cols, rows } = term;
 
-                    if (cols > 0 && rows > 0) {
-                        invoke("resize_terminal", { id, cols, rows });
+                        if (cols > 0 && rows > 0) {
+                            invoke("resize_terminal", { id, cols, rows });
 
-                        // If this is the first time we have size, spawn the shell
-                        if (!initializedRef.current) {
-                            initializedRef.current = true;
+                            // If this is the first time we have size, spawn the shell
+                            if (!initializedRef.current) {
+                                initializedRef.current = true;
 
-                            // Spawn backend process
-                            invoke("spawn_terminal", { id, cwd: explorerPath });
+                                // Spawn backend process
+                                invoke("spawn_terminal", { id, cwd: explorerPath });
 
-                            // Setup listeners
-                            listen(`terminal-data:${id}`, (event) => {
-                                term.write(event.payload as string);
-                            }).then((unlisten) => {
-                                unlistenRef.current = unlisten;
-                            });
+                                // Setup listeners
+                                listen(`terminal-data:${id}`, (event) => {
+                                    term.write(event.payload as string);
+                                }).then((unlisten) => {
+                                    unlistenRef.current = unlisten;
+                                });
 
-                            term.onData((data) => {
-                                invoke("write_to_terminal", { id, data });
-                            });
+                                term.onData((data) => {
+                                    invoke("write_to_terminal", { id, data });
+                                });
 
-                            if (isActive) {
-                                term.focus();
+                                if (isActive) {
+                                    term.focus();
+                                }
                             }
                         }
                     }
@@ -127,7 +129,7 @@ function TerminalInstance({ id, isActive, explorerPath }: TerminalInstanceProps)
             fitAddonRef.current = null;
             initializedRef.current = false;
         };
-    }, [id]);
+    }, [id, explorerPath]);
 
     // Handle focus/visibility changes
     useEffect(() => {

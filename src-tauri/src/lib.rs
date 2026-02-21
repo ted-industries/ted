@@ -3,6 +3,7 @@ mod lsp;
 mod terminal;
 mod agent_browser;
 mod background_cmd;
+mod dap;
 
 use lsp::LspState;
 use serde::Serialize;
@@ -13,6 +14,7 @@ use std::sync::{Arc, Mutex};
 use tauri::Manager;
 use terminal::TerminalState;
 use background_cmd::ProcessState;
+use dap::DapState;
 
 const IGNORED_DIRS: &[&str] = &[
     "node_modules",
@@ -325,6 +327,9 @@ pub fn run() {
         .manage(ProcessState {
              processes: Arc::new(Mutex::new(HashMap::new())),
         })
+        .manage(DapState {
+            sessions: Arc::new(Mutex::new(None)),
+        })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
@@ -369,6 +374,9 @@ pub fn run() {
             background_cmd::exec_background_cmd,
             background_cmd::check_background_cmd,
             background_cmd::kill_background_cmd,
+            dap::dap_connect,
+            dap::dap_send,
+            dap::dap_disconnect,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

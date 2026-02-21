@@ -12,9 +12,10 @@ import "./TerminalPanel.css";
 interface TerminalInstanceProps {
     id: string;
     isActive: boolean;
+    explorerPath: string | null;
 }
 
-function TerminalInstance({ id, isActive }: TerminalInstanceProps) {
+function TerminalInstance({ id, isActive, explorerPath }: TerminalInstanceProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const xtermRef = useRef<Terminal | null>(null);
     const fitAddonRef = useRef<FitAddon | null>(null);
@@ -88,7 +89,7 @@ function TerminalInstance({ id, isActive }: TerminalInstanceProps) {
                             initializedRef.current = true;
 
                             // Spawn backend process
-                            invoke("spawn_terminal", { id });
+                            invoke("spawn_terminal", { id, cwd: explorerPath });
 
                             // Setup listeners
                             listen(`terminal-data:${id}`, (event) => {
@@ -179,6 +180,7 @@ export default function TerminalPanel() {
     const terminalOpen = useEditorStore((s) => s.terminalOpen);
     const terminalHeight = useEditorStore((s) => s.terminalHeight);
     const historyOpen = useEditorStore((s) => s.historyOpen);
+    const explorerPath = useEditorStore((s) => s.explorerPath);
     const isDraggingRef = useRef(false);
 
     const handleMouseDown = (_: React.MouseEvent) => {
@@ -271,6 +273,7 @@ export default function TerminalPanel() {
                             key={t.id}
                             id={t.id}
                             isActive={activeTerminalId === t.id}
+                            explorerPath={explorerPath}
                         />
                     ))
                 )}

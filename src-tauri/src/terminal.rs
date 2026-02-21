@@ -19,6 +19,7 @@ pub fn spawn_terminal<R: Runtime>(
     app: AppHandle<R>,
     state: tauri::State<'_, TerminalState>,
     id: String,
+    cwd: Option<String>,
 ) -> Result<(), String> {
     let pty_system = native_pty_system();
 
@@ -38,6 +39,9 @@ pub fn spawn_terminal<R: Runtime>(
     let shell = "bash";
 
     let mut cmd = CommandBuilder::new(shell);
+    if let Some(path) = cwd {
+        cmd.cwd(path);
+    }
 
     let _child = pty_pair
         .slave

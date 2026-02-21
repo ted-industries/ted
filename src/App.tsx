@@ -11,11 +11,13 @@ import Welcome from "./components/welcome/Welcome";
 import SettingsPopup from "./components/settings/SettingsPopup";
 import TerminalPanel from "./components/terminal/TerminalPanel";
 import SuggestionToast from "./components/agent/SuggestionToast";
+import NotificationToast from "./components/notification/NotificationToast";
 import Browser from "./components/browser/Browser";
 import { editorStore, useEditorStore } from "./store/editor-store";
 import { ruleEngine } from "./services/agent/rule-engine";
 // import { llmAgent } from "./services/agent/llm-agent";
 import { lspManager } from "./services/lsp/lsp-manager";
+import { extensionHost } from "./services/extensions/extension-host";
 import "./App.css";
 
 function App() {
@@ -27,10 +29,11 @@ function App() {
   const [sidebarWidth, setSidebarWidth] = useState(storeSidebarWidth);
   const isDraggingRef = useRef(false);
 
-  // Initialize Rule Engine, LLM Agent & LSP
+  // Initialize Rule Engine, LLM Agent, LSP & Extensions
   useEffect(() => {
     ruleEngine.start();
     // llmAgent.start();
+    extensionHost.init();
 
     // Apply LSP server config overrides from settings
     const settings = editorStore.getState().settings;
@@ -41,6 +44,7 @@ function App() {
     return () => {
       ruleEngine.stop();
       // llmAgent.stop();
+      extensionHost.dispose();
       lspManager.dispose();
     };
   }, []);
@@ -248,6 +252,7 @@ function App() {
       <CommandPalette />
       <SettingsPopup />
       <SuggestionToast />
+      <NotificationToast />
     </div>
   );
 }

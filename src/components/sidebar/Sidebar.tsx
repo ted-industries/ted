@@ -4,6 +4,7 @@ import Explorer from "../explorer/Explorer";
 import SourceControl from "../source-control/SourceControl";
 import SearchPanel from "../search/SearchPanel";
 import AgentsPanel from "../agent/AgentsPanel";
+import ExtensionsPanel from "../extensions/ExtensionsPanel";
 import { useEditorStore } from "../../store/editor-store";
 import "./sidebar.css";
 
@@ -108,7 +109,7 @@ export default function Sidebar() {
             <SourceControl />
           </div>
           <div className="sidebar-panel">
-            <div className="sidebar-placeholder">Extensions</div>
+            <ExtensionsPanel />
           </div>
         </div>
       </div>

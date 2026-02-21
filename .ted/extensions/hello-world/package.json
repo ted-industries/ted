@@ -1,0 +1,7 @@
+{
+    "name": "hello-world",
+    "version": "1.0.0",
+    "displayName": "Hello World",
+    "description": "A sample extension for ted — registers a command palette entry.",
+    "main": "index.js"
+}

@@ -32,12 +32,25 @@ export function createTedAPI(extensionId: string, cleanup: ExtensionCleanup): Te
             },
 
             showNotification(message: string, type: "info" | "warning" | "error" = "info") {
-                // Dispatch a custom event that the notification system can pick up
                 window.dispatchEvent(
                     new CustomEvent("ted:notification", {
                         detail: { message, type, extensionId },
                     })
                 );
+            },
+
+            setSelection(anchor: number, _head?: number) {
+                const s = editorStore.getState();
+                if (s.activeTabPath) {
+                    editorStore.saveTabViewState(s.activeTabPath, 0, 0, anchor);
+                }
+            },
+
+            getSelection() {
+                const s = editorStore.getState();
+                const tab = s.tabs.find((t) => t.path === s.activeTabPath);
+                if (!tab) return null;
+                return { anchor: tab.cursorPos, head: tab.cursorPos };
             },
         },
 
@@ -109,6 +122,23 @@ export function createTedAPI(extensionId: string, cleanup: ExtensionCleanup): Te
                     await invoke("list_dir", { path });
                 return entries.map((e) => ({ name: e.name, path: e.path, isDir: e.is_dir }));
             },
+        },
+
+        window: {
+            showQuickPick<T>(items: T[], options?: any): Promise<T | undefined> {
+                return new Promise((resolve) => {
+                    window.dispatchEvent(new CustomEvent("ted:quickpick", {
+                        detail: { items, options, resolve }
+                    }));
+                });
+            },
+            showInputBox(options?: any): Promise<string | undefined> {
+                return new Promise((resolve) => {
+                    window.dispatchEvent(new CustomEvent("ted:inputbox", {
+                        detail: { options, resolve }
+                    }));
+                });
+            }
         },
 
         onEvent(event: string, handler: (...args: any[]) => void) {

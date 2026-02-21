@@ -42,6 +42,7 @@ export interface TedAPI {
     statusbar: TedStatusBarAPI;
     workspace: TedWorkspaceAPI;
     fs: TedFsAPI;
+    window: TedWindowAPI;
     onEvent: (event: string, handler: (...args: any[]) => void) => () => void;
 }
 
@@ -49,6 +50,8 @@ export interface TedEditorAPI {
     openFile: (path: string) => Promise<void>;
     getActiveFile: () => { path: string; name: string; content: string } | null;
     showNotification: (message: string, type?: "info" | "warning" | "error") => void;
+    setSelection: (anchor: number, head?: number) => void;
+    getSelection: () => { anchor: number; head: number } | null;
 }
 
 export interface TedCommandsAPI {
@@ -73,6 +76,11 @@ export interface TedFsAPI {
     readFile: (path: string) => Promise<string>;
     writeFile: (path: string, content: string) => Promise<void>;
     listDir: (path: string) => Promise<{ name: string; path: string; isDir: boolean }[]>;
+}
+
+export interface TedWindowAPI {
+    showQuickPick: <T>(items: T[], options?: { placeHolder?: string, getLabel: (item: T) => string }) => Promise<T | undefined>;
+    showInputBox: (options?: { prompt?: string, value?: string }) => Promise<string | undefined>;
 }
 
 // ── Registry types ─────────────────────────────────────────────────

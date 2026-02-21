@@ -1,6 +1,7 @@
 import { useRef, useMemo, useState, useEffect } from "react";
 import { useEditorStore, editorStore } from "../../store/editor-store";
 import { telemetry } from "../../services/telemetry-service";
+import { extensionHost, useExtensionHost } from "../../services/extensions/extension-host";
 import "./CommandPalette.css";
 
 interface Command {
@@ -116,13 +117,25 @@ export default function CommandPalette() {
         }
     ], []);
 
+    // Merge extension commands into the palette
+    const extCommands = useExtensionHost(() => extensionHost.getCommands());
+    const allCommands = useMemo(() => {
+        const ext: Command[] = extCommands.map((c) => ({
+            id: c.id,
+            label: `extension: ${c.label}`,
+            action: () => c.handler(),
+            category: "extension",
+        }));
+        return [...commands, ...ext];
+    }, [commands, extCommands]);
+
     const filteredCommands = useMemo(() => {
-        if (!query) return commands;
+        if (!query) return allCommands;
         const lowerQuery = query.toLowerCase();
-        return commands.filter((c) =>
+        return allCommands.filter((c) =>
             c.label.toLowerCase().includes(lowerQuery)
         );
-    }, [query, commands]);
+    }, [query, allCommands]);
 
     useEffect(() => {
         if (isOpen) {

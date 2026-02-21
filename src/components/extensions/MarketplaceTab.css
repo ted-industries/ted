@@ -82,24 +82,24 @@
 .marketplace-search input {
     width: 100%;
     height: 100%;
-    background: transparent;
+    background: var(--agent-user-bg);
     border: none;
-    border-bottom: 1px solid transparent;
-    padding: 0 0 0 24px;
-    color: var(--foreground);
+    padding: 0 12px 0 24px;
+    color: var(--agent-user-fg);
     font-size: 11px;
     font-family: inherit;
     outline: none;
-    transition: all 0.2s;
+    border-radius: 2px;
 }
 
 .marketplace-search input::placeholder {
     color: var(--agent-trace);
-    opacity: 0.5;
+    opacity: 0.8;
 }
 
 .marketplace-search input:focus {
-    border-bottom-color: var(--agent-trace);
+    background: var(--active-tab-bg);
+    box-shadow: 0 0 0 1px var(--agent-trace);
 }
 
 .marketplace-content {
@@ -110,25 +110,30 @@
 .marketplace-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    border-left: 1px solid var(--border);
-    border-top: 1px solid var(--border);
+    gap: 12px;
+    padding: 12px;
+    background: repeating-linear-gradient(45deg,
+            var(--agent-bg),
+            var(--agent-bg) 10px,
+            var(--border) 10px,
+            var(--border) 11px);
+    background-color: var(--background);
 }
 
 .marketplace-item {
     display: flex;
     flex-direction: column;
     padding: 16px;
-    border-right: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    background: transparent;
+    background: var(--agent-bg);
+    border: 1px solid var(--border);
     gap: 12px;
     height: 140px;
     /* Fixed height for consistent grid */
-    transition: background 0.1s ease;
+    transition: all 0.1s ease;
 }
 
 .marketplace-item:hover {
-    background: var(--line-highlight);
+    border-color: var(--agent-trace);
 }
 
 .marketplace-item.disabled {
@@ -191,7 +196,8 @@
 
 .item-tag {
     font-size: 9px;
-    color: var(--agent-trace);
+    color: var(--agent-fg);
+    opacity: 0.8;
     text-transform: lowercase;
 }
 

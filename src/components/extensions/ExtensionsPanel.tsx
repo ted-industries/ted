@@ -3,6 +3,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { extensionHost, useExtensionHost } from "../../services/extensions/extension-host";
 import type { ExtensionInstance } from "../../services/extensions/types";
 import "./extensions.css";
+import { RiPlug2Fill } from "@remixicon/react";
 
 export default function ExtensionsPanel() {
     const extensions = useExtensionHost(() => extensionHost.getExtensions());
@@ -38,7 +39,7 @@ export default function ExtensionsPanel() {
             <div className="extensions-list">
                 {extensions.length === 0 ? (
                     <div className="extensions-empty">
-                        <div className="extensions-empty-icon">⚡</div>
+                        <RiPlug2Fill size={24} />
                         <div>
                             No extensions loaded.
                             <br />

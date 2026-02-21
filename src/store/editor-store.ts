@@ -15,7 +15,7 @@ export interface TabState {
   cursorPos: number;
   isDiff?: boolean;
   originalContent?: string;
-  type?: "editor" | "diff" | "browser";
+  type?: "editor" | "diff" | "browser" | "extensions";
   url?: string;
 }
 
@@ -483,7 +483,7 @@ export const editorStore = {
     this.openTab(path, "Untitled", "");
   },
 
-  openTab(path: string, name: string, content: string, type: "editor" | "browser" = "editor", url?: string) {
+  openTab(path: string, name: string, content: string, type: "editor" | "browser" | "extensions" = "editor", url?: string) {
     if (state.tabs.find((t) => t.path === path)) {
       this.setActiveTab(path);
       return;
@@ -516,6 +516,15 @@ export const editorStore = {
     const id = crypto.randomUUID();
     const path = `browser://${id}`;
     this.openTab(path, "Browser", "", "browser", url);
+  },
+
+  openMarketplace() {
+    const path = "ted://extensions";
+    if (state.tabs.find((t) => t.path === path)) {
+      this.setActiveTab(path);
+      return;
+    }
+    this.openTab(path, "Extensions", "", "extensions");
   },
 
   async openDiff(path: string) {

@@ -12,6 +12,7 @@ import SettingsPopup from "./components/settings/SettingsPopup";
 import TerminalPanel from "./components/terminal/TerminalPanel";
 import SuggestionToast from "./components/agent/SuggestionToast";
 import NotificationToast from "./components/notification/NotificationToast";
+import MarketplaceTab from "./components/extensions/MarketplaceTab";
 import Browser from "./components/browser/Browser";
 import { editorStore, useEditorStore } from "./store/editor-store";
 import { ruleEngine } from "./services/agent/rule-engine";
@@ -123,16 +124,54 @@ function App() {
     }
   }, []);
 
+  const handleOpenFolder = useCallback(async () => {
+    const selected = await open({
+      multiple: false,
+      filters: [{ name: "All Files", extensions: ["*"] }],
+    });
+    if (!selected) return;
+    const path = selected as string;
+    try {
+      const content: string = await invoke("read_file", { path });
+      const name: string = await invoke("get_basename", { path });
+      editorStore.openTab(path, name, content);
+    } catch (err) {
+      console.error("Failed to open file:", err);
+    }
+  }, []);
+
+  const handleCloseFolder = useCallback(async () => {
+    const selected = await open({
+      multiple: false,
+      filters: [{ name: "All Files", extensions: ["*"] }],
+    });
+    if (!selected) return;
+    const path = selected as string;
+    try {
+      const content: string = await invoke("read_file", { path });
+      const name: string = await invoke("get_basename", { path });
+      editorStore.openTab(path, name, content);
+    } catch (err) {
+      console.error("Failed to open file:", err);
+    }
+  }, []);
+
   useEffect(() => {
     const onOpenFile = () => handleOpenFile();
     const onSaveFile = () => handleSaveFile();
+    const onOpenFolder = () => handleOpenFolder();
+    const onCloseFolder = () => handleCloseFolder();
     window.addEventListener("ted:open-file", onOpenFile);
     window.addEventListener("ted:save-file", onSaveFile);
+    window.addEventListener("ted:open-folder", onOpenFolder);
+    window.addEventListener("ted:close-folder", onCloseFolder);
     return () => {
       window.removeEventListener("ted:open-file", onOpenFile);
       window.removeEventListener("ted:save-file", onSaveFile);
+      window.removeEventListener("ted:open-folder", onOpenFolder);
+      window.removeEventListener("ted:close-folder", onCloseFolder);
     };
-  }, [handleOpenFile, handleSaveFile]);
+  }, [handleOpenFile, handleSaveFile, handleOpenFolder, handleCloseFolder]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -235,6 +274,8 @@ function App() {
                 <div className="app-editor">
                   {activeTab?.type === "browser" ? (
                     <Browser />
+                  ) : activeTab?.type === "extensions" ? (
+                    <MarketplaceTab />
                   ) : activeTabPath.startsWith("diff:") ? (
                     <DiffEditor />
                   ) : (

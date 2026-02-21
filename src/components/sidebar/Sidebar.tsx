@@ -56,6 +56,18 @@ export default function Sidebar() {
     }
   }, [activeIndex]);
 
+  // Allow external navigation (e.g. from Welcome page)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const idx = (e as CustomEvent).detail?.index;
+      if (typeof idx === "number" && idx >= 0 && idx < PANELS.length) {
+        handleChange(idx);
+      }
+    };
+    window.addEventListener("ted:sidebar-navigate", handler);
+    return () => window.removeEventListener("ted:sidebar-navigate", handler);
+  }, [handleChange]);
+
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       if (e.ctrlKey) {

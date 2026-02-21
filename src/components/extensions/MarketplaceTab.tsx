@@ -1,17 +1,19 @@
-import { useState, useEffect, useMemo } from "react";
-import { RiSearchLine, RiExternalLinkLine, RiPlug2Fill } from "@remixicon/react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { RiSearchLine, RiExternalLinkLine, RiPlug2Fill, RiFolderOpenLine } from "@remixicon/react";
+import { open } from "@tauri-apps/plugin-dialog";
 import { extensionHost, useExtensionHost } from "../../services/extensions/extension-host";
 import { extensionRegistryService, RegistryExtension } from "../../services/extensions/extension-registry-service";
 import "./MarketplaceTab.css";
 
 export default function MarketplaceTab() {
+    const [view, setView] = useState<"browse" | "installed">("browse");
     const [search, setSearch] = useState("");
     const [registry, setRegistry] = useState<RegistryExtension[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [installing, setInstalling] = useState<string | null>(null);
 
-    const installedExtensions = useExtensionHost(() => extensionHost.getExtensions());
+    const instances = useExtensionHost(() => extensionHost.getExtensions());
 
     useEffect(() => {
         fetchRegistry();
@@ -31,15 +33,20 @@ export default function MarketplaceTab() {
         }
     };
 
-    const filtered = useMemo(() => {
-        const s = search.toLowerCase();
-        return registry.filter(ext =>
-            ext.displayName.toLowerCase().includes(s) ||
-            ext.name.toLowerCase().includes(s) ||
-            ext.description.toLowerCase().includes(s) ||
-            ext.tags.some(t => t.toLowerCase().includes(s))
-        );
-    }, [registry, search]);
+    const handleLoadLocal = useCallback(async () => {
+        try {
+            const selected = await open({ directory: true, multiple: false });
+            if (!selected) return;
+            await extensionHost.loadFromPath(selected as string);
+            window.dispatchEvent(new CustomEvent("ted:notification", {
+                detail: { message: `Extension loaded from local path.`, type: "info" }
+            }));
+        } catch (err) {
+            window.dispatchEvent(new CustomEvent("ted:notification", {
+                detail: { message: `Failed to load local extension: ${err}`, type: "error" }
+            }));
+        }
+    }, []);
 
     const handleInstall = async (ext: RegistryExtension) => {
         if (installing) return;
@@ -64,42 +71,93 @@ export default function MarketplaceTab() {
         }
     };
 
+    const handleToggle = async (id: string) => {
+        await extensionHost.toggleExtension(id);
+    };
+
+    const filtered = useMemo(() => {
+        const s = search.toLowerCase();
+        if (view === "browse") {
+            return registry.filter(ext =>
+                ext.displayName.toLowerCase().includes(s) ||
+                ext.name.toLowerCase().includes(s) ||
+                ext.description.toLowerCase().includes(s) ||
+                ext.tags.some(t => t.toLowerCase().includes(s))
+            );
+        } else {
+            // Filter installed instances
+            return instances.filter(inst =>
+                (inst.manifest.displayName || inst.manifest.name).toLowerCase().includes(s) ||
+                inst.id.toLowerCase().includes(s)
+            );
+        }
+    }, [registry, instances, search, view]);
+
     return (
         <div className="marketplace-tab">
             <div className="marketplace-header">
                 <div className="marketplace-title">
-                    <RiPlug2Fill size={18} />
-                    <h2>Extension Marketplace</h2>
+                    <RiPlug2Fill size={14} />
+                    <div className="marketplace-nav">
+                        <div
+                            className={`marketplace-nav-item ${view === "browse" ? "active" : ""}`}
+                            onClick={() => setView("browse")}
+                        >
+                            browse
+                        </div>
+                        <div
+                            className={`marketplace-nav-item ${view === "installed" ? "active" : ""}`}
+                            onClick={() => setView("installed")}
+                        >
+                            installed ({instances.length})
+                        </div>
+                    </div>
                 </div>
                 <div className="marketplace-search">
-                    <RiSearchLine size={16} />
+                    <RiSearchLine size={14} />
                     <input
                         type="text"
-                        placeholder="Search extensions..."
+                        placeholder={`search ${view}...`}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
+                {view === "installed" && (
+                    <button className="item-install-btn" onClick={handleLoadLocal}>
+                        <RiFolderOpenLine size={12} style={{ marginRight: 4 }} />
+                        load local...
+                    </button>
+                )}
             </div>
 
             <div className="marketplace-content">
-                {loading ? (
-                    <div className="marketplace-loading">Loading registry...</div>
-                ) : error ? (
+                {view === "browse" && loading ? (
+                    <div className="marketplace-loading">fetching registry...</div>
+                ) : view === "browse" && error ? (
                     <div className="marketplace-error">{error}</div>
                 ) : (
                     <div className="marketplace-grid">
-                        {filtered.map(ext => (
-                            <ExtensionItem
-                                key={ext.name}
-                                ext={ext}
-                                isInstalled={installedExtensions.some(i => i.id === ext.name)}
-                                isInstalling={installing === ext.name}
-                                onInstall={() => handleInstall(ext)}
-                            />
-                        ))}
+                        {view === "browse" ? (
+                            (filtered as RegistryExtension[]).map(ext => (
+                                <RegistryItem
+                                    key={ext.name}
+                                    ext={ext}
+                                    isInstalled={instances.some(i => i.id === ext.name)}
+                                    isInstalling={installing === ext.name}
+                                    onInstall={() => handleInstall(ext)}
+                                />
+                            ))
+                        ) : (
+                            (filtered as any[]).map(inst => (
+                                <InstalledItem
+                                    key={inst.id}
+                                    inst={inst}
+                                    onToggle={() => handleToggle(inst.id)}
+                                />
+                            ))
+                        )}
                         {filtered.length === 0 && (
-                            <div className="marketplace-empty">No extensions found.</div>
+                            <div className="marketplace-empty">no extensions found.</div>
                         )}
                     </div>
                 )}
@@ -108,7 +166,7 @@ export default function MarketplaceTab() {
     );
 }
 
-function ExtensionItem({ ext, isInstalled, isInstalling, onInstall }: {
+function RegistryItem({ ext, isInstalled, isInstalling, onInstall }: {
     ext: RegistryExtension,
     isInstalled: boolean,
     isInstalling: boolean,
@@ -148,6 +206,45 @@ function ExtensionItem({ ext, isInstalled, isInstalling, onInstall }: {
                     >
                         <RiExternalLinkLine size={12} />
                     </a>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function InstalledItem({ inst, onToggle }: {
+    inst: any,
+    onToggle: () => void
+}) {
+    const isActive = inst.status === "active";
+    const isError = inst.status === "error";
+
+    return (
+        <div className={`marketplace-item ${isActive ? '' : 'disabled'}`}>
+            <div className="item-header">
+                <span className="item-name">{inst.manifest.displayName || inst.manifest.name}</span>
+                <span className="item-version">v{inst.manifest.version}</span>
+            </div>
+
+            <div className="item-desc">
+                {isError ? (
+                    <span style={{ color: "var(--syntax-variable)" }}>{inst.error || "error loading extension"}</span>
+                ) : (
+                    inst.manifest.description
+                )}
+            </div>
+
+            <div className="item-footer">
+                <div className="item-tags">
+                    <span className="item-tag">{inst.status}</span>
+                </div>
+                <div className="item-actions">
+                    <div className="item-status" title={isActive ? "active" : "disabled"}>
+                        <button
+                            className={`item-toggle-btn ${isActive ? 'active' : ''}`}
+                            onClick={onToggle}
+                        />
+                    </div>
                 </div>
             </div>
         </div>

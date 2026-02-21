@@ -4,11 +4,10 @@ import Explorer from "../explorer/Explorer";
 import SourceControl from "../source-control/SourceControl";
 import SearchPanel from "../search/SearchPanel";
 import AgentsPanel from "../agent/AgentsPanel";
-import ExtensionsPanel from "../extensions/ExtensionsPanel";
 import { useEditorStore } from "../../store/editor-store";
 import "./sidebar.css";
 
-const PANELS = ["agent", "explorer", "search", "source control", "extensions"];
+const PANELS = ["agent", "explorer", "search", "source control"];
 
 export default function Sidebar() {
   const [activeIndex, setActiveIndex] = useState(1);
@@ -119,9 +118,6 @@ export default function Sidebar() {
           </div>
           <div className="sidebar-panel">
             <SourceControl />
-          </div>
-          <div className="sidebar-panel">
-            <ExtensionsPanel />
           </div>
         </div>
       </div>

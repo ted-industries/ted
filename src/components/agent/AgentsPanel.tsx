@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { runAgentLoop, AgentUpdate } from "../../services/agent/agent-service";
-import { editorStore, useEditorStore } from "../../store/editor-store";
+import { editorStore } from "../../store/editor-store";
 import "./AgentsPanel.css";
 
 interface Trace {
@@ -74,11 +74,21 @@ export default function AgentsPanel() {
     const [expanded, setExpanded] = useState(false);
     const [attachments, setAttachments] = useState<string[]>([]);
     const [menuOpen, setMenuOpen] = useState(false);
+    const [autoTransition, setAutoTransition] = useState(false);
     const bottomRef = useRef<HTMLDivElement>(null);
     const abortRef = useRef<AbortController | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
+    const autoTransitionRef = useRef(false);
+
+    const toggleAutoTransition = useCallback(() => {
+        setAutoTransition((prev) => {
+            const next = !prev;
+            autoTransitionRef.current = next;
+            return next;
+        });
+    }, []);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView();
@@ -134,10 +144,28 @@ export default function AgentsPanel() {
         const onUpdate = (update: AgentUpdate) => {
             if (update.type === "thinking") {
                 setStatus(update.text);
+                if (autoTransitionRef.current) {
+                    window.dispatchEvent(new CustomEvent("ted:sidebar-navigate", { detail: { index: 0 } }));
+                }
             } else if (update.type === "tool") {
                 traces.push({ type: "tool", text: update.text });
                 setLiveTraces([...traces]);
                 setStatus(update.text);
+
+                if (autoTransitionRef.current) {
+                    const toolName = update.text.split('(')[0].trim();
+                    if (["read_file", "list_dir", "edit_file", "delete_file"].includes(toolName)) {
+                        window.dispatchEvent(new CustomEvent("ted:sidebar-navigate", { detail: { index: 1 } }));
+                    } else if (["grep", "codebase_search", "file_search"].includes(toolName)) {
+                        window.dispatchEvent(new CustomEvent("ted:sidebar-navigate", { detail: { index: 2 } }));
+                    } else if (toolName === "run_terminal_cmd" && update.text.includes("git ")) {
+                        window.dispatchEvent(new CustomEvent("ted:sidebar-navigate", { detail: { index: 3 } }));
+                    } else if (toolName.startsWith("browser_")) {
+                        // Assuming browser tools stay on the split view, but maybe user wants it to go back to Agents so they can see the chat?
+                        // Actually, since browser interactions are typically just reading, let's keep it on Agents panel so user can see what agent is doing.
+                        window.dispatchEvent(new CustomEvent("ted:sidebar-navigate", { detail: { index: 0 } }));
+                    }
+                }
             } else if (update.type === "tool_result") {
                 traces.push({ type: "result", text: update.text });
                 setLiveTraces([...traces]);
@@ -329,6 +357,18 @@ export default function AgentsPanel() {
                     >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+                        </svg>
+                    </button>
+                    <button
+                        className="agent-input-btn"
+                        style={{ color: autoTransition ? "var(--ted-primary, #64ffda)" : undefined }}
+                        onClick={toggleAutoTransition}
+                        title="auto-transition tools"
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <circle cx="12" cy="12" r="6"></circle>
+                            <circle cx="12" cy="12" r="2"></circle>
                         </svg>
                     </button>
                     {loading ? (

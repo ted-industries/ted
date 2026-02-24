@@ -141,6 +141,7 @@ interface EditorStoreState {
   };
   logs: ActionLog[];
   agentHistory: { role: "user" | "assistant" | "system"; content: string }[];
+  agentActiveTask: { type: "read" | "edit" | "search" | "cmd"; payload: string } | null;
 }
 
 type Listener = () => void;
@@ -218,6 +219,7 @@ let state: EditorStoreState = {
   },
   logs: [],
   agentHistory: [],
+  agentActiveTask: null,
 };
 
 const MAX_LOGS = 1000;
@@ -805,6 +807,10 @@ export const editorStore = {
 
   clearAgentHistory() {
     dispatch("UPDATE_AGENT_HISTORY", { agentHistory: [] });
+  },
+
+  setAgentActiveTask(task: { type: "read" | "edit" | "search" | "cmd"; payload: string } | null) {
+    dispatch("SET_AGENT_ACTIVE_TASK", { agentActiveTask: task });
   },
 };
 

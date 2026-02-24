@@ -144,13 +144,25 @@ export default function AgentsPanel() {
         const onUpdate = (update: AgentUpdate) => {
             if (update.type === "thinking") {
                 setStatus(update.text);
-                if (autoTransitionRef.current) {
-                    window.dispatchEvent(new CustomEvent("ted:sidebar-navigate", { detail: { index: 0 } }));
-                }
+                editorStore.setAgentActiveTask(null);
             } else if (update.type === "tool") {
                 traces.push({ type: "tool", text: update.text });
                 setLiveTraces([...traces]);
                 setStatus(update.text);
+
+                const toolName = update.text.split('(')[0].trim();
+                const argsMatch = update.text.match(/\((.*)\)$/);
+                const firstArg = argsMatch && argsMatch[1] ? argsMatch[1].split(',')[0].trim() : "";
+
+                if (["read_file", "list_dir", "edit_file", "delete_file"].includes(toolName)) {
+                    editorStore.setAgentActiveTask({ type: "read", payload: firstArg });
+                } else if (["grep", "codebase_search", "file_search"].includes(toolName)) {
+                    editorStore.setAgentActiveTask({ type: "search", payload: firstArg });
+                } else if (toolName === "run_terminal_cmd") {
+                    editorStore.setAgentActiveTask({ type: "cmd", payload: firstArg });
+                } else {
+                    editorStore.setAgentActiveTask(null);
+                }
 
                 if (autoTransitionRef.current) {
                     const toolName = update.text.split('(')[0].trim();
@@ -192,6 +204,11 @@ export default function AgentsPanel() {
 
             // Update store with new history
             editorStore.updateAgentHistory(newHistory);
+
+            // Bring user back to Agents panel so they can read response
+            if (autoTransitionRef.current) {
+                window.dispatchEvent(new CustomEvent("ted:sidebar-navigate", { detail: { index: 0 } }));
+            }
 
         } catch (e: any) {
             if (e.message !== "Aborted") {
@@ -349,28 +366,30 @@ export default function AgentsPanel() {
                     </button>
                 </div>
                 <div className="agent-input-bottom">
-                    <button
-                        className="agent-input-btn"
-                        onClick={handleAttach}
-                        disabled={loading}
-                        title="attach context"
-                    >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
-                        </svg>
-                    </button>
-                    <button
-                        className="agent-input-btn"
-                        style={{ color: autoTransition ? "var(--ted-primary, #64ffda)" : undefined }}
-                        onClick={toggleAutoTransition}
-                        title="auto-transition tools"
-                    >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <circle cx="12" cy="12" r="6"></circle>
-                            <circle cx="12" cy="12" r="2"></circle>
-                        </svg>
-                    </button>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                        <button
+                            className="agent-input-btn"
+                            onClick={handleAttach}
+                            disabled={loading}
+                            title="attach context"
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+                            </svg>
+                        </button>
+                        <button
+                            className="agent-input-btn"
+                            style={{ color: autoTransition ? "var(--ted-primary, #64ffda)" : undefined }}
+                            onClick={toggleAutoTransition}
+                            title="auto-transition tools"
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <circle cx="12" cy="12" r="6"></circle>
+                                <circle cx="12" cy="12" r="2"></circle>
+                            </svg>
+                        </button>
+                    </div>
                     {loading ? (
                         <button className="agent-stop" onClick={handleStop}>stop</button>
                     ) : (

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useEditorStore, editorStore } from "../../store/editor-store";
 import "./SearchPanel.css";
@@ -19,6 +19,7 @@ interface FileGroup {
 
 export default function SearchPanel() {
     const explorerPath = useEditorStore((s) => s.explorerPath);
+    const agentActiveTask = useEditorStore((s) => s.agentActiveTask);
     const [query, setQuery] = useState("");
     const [replaceText, setReplaceText] = useState("");
     const [results, setResults] = useState<SearchResult[]>([]);
@@ -26,6 +27,7 @@ export default function SearchPanel() {
     const [caseSensitive, setCaseSensitive] = useState(false);
     const [useRegex, setUseRegex] = useState(false);
     const [searching, setSearching] = useState(false);
+    const [isAgentTyping, setIsAgentTyping] = useState(false);
     const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
     const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const queryRef = useRef("");
@@ -91,6 +93,32 @@ export default function SearchPanel() {
         return Array.from(map.values());
     }, [results]);
 
+    useEffect(() => {
+        if (agentActiveTask?.type === "search" && agentActiveTask.payload) {
+            const targetQuery = agentActiveTask.payload;
+            if (queryRef.current === targetQuery) return; // already searching
+
+            setIsAgentTyping(true);
+            setQuery("");
+            setResults([]);
+            let i = 0;
+            const interval = setInterval(() => {
+                i++;
+                const currentStr = targetQuery.substring(0, i);
+                setQuery(currentStr);
+                queryRef.current = currentStr;
+                if (i >= targetQuery.length) {
+                    clearInterval(interval);
+                    setIsAgentTyping(false);
+                    doSearch(targetQuery);
+                }
+            }, 20); // 20ms per char
+            return () => clearInterval(interval);
+        } else {
+            setIsAgentTyping(false);
+        }
+    }, [agentActiveTask?.payload, agentActiveTask?.type, doSearch]);
+
     const openMatch = useCallback(async (result: SearchResult) => {
         try {
             const content: string = await invoke("read_file", { path: result.path });
@@ -153,6 +181,9 @@ export default function SearchPanel() {
         );
     }, []);
 
+    const isAgentManaged = agentActiveTask?.type === "search" && query === agentActiveTask.payload;
+    const renderedGroups = groups.slice(0, 50);
+
     if (!explorerPath) {
         return <div className="search-panel"><div className="search-empty">open a folder</div></div>;
     }
@@ -160,7 +191,7 @@ export default function SearchPanel() {
     return (
         <div className="search-panel">
             <div className="search-inputs">
-                <div className="search-row">
+                <div className={`search-row${isAgentTyping || isAgentManaged ? " agent-managed" : ""}`}>
                     <input
                         className="search-field"
                         placeholder="search"
@@ -184,6 +215,9 @@ export default function SearchPanel() {
                         onClick={() => setShowReplace(!showReplace)}
                         title="Toggle Replace"
                     >{showReplace ? "−" : "+"}</button>
+                    {(isAgentTyping || isAgentManaged) && (
+                        <div className="search-agent-badge">AGENT MODE</div>
+                    )}
                 </div>
                 {showReplace && (
                     <div className="search-row">
@@ -216,8 +250,8 @@ export default function SearchPanel() {
                 <div className="search-empty">search</div>
             ) : (
                 <div className="search-results">
-                    {groups.map((g) => (
-                        <div key={g.path} className="search-file-group">
+                    {renderedGroups.map((g, gi) => (
+                        <div key={g.path} className="search-file-group fade-in-up" style={{ animationDelay: `${gi * 30}ms` }}>
                             <div className="search-file-header" onClick={() => toggleFile(g.path)}>
                                 <span>{g.name}</span>
                                 <span className="search-file-count">{g.matches.length}</span>
@@ -229,7 +263,7 @@ export default function SearchPanel() {
                                     >⟳</button>
                                 )}
                             </div>
-                            {!collapsed[g.path] && g.matches.map((m, i) => (
+                            {!collapsed[g.path] && g.matches.slice(0, 20).map((m, i) => (
                                 <div
                                     key={`${m.line_number}-${m.column}-${i}`}
                                     className="search-match"
@@ -239,8 +273,18 @@ export default function SearchPanel() {
                                     {renderLine(m.line_text, m.match_text)}
                                 </div>
                             ))}
+                            {!collapsed[g.path] && g.matches.length > 20 && (
+                                <div className="search-match-more" onClick={() => openMatch(g.matches[0])}>
+                                    + {g.matches.length - 20} more match{g.matches.length - 20 > 1 ? 'es' : ''} (click to open file)
+                                </div>
+                            )}
                         </div>
                     ))}
+                    {groups.length > 50 && (
+                        <div className="search-group-more">
+                            + {groups.length - 50} more files (refine search query)
+                        </div>
+                    )}
                 </div>
             )}
         </div>

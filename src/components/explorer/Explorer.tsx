@@ -12,6 +12,7 @@ import {
 } from "@remixicon/react";
 import { editorStore, useEditorStore } from "../../store/editor-store";
 import { gitService } from "../../services/git-service"; // Removed unused FileStatus
+import { RiFocusLine } from "@remixicon/react"; // For the target icon in the pill
 import "./explorer.css";
 
 interface FileEntry {
@@ -27,6 +28,7 @@ const FileTreeItem = memo(function FileTreeItem({
   onDiffClick,
   activePath,
   gitStatus,
+  agentActiveTask,
 }: {
   entry: FileEntry;
   depth: number;
@@ -34,6 +36,7 @@ const FileTreeItem = memo(function FileTreeItem({
   onDiffClick: (path: string) => void;
   activePath: string | null;
   gitStatus: Record<string, string>;
+  agentActiveTask: { type: string, payload: string } | null;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [children, setChildren] = useState<FileEntry[]>([]);
@@ -61,11 +64,28 @@ const FileTreeItem = memo(function FileTreeItem({
   const lookupPath = entry.path.replace(/\\/g, "/").toLowerCase();
   const status = gitStatus[lookupPath];
 
+  let isAgentTarget = false;
+  let isAgentParent = false;
+
+  if (agentActiveTask && agentActiveTask.payload && ["read", "edit"].includes(agentActiveTask.type)) {
+    const payloadNorm = agentActiveTask.payload.replace(/\\/g, "/").toLowerCase();
+    if (lookupPath.endsWith(payloadNorm) || payloadNorm.endsWith(lookupPath)) {
+      isAgentTarget = true;
+    } else if (payloadNorm.includes(lookupPath + "/")) {
+      isAgentParent = true;
+    }
+
+    // Auto-expand if agent is working inside this directory
+    if (isAgentParent && !expanded) {
+      setExpanded(true);
+    }
+  }
+
   return (
     <>
       <div
         className={`explorer-item${isActive ? " explorer-item-active" : ""}${status ? ` git-${status}` : ""
-          }`}
+          }${isAgentTarget ? " agent-target" : ""}${isAgentParent ? " agent-parent" : ""}`}
         style={{ paddingLeft: `${depth * 12 + 12}px` }}
         onClick={toggle}
         title={status ? `Git: ${status}` : undefined}
@@ -118,6 +138,7 @@ const FileTreeItem = memo(function FileTreeItem({
             onDiffClick={onDiffClick}
             activePath={activePath}
             gitStatus={gitStatus}
+            agentActiveTask={agentActiveTask}
           />
         ))}
     </>
@@ -127,6 +148,7 @@ const FileTreeItem = memo(function FileTreeItem({
 export default function Explorer() {
   const explorerPath = useEditorStore((s) => s.explorerPath);
   const activePath = useEditorStore((s) => s.activeTabPath);
+  const agentActiveTask = useEditorStore((s) => s.agentActiveTask);
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [rootName, setRootName] = useState("");
   const [gitStatus, setGitStatus] = useState<Record<string, string>>({});
@@ -332,9 +354,16 @@ export default function Explorer() {
             onDiffClick={handleDiffClick}
             activePath={activePath}
             gitStatus={gitStatus}
+            agentActiveTask={agentActiveTask}
           />
         ))}
       </div>
+      {agentActiveTask && ["read", "edit"].includes(agentActiveTask.type) && agentActiveTask.payload && (
+        <div className="explorer-agent-pill">
+          <RiFocusLine size={14} className="animate-spin-slow" />
+          <span className="explorer-agent-pill-text">scanning {agentActiveTask.payload.split(/[/\\]/).pop()}...</span>
+        </div>
+      )}
     </div>
   );
 }

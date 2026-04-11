@@ -37,7 +37,7 @@ const FileTreeItem = memo(function FileTreeItem({
   activePath: string | null;
   gitStatus: Record<string, string>;
   agentActiveTask: { type: string, payload: string } | null;
-  getIcon: ((path: string, is_dir: boolean) => string | undefined) | null;
+  getIcon: ((path: string, is_dir: boolean, is_expanded: boolean) => string | undefined) | null;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [children, setChildren] = useState<FileEntry[]>([]);
@@ -111,7 +111,7 @@ const FileTreeItem = memo(function FileTreeItem({
           <span className="explorer-chevron explorer-chevron-spacer" />
         )}
         {(() => {
-          const customHtml = getIcon ? getIcon(entry.path, entry.is_dir) : undefined;
+          const customHtml = getIcon ? getIcon(entry.path, entry.is_dir, expanded) : undefined;
           if (customHtml) {
             return (
               <span

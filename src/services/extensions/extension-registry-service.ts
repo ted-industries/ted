@@ -23,6 +23,9 @@ class ExtensionRegistryService {
     }
 
     async installExtension(ext: RegistryExtension) {
+        if (!ext.repository) {
+            throw new Error(`Extension "${ext.displayName}" cannot be installed: missing repository URL.`);
+        }
         const installDir = await this.getInstallDir(ext.name);
 
         // 1. Clean up existing install
@@ -30,7 +33,7 @@ class ExtensionRegistryService {
 
         // 2. Handle potential monorepo path
         // URL format: https://github.com/owner/repo/tree/main/path/to/ext
-        if (ext.repository.includes("/tree/")) {
+        if (ext.repository?.includes("/tree/")) {
             const parts = ext.repository.split("/tree/");
             const repoUrl = parts[0];
             const subparts = parts[1].split("/");

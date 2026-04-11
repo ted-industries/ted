@@ -46,10 +46,12 @@ export interface TedAPI {
     window: TedWindowAPI;
     icons: TedIconsAPI;
     onEvent: (event: string, handler: (...args: any[]) => void) => () => void;
+    extensionPath: string; // Absolute path to this extension's folder
 }
 
 export interface TedIconsAPI {
-    registerFileIconProvider: (provider: (path: string, is_dir: boolean) => string | undefined) => void;
+    registerFileIconProvider: (provider: (path: string, is_dir: boolean, is_expanded: boolean) => string | undefined) => void;
+    refresh: () => void;
 }
 
 export interface TedEditorAPI {

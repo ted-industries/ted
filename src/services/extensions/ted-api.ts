@@ -11,8 +11,9 @@ import type {
     RegisteredStatusBarItem,
 } from "./types";
 
-export function createTedAPI(extensionId: string, cleanup: ExtensionCleanup): TedAPI {
+export function createTedAPI(extensionId: string, extensionPath: string, cleanup: ExtensionCleanup): TedAPI {
     return {
+        extensionPath,
         editor: {
             async openFile(path: string) {
                 try {
@@ -142,9 +143,12 @@ export function createTedAPI(extensionId: string, cleanup: ExtensionCleanup): Te
         },
 
         icons: {
-            registerFileIconProvider(provider: (path: string, is_dir: boolean) => string | undefined) {
+            registerFileIconProvider(provider: (path: string, is_dir: boolean, is_expanded: boolean) => string | undefined) {
                 extensionHost.registerFileIconProvider(extensionId, provider);
                 cleanup.iconProviderId = extensionId;
+            },
+            refresh() {
+                extensionHost.refreshIcons();
             }
         },
 

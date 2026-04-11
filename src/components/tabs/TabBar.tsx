@@ -34,14 +34,22 @@ export default function TabBar() {
             onMouseDown={(e) => handleMouseDown(e, tab.path)}
           >
             {(() => {
-              const customHtml = getIcon ? getIcon(tab.path, false) : undefined;
+              const customHtml = getIcon ? getIcon(tab.path, false, false) : undefined;
               if (customHtml) {
                 return (
-                   <span 
-                      className="tab-icon"
-                      style={{ display: "flex", alignItems: "center", justifyContent: "center", marginRight: 6 }}
-                      dangerouslySetInnerHTML={{ __html: customHtml }} 
-                   />
+                  <span
+                    className="tab-icon"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 6,
+                      width: 16,
+                      height: 16,
+                      flexShrink: 0
+                    }}
+                    dangerouslySetInnerHTML={{ __html: customHtml }}
+                  />
                 );
               }
               return null;

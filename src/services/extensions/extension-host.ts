@@ -48,7 +48,7 @@ class ExtensionHost {
     private listeners = new Set<Listener>();
     private initialized = false;
 
-    private fileIconProvider: ((path: string, is_dir: boolean) => string | undefined) | null = null;
+    private fileIconProvider: ((path: string, is_dir: boolean, is_expanded: boolean) => string | undefined) | null = null;
     private fileIconProviderExtensionId: string | null = null;
 
     // Snapshot caches — stable references for useSyncExternalStore
@@ -166,7 +166,7 @@ class ExtensionHost {
             instance.module = mod;
 
             // Create scoped API and activate
-            const api = createTedAPI(manifest.name, cleanup);
+            const api = createTedAPI(manifest.name, extPath, cleanup);
 
             // Check ESM export first, then CJS default export
             const activate = mod.activate || mod.default?.activate;
@@ -256,7 +256,7 @@ class ExtensionHost {
             const mod = await loadModuleFromDisk(entryPath);
             instance.module = mod;
 
-            const api = createTedAPI(id, cleanup);
+            const api = createTedAPI(id, instance.path, cleanup);
             const activate = mod.activate || mod.default?.activate;
             if (typeof activate === "function") {
                 await activate(api);
@@ -314,13 +314,15 @@ class ExtensionHost {
         this.emit();
     }
 
-    registerFileIconProvider(extensionId: string, provider: (path: string, is_dir: boolean) => string | undefined) {
+    registerFileIconProvider(extensionId: string, provider: (path: string, is_dir: boolean, is_expanded: boolean) => string | undefined) {
         this.fileIconProvider = provider;
         this.fileIconProviderExtensionId = extensionId;
         this.emit();
     }
 
-    // ── Getters (cached snapshots) ─────────────────────────────────
+    refreshIcons() {
+        this.emit();
+    }
 
     getExtensions(): ExtensionInstance[] {
         return this._extSnap;

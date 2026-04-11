@@ -1,5 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { RiCloseLine, RiSubtractLine, RiCheckboxMultipleBlankLine, RiCheckboxBlankLine, RiAddLine } from "@remixicon/react";
+import { RiCloseLine, RiSubtractLine, RiCheckboxMultipleBlankLine, RiCheckboxBlankLine, RiAddLine, RiCodeSSlashLine, RiRobotLine } from "@remixicon/react";
 import { useState, useEffect } from "react";
 import "./Titlebar.css";
 import { editorStore, useEditorStore } from "../../store/editor-store";
@@ -26,6 +26,7 @@ export default function Titlebar() {
 
     const workspaces = useEditorStore((s) => s.workspaces);
     const activeWorkspaceId = useEditorStore((s) => s.activeWorkspaceId);
+    const viewMode = useEditorStore((s) => s.viewMode);
 
     // Convert workspaces map to array for rendering
     const workspaceList = Object.values(workspaces);
@@ -34,6 +35,23 @@ export default function Titlebar() {
         <div data-tauri-drag-region className="titlebar">
             <div data-tauri-drag-region className="titlebar-left">
                 <img data-tauri-drag-region src="/ted.svg" alt="ted" className="titlebar-icon" />
+
+                <div className="view-mode-tabs">
+                    <div
+                        className={`view-mode-tab ${viewMode === "editor" ? "active" : ""}`}
+                        onClick={() => editorStore.setViewMode("editor")}
+                    >
+                        <RiCodeSSlashLine size={14} />
+                        <span>editor</span>
+                    </div>
+                    <div
+                        className={`view-mode-tab ${viewMode === "swarms" ? "active" : ""}`}
+                        onClick={() => editorStore.setViewMode("swarms")}
+                    >
+                        <RiRobotLine size={14} />
+                        <span>swarms</span>
+                    </div>
+                </div>
             </div>
 
             <div data-tauri-drag-region className="titlebar-tabs">

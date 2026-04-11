@@ -24,6 +24,19 @@ export interface TerminalState {
   name: string;
 }
 
+export interface AgentMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+  traces?: { type: "tool" | "result"; text: string }[];
+}
+
+export interface AgentSession {
+  id: string;
+  name: string;
+  history: AgentMessage[];
+  timestamp: number;
+}
+
 export interface ActionLog {
   id: string;
   type: string;
@@ -140,8 +153,11 @@ interface EditorStoreState {
     };
   };
   logs: ActionLog[];
-  agentHistory: { role: "user" | "assistant" | "system"; content: string }[];
+  agentHistory: AgentMessage[];
+  agentSessions: AgentSession[];
+  activeAgentSessionId: string | null;
   agentActiveTask: { type: "read" | "edit" | "search" | "cmd"; payload: string } | null;
+  viewMode: "editor" | "swarms";
 }
 
 type Listener = () => void;
@@ -219,7 +235,10 @@ let state: EditorStoreState = {
   },
   logs: [],
   agentHistory: [],
+  agentSessions: [],
+  activeAgentSessionId: null,
   agentActiveTask: null,
+  viewMode: "editor",
 };
 
 const MAX_LOGS = 1000;
@@ -773,7 +792,74 @@ export const editorStore = {
     dispatch("SET_HISTORY_OPEN", { historyOpen: open });
   },
 
-  addAgentMessage(msg: { role: "user" | "assistant" | "system"; content: string }) {
+  setViewMode(mode: "editor" | "swarms") {
+    dispatch("SET_VIEW_MODE", { viewMode: mode });
+  },
+
+  // Agent Sessions
+  createAgentSession(name: string = "New Session") {
+    const id = crypto.randomUUID();
+    const newSession: AgentSession = {
+      id,
+      name,
+      history: [],
+      timestamp: Date.now(),
+    };
+    dispatch("CREATE_AGENT_SESSION", {
+      agentSessions: [newSession, ...state.agentSessions],
+      activeAgentSessionId: id,
+      agentHistory: [],
+    });
+  },
+
+  switchAgentSession(id: string) {
+    const session = state.agentSessions.find((s) => s.id === id);
+    if (!session) return;
+    dispatch("SWITCH_AGENT_SESSION", {
+      activeAgentSessionId: id,
+      agentHistory: session.history,
+    });
+  },
+
+  deleteAgentSession(id: string) {
+    const nextSessions = state.agentSessions.filter((s) => s.id !== id);
+    let nextActiveId = state.activeAgentSessionId;
+    let nextHistory = state.agentHistory;
+
+    if (nextActiveId === id) {
+      nextActiveId = nextSessions.length > 0 ? nextSessions[0].id : null;
+      nextHistory = nextActiveId ? nextSessions[0].history : [];
+    }
+
+    dispatch("DELETE_AGENT_SESSION", {
+      agentSessions: nextSessions,
+      activeAgentSessionId: nextActiveId,
+      agentHistory: nextHistory,
+    });
+  },
+
+  updateAgentHistory(history: AgentMessage[]) {
+    // Also update history in current active session if exists
+    let agentSessions = state.agentSessions;
+    if (state.activeAgentSessionId) {
+      agentSessions = agentSessions.map((s) =>
+        s.id === state.activeAgentSessionId ? { ...s, history } : s
+      );
+    }
+    dispatch("UPDATE_AGENT_HISTORY", { agentHistory: history, agentSessions });
+  },
+
+  clearAgentHistory() {
+    let agentSessions = state.agentSessions;
+    if (state.activeAgentSessionId) {
+      agentSessions = agentSessions.map((s) =>
+        s.id === state.activeAgentSessionId ? { ...s, history: [] } : s
+      );
+    }
+    dispatch("CLEAR_AGENT_HISTORY", { agentHistory: [], agentSessions });
+  },
+
+  addAgentMessage(msg: AgentMessage) {
     // This is a bit of a hack to inject messages into the agent loop.
     // Ideally the agent service should be a store itself or subscribe to this.
     // For now, we'll store it in a temporary state that the agent UI can read, 

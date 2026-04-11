@@ -11,9 +11,10 @@ class RuleEngine {
 
     constructor() {
         this.rules = [
-            new RapidUndoRedoRule(),
-            new LargeFunctionRule(),
-            new GitChurnRule(),
+            // disabled for now
+            // new RapidUndoRedoRule(),
+            // new LargeFunctionRule(),
+            // new GitChurnRule(),
         ];
     }
 

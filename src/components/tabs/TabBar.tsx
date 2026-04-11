@@ -1,11 +1,13 @@
 import { useCallback } from "react";
 import { RiCloseLine } from "@remixicon/react";
 import { editorStore, useEditorStore } from "../../store/editor-store";
+import { useExtensionHost } from "../../services/extensions/extension-host";
 import "./tabs.css";
 
 export default function TabBar() {
   const tabs = useEditorStore((s) => s.tabs);
   const activeTabPath = useEditorStore((s) => s.activeTabPath);
+  const getIcon = useExtensionHost((s) => s.getFileIconProvider());
 
   const handleMouseDown = useCallback((e: React.MouseEvent, path: string) => {
     if (e.button === 1) {
@@ -31,6 +33,19 @@ export default function TabBar() {
             onClick={() => editorStore.setActiveTab(tab.path)}
             onMouseDown={(e) => handleMouseDown(e, tab.path)}
           >
+            {(() => {
+              const customHtml = getIcon ? getIcon(tab.path, false) : undefined;
+              if (customHtml) {
+                return (
+                   <span 
+                      className="tab-icon"
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", marginRight: 6 }}
+                      dangerouslySetInnerHTML={{ __html: customHtml }} 
+                   />
+                );
+              }
+              return null;
+            })()}
             <span className="tab-label">{tab.name}</span>
             <button
               className="tab-close"

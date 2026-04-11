@@ -141,6 +141,13 @@ export function createTedAPI(extensionId: string, cleanup: ExtensionCleanup): Te
             }
         },
 
+        icons: {
+            registerFileIconProvider(provider: (path: string, is_dir: boolean) => string | undefined) {
+                extensionHost.registerFileIconProvider(extensionId, provider);
+                cleanup.iconProviderId = extensionId;
+            }
+        },
+
         onEvent(event: string, handler: (...args: any[]) => void) {
             const wrappedHandler = ((e: CustomEvent) => handler(...(e.detail ? [e.detail] : []))) as EventListener;
             window.addEventListener(`ted:${event}`, wrappedHandler);

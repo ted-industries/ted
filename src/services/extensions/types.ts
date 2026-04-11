@@ -31,6 +31,7 @@ export interface ExtensionCleanup {
     panels: string[];
     statusBarItems: string[];
     eventUnsubs: (() => void)[];
+    iconProviderId?: string;
 }
 
 // ── Ted API surface exposed to extensions ──────────────────────────
@@ -43,7 +44,12 @@ export interface TedAPI {
     workspace: TedWorkspaceAPI;
     fs: TedFsAPI;
     window: TedWindowAPI;
+    icons: TedIconsAPI;
     onEvent: (event: string, handler: (...args: any[]) => void) => () => void;
+}
+
+export interface TedIconsAPI {
+    registerFileIconProvider: (provider: (path: string, is_dir: boolean) => string | undefined) => void;
 }
 
 export interface TedEditorAPI {

@@ -5,14 +5,13 @@ import {
   RiArrowDownSLine,
   RiFileTextLine,
   RiArrowLeftRightLine,
-  RiFolderOpenLine,
-  RiGitRepositoryLine,
   RiFolderOpenFill,
   RiGitRepositoryFill,
 } from "@remixicon/react";
 import { editorStore, useEditorStore } from "../../store/editor-store";
 import { gitService } from "../../services/git-service"; // Removed unused FileStatus
 import { RiFocusLine } from "@remixicon/react"; // For the target icon in the pill
+import { useExtensionHost } from "../../services/extensions/extension-host";
 import "./explorer.css";
 
 interface FileEntry {
@@ -29,6 +28,7 @@ const FileTreeItem = memo(function FileTreeItem({
   activePath,
   gitStatus,
   agentActiveTask,
+  getIcon,
 }: {
   entry: FileEntry;
   depth: number;
@@ -37,6 +37,7 @@ const FileTreeItem = memo(function FileTreeItem({
   activePath: string | null;
   gitStatus: Record<string, string>;
   agentActiveTask: { type: string, payload: string } | null;
+  getIcon: ((path: string, is_dir: boolean) => string | undefined) | null;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [children, setChildren] = useState<FileEntry[]>([]);
@@ -109,11 +110,25 @@ const FileTreeItem = memo(function FileTreeItem({
         ) : (
           <span className="explorer-chevron explorer-chevron-spacer" />
         )}
-        <RiFileTextLine
-          size={14}
-          className={`explorer-icon${entry.is_dir ? " folder" : " file"}`}
-          style={{ display: entry.is_dir ? "none" : undefined }}
-        />
+        {(() => {
+          const customHtml = getIcon ? getIcon(entry.path, entry.is_dir) : undefined;
+          if (customHtml) {
+            return (
+              <span
+                className={`explorer-custom-icon explorer-icon${entry.is_dir ? " folder" : " file"}`}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+                dangerouslySetInnerHTML={{ __html: customHtml }}
+              />
+            );
+          }
+          return (
+            <RiFileTextLine
+              size={14}
+              className={`explorer-icon${entry.is_dir ? " folder" : " file"}`}
+              style={{ display: entry.is_dir ? "none" : undefined }}
+            />
+          );
+        })()}
         <span className="explorer-item-name">{entry.name}</span>
         {status === "modified" && !entry.is_dir && (
           <div
@@ -139,6 +154,7 @@ const FileTreeItem = memo(function FileTreeItem({
             activePath={activePath}
             gitStatus={gitStatus}
             agentActiveTask={agentActiveTask}
+            getIcon={getIcon}
           />
         ))}
     </>
@@ -152,6 +168,7 @@ export default function Explorer() {
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [rootName, setRootName] = useState("");
   const [gitStatus, setGitStatus] = useState<Record<string, string>>({});
+  const getIcon = useExtensionHost((host) => host.getFileIconProvider());
 
   const refreshGitStatus = useCallback(async () => {
     if (!explorerPath) return;
@@ -355,6 +372,7 @@ export default function Explorer() {
             activePath={activePath}
             gitStatus={gitStatus}
             agentActiveTask={agentActiveTask}
+            getIcon={getIcon}
           />
         ))}
       </div>

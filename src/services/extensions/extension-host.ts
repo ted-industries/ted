@@ -48,6 +48,9 @@ class ExtensionHost {
     private listeners = new Set<Listener>();
     private initialized = false;
 
+    private fileIconProvider: ((path: string, is_dir: boolean) => string | undefined) | null = null;
+    private fileIconProviderExtensionId: string | null = null;
+
     // Snapshot caches — stable references for useSyncExternalStore
     private _extSnap: ExtensionInstance[] = [];
     private _cmdSnap: RegisteredCommand[] = [];
@@ -200,6 +203,10 @@ class ExtensionHost {
         for (const panelId of instance.cleanup.panels) this.panels.delete(panelId);
         for (const itemId of instance.cleanup.statusBarItems) this.statusBarItems.delete(itemId);
         for (const unsub of instance.cleanup.eventUnsubs) unsub();
+        if (instance.cleanup.iconProviderId && instance.cleanup.iconProviderId === this.fileIconProviderExtensionId) {
+            this.fileIconProvider = null;
+            this.fileIconProviderExtensionId = null;
+        }
 
         this.extensions.delete(id);
         this.emit();
@@ -221,6 +228,10 @@ class ExtensionHost {
             for (const panelId of instance.cleanup.panels) this.panels.delete(panelId);
             for (const itemId of instance.cleanup.statusBarItems) this.statusBarItems.delete(itemId);
             for (const unsub of instance.cleanup.eventUnsubs) unsub();
+            if (instance.cleanup.iconProviderId && instance.cleanup.iconProviderId === this.fileIconProviderExtensionId) {
+                this.fileIconProvider = null;
+                this.fileIconProviderExtensionId = null;
+            }
             instance.cleanup = { commands: [], panels: [], statusBarItems: [], eventUnsubs: [] };
 
             instance.status = "inactive";
@@ -303,6 +314,12 @@ class ExtensionHost {
         this.emit();
     }
 
+    registerFileIconProvider(extensionId: string, provider: (path: string, is_dir: boolean) => string | undefined) {
+        this.fileIconProvider = provider;
+        this.fileIconProviderExtensionId = extensionId;
+        this.emit();
+    }
+
     // ── Getters (cached snapshots) ─────────────────────────────────
 
     getExtensions(): ExtensionInstance[] {
@@ -319,6 +336,10 @@ class ExtensionHost {
 
     getStatusBarItems(): RegisteredStatusBarItem[] {
         return this._sbSnap;
+    }
+
+    getFileIconProvider() {
+        return this.fileIconProvider;
     }
 
     // ── Pub/Sub ────────────────────────────────────────────────────

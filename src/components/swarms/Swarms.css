@@ -1,0 +1,466 @@
+.swarms-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    background: var(--background);
+    color: var(--foreground);
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Flyout Sidebar */
+.swarms-flyout-sidebar {
+    position: absolute;
+    top: 0;
+    left: -260px;
+    width: 240px;
+    height: 100%;
+    background: rgba(20, 20, 20, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    z-index: 50;
+    transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.swarms-flyout-sidebar.open {
+    left: 0;
+}
+
+.swarms-sidebar-toggle {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(20, 20, 20, 0.6);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--foreground);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.swarms-sidebar-toggle:hover {
+    background: rgba(45, 45, 45, 0.8);
+}
+
+.swarms-sidebar-header {
+    padding: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.swarms-close-sidebar-btn {
+    background: transparent;
+    border: none;
+    color: var(--foreground);
+    opacity: 0.5;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+}
+
+.swarms-close-sidebar-btn:hover {
+    opacity: 1;
+}
+
+.swarms-new-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--foreground);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    justify-content: center;
+    opacity: 0.6;
+}
+
+.swarms-new-btn:hover {
+    background: var(--accent);
+    opacity: 1;
+}
+
+.swarms-session-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.swarms-session-item {
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    opacity: 0.6;
+    transition: all 0.2s;
+}
+
+.swarms-session-item:hover {
+    background: var(--accent);
+    opacity: 0.9;
+}
+
+.swarms-session-item.active {
+    background: var(--accent);
+    opacity: 1;
+    font-weight: 500;
+}
+
+.swarms-session-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.swarms-session-delete {
+    opacity: 0;
+    padding: 2px;
+    border-radius: 3px;
+    transition: all 0.2s;
+}
+
+.swarms-session-item:hover .swarms-session-delete {
+    opacity: 0.5;
+}
+
+.swarms-session-delete:hover {
+    opacity: 1 !important;
+    background: rgba(255, 0, 0, 0.1);
+}
+
+/* Map Container */
+.swarms-map-container {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    cursor: grab;
+}
+
+.swarms-map-container:active {
+    cursor: grabbing;
+}
+
+.force-graph-container {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* Floating Deck at Bottom */
+.swarms-deck {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--input-bg, #111111);
+    border: 1px solid var(--border, #262626);
+    border-radius: 8px;
+    padding: 6px;
+    display: flex;
+    gap: 4px;
+    z-index: 10;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+    
+    max-width: 90vw;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.swarms-deck::-webkit-scrollbar {
+    display: none;
+}
+
+.deck-model-card {
+    flex-shrink: 0;
+    width: 56px;
+    height: 52px;
+    background: transparent;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: grab;
+    transition: background-color 0.1s ease;
+}
+
+.deck-model-card:hover {
+    background: var(--accent, #2a2a2a);
+}
+
+.deck-model-card:active {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.deck-model-card.dragging {
+    opacity: 0.3;
+}
+
+.deck-model-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--foreground);
+    opacity: 0.5;
+    transition: opacity 0.1s ease;
+}
+
+.deck-model-name {
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--foreground);
+    opacity: 0.4;
+    transition: opacity 0.1s ease;
+}
+
+.deck-model-card:hover .deck-model-icon,
+.deck-model-card:hover .deck-model-name {
+    opacity: 1;
+}
+
+/* Right Chat Panel */
+.swarms-chat-panel {
+    position: absolute;
+    top: 0;
+    right: -400px;
+    width: 380px;
+    height: 100%;
+    background: rgba(20, 20, 20, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    z-index: 50;
+    transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.swarms-chat-panel.open {
+    right: 0;
+}
+
+.swarms-chat-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.swarms-message-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.swarms-msg-header {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+}
+
+.swarms-msg-text {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--foreground);
+    background: rgba(255,255,255,0.03);
+    padding: 10px 14px;
+    border-radius: 8px;
+}
+
+.swarms-msg-text p { margin: 0 0 8px 0; }
+.swarms-msg-text p:last-child { margin: 0; }
+.swarms-msg-text pre { background: rgba(0,0,0,0.5); padding: 8px; border-radius: 4px; overflow-x: auto;}
+
+.swarms-input-section {
+    padding: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(20, 20, 20, 0.95);
+}
+
+.swarms-input-box {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.swarms-input-box:focus-within {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.swarms-textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--foreground);
+    padding: 12px;
+    font-size: 13px;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    min-height: 48px;
+    max-height: 200px;
+}
+
+.swarms-input-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px 8px 12px;
+}
+
+.swarms-input-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.swarms-icon-btn, .swarms-send-btn {
+    background: transparent;
+    border: none;
+    color: var(--foreground);
+    opacity: 0.5;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.swarms-icon-btn:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.swarms-send-btn:hover:not(:disabled) {
+    opacity: 1;
+    background: var(--accent);
+    color: #fff;
+}
+
+.swarms-send-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.2;
+}
+
+.swarms-status-area {
+    display: flex;
+    padding: 8px 0;
+}
+
+.swarms-status-pill {
+    background: rgba(20, 160, 120, 0.15);
+    color: #4ade80;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+.swarms-traces {
+    margin-top: 8px;
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: 11px;
+    font-family: monospace;
+}
+
+.trace-group-header {
+    background: rgba(0,0,0,0.3);
+    padding: 6px 10px;
+    cursor: pointer;
+    color: var(--accent);
+    display: flex;
+    gap: 8px;
+}
+
+.trace-group-body {
+    background: rgba(0,0,0,0.5);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.trace-call {
+    color: #bbb;
+}
+
+.trace-result-wrapper {
+    margin-left: 8px;
+    border-left: 1px solid rgba(255,255,255,0.1);
+}
+
+.trace-result-header {
+    padding: 2px 8px;
+    cursor: pointer;
+    color: #888;
+}
+
+.trace-result-body {
+    margin: 4px 0 0 8px;
+    padding: 6px;
+    background: rgba(0,0,0,0.5);
+    color: #ccc;
+    font-size: 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+/* Graph tooltip Overrides */
+.graph-tooltip {
+    background: rgba(0, 0, 0, 0.8) !important;
+    color: #fff !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-size: 11px !important;
+    pointer-events: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}

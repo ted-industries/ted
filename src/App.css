@@ -6,31 +6,6 @@
     --accent: #ffffff10;
 }
 
-/* Global Scrollbar Styling */
-
-/* Global Scrollbar Styling */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--scroll-track);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--scroll-thumb);
-    border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--scroll-thumb-hover);
-}
-
-::-webkit-scrollbar-corner {
-    background: transparent;
-}
-
 body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -46,6 +21,41 @@ body {
     flex-direction: column;
     height: 100vh;
     width: 100vw;
+    overflow: hidden;
+    position: relative;
+}
+
+.view-viewport {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+}
+
+.editor-view, .swarms-view-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
+}
+
+.editor-view {
+    display: flex;
+}
+
+.swarms-view-container {
+    transform: translateX(100%);
+}
+
+.editor-view.switched {
+    transform: translateX(-100%);
+}
+
+.swarms-view-container.switched {
+    transform: translateX(0);
 }
 
 .app-content {
@@ -53,6 +63,7 @@ body {
     flex: 1;
     min-height: 0;
     position: relative;
+    width: 100%;
 }
 
 .app-sidebar {
@@ -62,6 +73,7 @@ body {
     height: 100%;
     min-width: 180px;
     max-width: 500px;
+    border-right: 1px solid var(--border);
 }
 
 .app-resize-handle {
@@ -69,14 +81,12 @@ body {
     background-color: var(--border);
     cursor: ew-resize;
     flex-shrink: 0;
-    transition: background-color 0.2s;
     z-index: 10;
+    transition: background-color 0.2s;
 }
 
 .app-resize-handle:hover {
     background: var(--accent);
-    width: 2px;
-    margin-right: -1px;
 }
 
 .app-main {
@@ -84,8 +94,6 @@ body {
     display: flex;
     flex-direction: column;
     min-width: 0;
-    background-color: var(--background);
-    position: relative;
 }
 
 .editor-area {
@@ -93,36 +101,9 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 0;
-    position: relative;
 }
 
 .app-editor {
     flex: 1;
     min-height: 0;
-    position: relative;
-}
-
-.zed-input {
-    background-color: var(--input-bg);
-    border: 1px solid var(--input-border);
-    color: var(--input-fg);
-    padding: 4px 8px;
-    border-radius: 3px;
-    outline: none;
-    font-size: 13px;
-}
-
-.zed-input:focus {
-    border-color: var(--active-tab-fg);
-    /* Using explicit color or specific valid var */
-}
-
-/* Animations for panel switching */
-.sidebar-panel-container {
-    display: flex;
-    height: 100%;
-}
-
-.is-animating {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

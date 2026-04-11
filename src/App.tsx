@@ -14,6 +14,7 @@ import SuggestionToast from "./components/agent/SuggestionToast";
 import NotificationToast from "./components/notification/NotificationToast";
 import MarketplaceTab from "./components/extensions/MarketplaceTab";
 import Browser from "./components/browser/Browser";
+import Swarms from "./components/swarms/Swarms";
 import { editorStore, useEditorStore } from "./store/editor-store";
 import { ruleEngine } from "./services/agent/rule-engine";
 // import { llmAgent } from "./services/agent/llm-agent";
@@ -24,6 +25,7 @@ import "./App.css";
 function App() {
   const explorerCollapsed = useEditorStore((s) => s.explorerCollapsed);
   const activeTabPath = useEditorStore((s) => s.activeTabPath);
+  const viewMode = useEditorStore((s) => s.viewMode);
   const tabs = useEditorStore((s) => s.tabs);
   const activeTab = tabs.find((t) => t.path === activeTabPath);
   const storeSidebarWidth = useEditorStore((s) => s.settings.sidebarWidth);
@@ -257,38 +259,50 @@ function App() {
   return (
     <div className="app-layout">
       <Titlebar />
-      <div className="app-content">
-        {!explorerCollapsed && (
-          <>
-            <div className="app-sidebar" style={{ width: `${sidebarWidth}px` }}>
-              <Sidebar />
-            </div>
-            <div className="app-resize-handle" onMouseDown={handleMouseDown} />
-          </>
-        )}
-        <div className="app-main">
-          <div className="editor-area">
-            {activeTabPath ? (
+      
+      <div className="view-viewport">
+        {/* Editor View */}
+        <div className={`editor-view ${viewMode === "swarms" ? "switched" : ""}`}>
+          <div className="app-content">
+            {!explorerCollapsed && (
               <>
-                <TabBar />
-                <div className="app-editor">
-                  {activeTab?.type === "browser" ? (
-                    <Browser />
-                  ) : activeTab?.type === "extensions" ? (
-                    <MarketplaceTab />
-                  ) : activeTabPath.startsWith("diff:") ? (
-                    <DiffEditor />
-                  ) : (
-                    <Editor />
-                  )}
+                <div className="app-sidebar" style={{ width: `${sidebarWidth}px` }}>
+                  <Sidebar />
                 </div>
+                <div className="app-resize-handle" onMouseDown={handleMouseDown} />
               </>
-            ) : (
-              <Welcome />
             )}
+            <div className="app-main">
+              <div className="editor-area">
+                {activeTabPath ? (
+                  <>
+                    <TabBar />
+                    <div className="app-editor">
+                      {activeTab?.type === "browser" ? (
+                        <Browser />
+                      ) : activeTab?.type === "extensions" ? (
+                        <MarketplaceTab />
+                      ) : activeTabPath.startsWith("diff:") ? (
+                        <DiffEditor />
+                      ) : (
+                        <Editor />
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <Welcome />
+                )}
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Swarms View */}
+        <div className={`swarms-view-container ${viewMode === "swarms" ? "switched" : ""}`}>
+          <Swarms />
+        </div>
       </div>
+
       <TerminalPanel />
       <CommandPalette />
       <SettingsPopup />

@@ -169,9 +169,9 @@ fn list_dir(path: String) -> Result<Vec<FileEntry>, String> {
         };
         let name = entry.file_name().to_string_lossy().to_string();
 
-        if name.starts_with('.') {
-            continue;
-        }
+        // if name.starts_with('.') {
+        //     continue;
+        // }
 
         if metadata.is_dir() && IGNORED_DIRS.contains(&name.as_str()) {
             continue;

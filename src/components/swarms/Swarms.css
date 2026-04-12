@@ -10,6 +10,16 @@
     overflow: hidden;
 }
 
+.deck-model-card.drag-ghost {
+    background: var(--accent, #2a2a2a);
+    opacity: 0.9;
+    pointer-events: none;
+}
+
+.deck-model-card.dragging {
+    opacity: 0.3;
+}
+
 /* Flyout Sidebar */
 .swarms-flyout-sidebar {
     position: absolute;
@@ -17,9 +27,7 @@
     left: -260px;
     width: 240px;
     height: 100%;
-    background: rgba(20, 20, 20, 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: #111111;
     border-right: 1px solid rgba(255, 255, 255, 0.05);
     z-index: 50;
     transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -39,8 +47,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    background: rgba(20, 20, 20, 0.6);
-    backdrop-filter: blur(8px);
+    background: #181818;
     border: 1px solid rgba(255, 255, 255, 0.08);
     color: var(--foreground);
     padding: 6px 12px;
@@ -259,9 +266,7 @@
     right: -400px;
     width: 380px;
     height: 100%;
-    background: rgba(20, 20, 20, 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: #111111;
     border-left: 1px solid rgba(255, 255, 255, 0.05);
     z-index: 50;
     transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);

@@ -887,13 +887,6 @@ export const editorStore = {
     window.dispatchEvent(new CustomEvent("agent-request", { detail: msg }));
   },
 
-  updateAgentHistory(history: { role: "user" | "assistant" | "system"; content: string }[]) {
-    dispatch("UPDATE_AGENT_HISTORY", { agentHistory: history });
-  },
-
-  clearAgentHistory() {
-    dispatch("UPDATE_AGENT_HISTORY", { agentHistory: [] });
-  },
 
   setAgentActiveTask(task: { type: "read" | "edit" | "search" | "cmd"; payload: string } | null) {
     dispatch("SET_AGENT_ACTIVE_TASK", { agentActiveTask: task });

@@ -28,12 +28,38 @@ export interface AgentMessage {
   role: "user" | "assistant" | "system";
   content: string;
   traces?: { type: "tool" | "result"; text: string }[];
+  authorId?: string;
+  authorName?: string;
 }
 
-export interface AgentSession {
+export interface AgentInstance {
+  id: string;
+  modelId: string;
+  name: string;
+  x: number;
+  y: number;
+  isThinking?: boolean;
+  activeTaskTarget?: string;
+}
+
+export interface KanbanTask {
+  id: string;
+  title: string;
+  columnId: string;
+}
+
+export interface KanbanColumn {
+  id: string;
+  title: string;
+}
+
+export interface SwarmSession {
   id: string;
   name: string;
+  agents: AgentInstance[];
   history: AgentMessage[];
+  kanbanColumns: KanbanColumn[];
+  kanbanTasks: KanbanTask[];
   timestamp: number;
 }
 
@@ -153,9 +179,10 @@ interface EditorStoreState {
     };
   };
   logs: ActionLog[];
-  agentHistory: AgentMessage[];
-  agentSessions: AgentSession[];
-  activeAgentSessionId: string | null;
+  agentHistory: AgentMessage[]; // For backward compatibility / global chat, though we'll deprecate
+  swarmSessions: SwarmSession[];
+  activeSwarmSessionId: string | null;
+  activeAgentId: string | null;
   agentActiveTask: { type: "read" | "edit" | "search" | "cmd"; payload: string } | null;
   viewMode: "editor" | "swarms";
 }
@@ -235,8 +262,9 @@ let state: EditorStoreState = {
   },
   logs: [],
   agentHistory: [],
-  agentSessions: [],
-  activeAgentSessionId: null,
+  swarmSessions: [],
+  activeSwarmSessionId: null,
+  activeAgentId: null,
   agentActiveTask: null,
   viewMode: "editor",
 };
@@ -796,67 +824,128 @@ export const editorStore = {
     dispatch("SET_VIEW_MODE", { viewMode: mode });
   },
 
-  // Agent Sessions
-  createAgentSession(name: string = "New Session") {
+  // Swarm Sessions
+  createSwarmSession(name: string = "New Swarm") {
     const id = crypto.randomUUID();
-    const newSession: AgentSession = {
+    const newSession: SwarmSession = {
       id,
       name,
+      agents: [],
       history: [],
+      kanbanColumns: [
+        { id: "todo", title: "TODO" },
+        { id: "in-progress", title: "IN PROGRESS" },
+        { id: "done", title: "DONE" }
+      ],
+      kanbanTasks: [],
       timestamp: Date.now(),
     };
-    dispatch("CREATE_AGENT_SESSION", {
-      agentSessions: [newSession, ...state.agentSessions],
-      activeAgentSessionId: id,
-      agentHistory: [],
+    dispatch("CREATE_SWARM_SESSION", {
+      swarmSessions: [newSession, ...state.swarmSessions],
+      activeSwarmSessionId: id,
+      activeAgentId: null,
     });
   },
 
-  switchAgentSession(id: string) {
-    const session = state.agentSessions.find((s) => s.id === id);
+  switchSwarmSession(id: string) {
+    const session = state.swarmSessions.find((s) => s.id === id);
     if (!session) return;
-    dispatch("SWITCH_AGENT_SESSION", {
-      activeAgentSessionId: id,
-      agentHistory: session.history,
+    dispatch("SWITCH_SWARM_SESSION", {
+      activeSwarmSessionId: id,
+      activeAgentId: null, // Deselect agent on session switch
     });
   },
 
-  deleteAgentSession(id: string) {
-    const nextSessions = state.agentSessions.filter((s) => s.id !== id);
-    let nextActiveId = state.activeAgentSessionId;
-    let nextHistory = state.agentHistory;
+  deleteSwarmSession(id: string) {
+    const nextSessions = state.swarmSessions.filter((s) => s.id !== id);
+    let nextActiveId = state.activeSwarmSessionId;
 
     if (nextActiveId === id) {
       nextActiveId = nextSessions.length > 0 ? nextSessions[0].id : null;
-      nextHistory = nextActiveId ? nextSessions[0].history : [];
     }
 
-    dispatch("DELETE_AGENT_SESSION", {
-      agentSessions: nextSessions,
-      activeAgentSessionId: nextActiveId,
-      agentHistory: nextHistory,
+    dispatch("DELETE_SWARM_SESSION", {
+      swarmSessions: nextSessions,
+      activeSwarmSessionId: nextActiveId,
+      activeAgentId: null,
     });
   },
 
+  addAgentToSession(agent: AgentInstance) {
+    if (!state.activeSwarmSessionId) return;
+    const nextSessions = state.swarmSessions.map(s => {
+      if (s.id === state.activeSwarmSessionId) {
+        return { ...s, agents: [...s.agents, agent] };
+      }
+      return s;
+    });
+    dispatch("ADD_AGENT", { swarmSessions: nextSessions });
+    this.setActiveAgent(agent.id);
+  },
+
+  setActiveAgent(agentId: string | null) {
+    dispatch("SET_ACTIVE_AGENT", { activeAgentId: agentId });
+  },
+
   updateAgentHistory(history: AgentMessage[]) {
-    // Also update history in current active session if exists
-    let agentSessions = state.agentSessions;
-    if (state.activeAgentSessionId) {
-      agentSessions = agentSessions.map((s) =>
-        s.id === state.activeAgentSessionId ? { ...s, history } : s
-      );
-    }
-    dispatch("UPDATE_AGENT_HISTORY", { agentHistory: history, agentSessions });
+    dispatch("UPDATE_AGENT_HISTORY", { agentHistory: history });
   },
 
   clearAgentHistory() {
-    let agentSessions = state.agentSessions;
-    if (state.activeAgentSessionId) {
-      agentSessions = agentSessions.map((s) =>
-        s.id === state.activeAgentSessionId ? { ...s, history: [] } : s
-      );
-    }
-    dispatch("CLEAR_AGENT_HISTORY", { agentHistory: [], agentSessions });
+    dispatch("CLEAR_AGENT_HISTORY", { agentHistory: [] });
+  },
+
+  setAgentStatus(agentId: string, isThinking: boolean, target?: string | null) {
+    if (!state.activeSwarmSessionId) return;
+    const nextSessions = state.swarmSessions.map(s => {
+      if (s.id === state.activeSwarmSessionId) {
+        return {
+          ...s,
+          agents: s.agents.map(a => a.id === agentId ? { 
+            ...a, 
+            isThinking,
+            activeTaskTarget: target !== undefined && target !== null ? target : undefined
+          } : a)
+        };
+      }
+      return s;
+    });
+    dispatch("SET_AGENT_STATUS", { swarmSessions: nextSessions });
+  },
+
+  updateSwarmHistory(history: AgentMessage[]) {
+    if (!state.activeSwarmSessionId) return;
+    
+    const nextSessions = state.swarmSessions.map(s => {
+      if (s.id === state.activeSwarmSessionId) {
+        return { ...s, history };
+      }
+      return s;
+    });
+    dispatch("UPDATE_SWARM_HISTORY", { swarmSessions: nextSessions });
+  },
+
+  clearSwarmHistory() {
+    if (!state.activeSwarmSessionId) return;
+    
+    const nextSessions = state.swarmSessions.map(s => {
+      if (s.id === state.activeSwarmSessionId) {
+        return { ...s, history: [] };
+      }
+      return s;
+    });
+    dispatch("CLEAR_SWARM_HISTORY", { swarmSessions: nextSessions });
+  },
+
+  updateKanbanState(columns: KanbanColumn[], tasks: KanbanTask[]) {
+    if (!state.activeSwarmSessionId) return;
+    const nextSessions = state.swarmSessions.map(s => {
+      if (s.id === state.activeSwarmSessionId) {
+        return { ...s, kanbanColumns: columns, kanbanTasks: tasks };
+      }
+      return s;
+    });
+    dispatch("UPDATE_KANBAN_STATE", { swarmSessions: nextSessions });
   },
 
   addAgentMessage(msg: AgentMessage) {

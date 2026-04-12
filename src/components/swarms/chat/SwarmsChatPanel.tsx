@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect, useCallback, memo, Dispatch, SetStateAction } from "react";
+import { useState, useRef, useEffect, useCallback, memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useEditorStore, editorStore } from "../../../store/editor-store";
 import { runAgentLoop, AgentUpdate } from "../../../services/agent/agent-service";
 import { RiCloseLine, RiSendPlane2Line, RiAttachment2, RiStopCircleLine } from "@remixicon/react";
-import { Trace, NodeData, LinkData } from "../types";
+import { Trace } from "../types";
+import { MentionsInput, Mention } from "react-mentions";
 
 const TraceResult = ({ text }: { text: string }) => {
     const [open, setOpen] = useState(false);
@@ -44,11 +45,11 @@ const TraceGroup = ({ traces }: { traces: Trace[] }) => {
     );
 };
 
-const ChatMessage = memo(({ role, text, traces }: { role: string; text: string; traces?: Trace[] }) => (
+const ChatMessage = memo(({ role, text, traces, authorName }: { role: string; text: string; traces?: Trace[]; authorName?: string }) => (
     <div className="swarms-message-row">
         <div className="swarms-message-content">
             <div className="swarms-msg-header">
-                {role === "user" ? "User" : "Agent"}
+                {authorName || (role === "user" ? "User" : "Agent")}
             </div>
             <div className="swarms-msg-text">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -63,14 +64,14 @@ const ChatMessage = memo(({ role, text, traces }: { role: string; text: string; 
 interface Props {
     chatPanelOpen: boolean;
     setChatPanelOpen: (b: boolean) => void;
-    graphData: { nodes: NodeData[]; links: LinkData[] };
-    setGraphData: Dispatch<SetStateAction<{ nodes: NodeData[]; links: LinkData[] }>>;
 }
 
-export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen, graphData, setGraphData }: Props) {
-    const activeSessionId = useEditorStore((s) => s.activeAgentSessionId);
-    const sessions = useEditorStore((s) => s.agentSessions);
-    const agentHistory = useEditorStore((s) => s.agentHistory);
+export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
+    const activeSessionId = useEditorStore((s) => s.activeSwarmSessionId);
+    const sessions = useEditorStore((s) => s.swarmSessions);
+    
+    const activeSession = sessions.find(s => s.id === activeSessionId);
+    const sessionHistory = activeSession?.history || [];
 
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
@@ -86,7 +87,7 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen, graphData, se
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
-    }, [agentHistory, status, liveTraces, chatPanelOpen]);
+    }, [sessionHistory, status, liveTraces, chatPanelOpen]);
 
     // Resizing textarea horizontally
     useEffect(() => {
@@ -96,37 +97,54 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen, graphData, se
         ta.style.height = Math.min(ta.scrollHeight, 250) + "px";
     }, [input]);
 
-    const send = useCallback(async () => {
-        const text = input.trim();
-        if (!text || loading || !activeSessionId) return;
+    // Listen to @mention from map
+    useEffect(() => {
+        const handler = (e: any) => {
+            setInput(prev => prev + e.detail);
+            textareaRef.current?.focus();
+        };
+        window.addEventListener("agent-mention", handler);
+        return () => window.removeEventListener("agent-mention", handler);
+    }, []);
 
-        setInput("");
-        setLoading(true);
-        setStatus("Thinking");
-        setLiveTraces([]);
+    // Recursive Collaboration Loop
+    // Takes a message string, routes to an agent (targetAgentId or fallback lead), generates response.
+    // If response contains @AgentName, dispatch the loop again automatically!
+    const runInferenceIteration = async (
+        promptText: string, 
+        currentHistoryBase: any[], 
+        targetAgentId: string | undefined
+    ) => {
+        if (!activeSession) return;
         
-        const currentAgentId = graphData.nodes.slice().reverse().find(n => n.group === "agent")?.id;
-        if (currentAgentId) {
-            setGraphData(prev => ({
-                 nodes: prev.nodes.map(n => n.id === currentAgentId ? { ...n, isThinking: true } : n),
-                 links: prev.links
-            }));
+        // Find routing agent
+        let processingAgent = activeSession.agents.find(a => a.id === targetAgentId);
+        if (!processingAgent && activeSession.agents.length > 0) {
+            processingAgent = activeSession.agents[0]; // fallback Tech Lead
         }
+        
+        if (!processingAgent) return; // No agents deployed
 
-        const currentHistory = [...agentHistory, { role: "user" as const, content: text }];
-        editorStore.updateAgentHistory(currentHistory);
+        editorStore.setAgentStatus(processingAgent.id, true, null);
 
         const controller = new AbortController();
         abortRef.current = controller;
         const traces: Trace[] = [];
 
+        setStatus(`waiting for ${processingAgent.name}`);
+
         const onUpdate = (update: AgentUpdate) => {
             if (update.type === "thinking") {
-                setStatus(update.text);
+                setStatus(`${processingAgent!.name} is thinking...`);
             } else if (update.type === "tool") {
                 traces.push({ type: "tool", text: update.text });
                 setLiveTraces([...traces]);
-                setStatus(update.text);
+                setStatus(`${processingAgent!.name}: ` + update.text);
+
+                const pathMatch = update.text.match(/(?:[a-zA-Z]:[\\/]|(?:\.\/|\.\.\/)+)[a-zA-Z0-9_\-\.\/\\]+/);
+                if (pathMatch) {
+                    editorStore.setAgentStatus(processingAgent!.id, true, pathMatch[0].replace(/\\/g, '/'));
+                }
             } else if (update.type === "tool_result") {
                 traces.push({ type: "result", text: update.text });
                 setLiveTraces([...traces]);
@@ -134,44 +152,91 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen, graphData, se
         };
 
         try {
+            // Send full unified context up to this point
             const { history: newHistory } = await runAgentLoop(
-                text,
-                currentHistory,
+                promptText,
+                currentHistoryBase,
                 onUpdate,
                 controller.signal
             );
 
-            const finalHistory = newHistory.map((m, idx) => {
-                if (idx === newHistory.length - 1 && m.role === "assistant") {
-                    return { ...m, traces: traces.length > 0 ? [...traces] : undefined };
+            // Fetch the final output the AI returned 
+            const finalAiMessage = newHistory[newHistory.length - 1];
+            
+            let resultData = {
+                role: "assistant" as const,
+                content: finalAiMessage.content,
+                traces: traces.length > 0 ? [...traces] : undefined,
+                authorId: processingAgent.id,
+                authorName: processingAgent.name
+            };
+
+            const updatedHistory = [...currentHistoryBase, resultData];
+            editorStore.updateSwarmHistory(updatedHistory);
+            
+            // Check for collaboration request in AI's output
+            // e.g. "I think you should look @Model2"
+            activeSession.agents.forEach(collaborator => {
+                const mentionTag = `@${collaborator.name}`;
+                if (finalAiMessage.content.includes(mentionTag) && collaborator.id !== processingAgent!.id) {
+                    // Start next recursive turn after slight delay
+                    setTimeout(() => {
+                        setLiveTraces([]);
+                        runInferenceIteration(
+                            `Agent ${processingAgent!.name} @ mentioned you in the history. Respond seamlessly.`,
+                            updatedHistory,
+                            collaborator.id
+                        );
+                    }, 500);
                 }
-                return m;
             });
 
-            editorStore.updateAgentHistory(finalHistory);
         } catch (e: any) {
             if (e.message !== "Aborted") {
-                const errorHistory = [...currentHistory, { 
+                const errorHistory = [...currentHistoryBase, { 
                     role: "assistant" as const, 
                     content: `Error: ${e.message}`,
-                    traces: traces.length > 0 ? [...traces] : undefined
+                    traces: traces.length > 0 ? [...traces] : undefined,
+                    authorId: processingAgent.id,
+                    authorName: processingAgent.name
                 }];
-                editorStore.updateAgentHistory(errorHistory);
+                editorStore.updateSwarmHistory(errorHistory);
             }
         } finally {
-            setLoading(false);
-            setStatus("");
-            setLiveTraces([]);
-            abortRef.current = null;
-            
-            if (currentAgentId) {
-                setGraphData(prev => ({
-                     nodes: prev.nodes.map(n => n.id === currentAgentId ? { ...n, isThinking: false } : n),
-                     links: prev.links
-                }));
-            }
+            editorStore.setAgentStatus(processingAgent.id, false, null);
         }
-    }, [input, loading, activeSessionId, agentHistory, graphData, setGraphData]);
+    };
+
+    const send = useCallback(async () => {
+        const text = input.trim();
+        if (!text || loading || !activeSessionId || !activeSession) return;
+
+        setInput("");
+        setLoading(true);
+        setStatus("Thinking");
+        setLiveTraces([]);
+        
+        let routingAgentId: string | undefined = undefined;
+        // Check local routing
+        // Regex over the raw markup, e.g. @[GPT-4](agent-123)
+        // Or simply pull ID directly
+        activeSession.agents.forEach(a => {
+            if (text.includes(`](${a.id})`)) routingAgentId = a.id;
+        });
+
+        // Strip the [ ] ( ) markup for standard rendering before inserting to history
+        const cleanedText = text.replace(/@\[(.*?)\]\([^)]+\)/g, "@$1");
+
+        const currentHistory = [...sessionHistory, { role: "user" as const, content: cleanedText, authorName: "User" }];
+        editorStore.updateSwarmHistory(currentHistory);
+
+        await runInferenceIteration(cleanedText, currentHistory, routingAgentId);
+
+        setLoading(false);
+        setStatus("");
+        setLiveTraces([]);
+        abortRef.current = null;
+    }, [input, loading, activeSessionId, activeSession, sessionHistory]);
 
     const handleKey = (e: React.KeyboardEvent) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -180,11 +245,21 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen, graphData, se
         }
     };
 
+    if (!activeSessionId) {
+        return (
+            <div className={`swarms-chat-panel ${chatPanelOpen ? 'open' : ''}`}>
+                <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.5, fontSize: 11 }}>
+                    Create a Swarm Session to begin formatting.
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className={`swarms-chat-panel ${chatPanelOpen ? 'open' : ''}`}>
             <div className="swarms-sidebar-header">
                 <div style={{ flex: 1, fontSize: 12, fontWeight: 600, opacity: 0.8 }}>
-                    {sessions.find(s => s.id === activeSessionId)?.name || 'Agent Chat'}
+                    #{activeSession?.name?.replace(/\s+/g, '-').toLowerCase() || 'channel'}
                 </div>
                 <button className="swarms-close-sidebar-btn" onClick={() => setChatPanelOpen(false)}>
                     <RiCloseLine size={16} />
@@ -192,14 +267,14 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen, graphData, se
             </div>
             
             <div className="swarms-chat-container" ref={chatContainerRef}>
-                {agentHistory.length === 0 && !loading && (
+                {sessionHistory.length === 0 && !loading && (
                     <div className="agent-empty" style={{ opacity: 0.5, fontSize: 11, textAlign: 'center', marginTop: 40 }}>
-                        AGENT DEPLOYED. GIVE A PROMPT.
+                        {activeSession?.agents?.length === 0 ? "NO AGENTS DEPLOYED" : "UNIFIED WORKSPACE CREATED. @MENTION AGENTS TO DELEGATE TASKS."}
                     </div>
                 )}
                 
-                {agentHistory.filter((m: any) => m.role !== 'system').map((m: any, i: number) => (
-                    <ChatMessage key={i} role={m.role} text={m.content} traces={m.traces} />
+                {sessionHistory.filter((m: any) => m.role !== 'system').map((m: any, i: number) => (
+                    <ChatMessage key={i} role={m.role} text={m.content} traces={m.traces} authorName={m.authorName} />
                 ))}
                 
                 {loading && (
@@ -219,16 +294,32 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen, graphData, se
 
             <div className="swarms-input-section">
                 <div className="swarms-input-box">
-                    <textarea
-                        ref={textareaRef}
-                        className="swarms-textarea"
-                        placeholder="Instruct agent..."
+                    <MentionsInput
+                        inputRef={textareaRef}
+                        className="swarms-mentions-input"
+                        placeholder="Message channel... Type @ to mention an agent."
                         value={input}
-                        onChange={(e) => setInput(e.target.value)}
+                        onChange={(_, newValue) => setInput(newValue)}
                         onKeyDown={handleKey}
-                        rows={1}
                         disabled={loading}
-                    />
+                        style={{
+                            control: { fontSize: 13, fontWeight: 'normal' },
+                            highlighter: { padding: 12 },
+                            input: { padding: 12, border: 'none', outline: 'none', minHeight: 48, color: '#fff' },
+                            suggestions: { 
+                                list: { backgroundColor: '#111', border: '1px solid #333', fontSize: 12, borderRadius: 4 },
+                                item: { padding: '8px 12px', borderBottom: '1px solid #222' }
+                            }
+                        }}
+                    >
+                        <Mention 
+                            trigger="@" 
+                            markup="@[__display__](__id__)"
+                            data={activeSession?.agents?.map(a => ({ id: a.id, display: a.name })) || []}
+                            displayTransform={(_, display) => `@${display}`}
+                            style={{ backgroundColor: 'rgba(100, 255, 218, 0.2)', color: '#64ffda', borderRadius: 2 }}
+                        />
+                    </MentionsInput>
                     <div className="swarms-input-footer">
                         <div className="swarms-input-actions">
                             <button className="swarms-icon-btn" title="attach file">
@@ -254,3 +345,4 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen, graphData, se
         </div>
     );
 }
+

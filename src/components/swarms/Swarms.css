@@ -264,9 +264,9 @@
     position: absolute;
     top: 0;
     right: -400px;
-    width: 380px;
+    width: 420px;
     height: 100%;
-    background: #111111;
+    background: var(--background);
     border-left: 1px solid rgba(255, 255, 255, 0.05);
     z-index: 50;
     transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -281,48 +281,45 @@
 .swarms-chat-container {
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
+    padding: 24px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
 }
 
 .swarms-message-row {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
 }
 
 .swarms-msg-header {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--accent);
-    text-transform: uppercase;
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
 }
 
 .swarms-msg-text {
-    font-size: 13px;
-    line-height: 1.5;
-    color: var(--foreground);
-    background: rgba(255,255,255,0.03);
-    padding: 10px 14px;
-    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #dfdfdf;
+    padding: 2px 0 10px 0;
 }
 
-.swarms-msg-text p { margin: 0 0 8px 0; }
+.swarms-msg-text p { margin: 0 0 10px 0; }
 .swarms-msg-text p:last-child { margin: 0; }
-.swarms-msg-text pre { background: rgba(0,0,0,0.5); padding: 8px; border-radius: 4px; overflow-x: auto;}
+.swarms-msg-text pre { background: #111111; padding: 12px; border-radius: 4px; overflow-x: auto; border: 1px solid #333333;}
 
 .swarms-input-section {
-    padding: 16px;
+    padding: 16px 24px 24px 24px;
+    background: var(--background);
     border-top: 1px solid rgba(255, 255, 255, 0.05);
-    background: rgba(20, 20, 20, 0.95);
 }
 
 .swarms-input-box {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
     display: flex;
     flex-direction: column;
 }
@@ -468,4 +465,169 @@
     font-size: 11px !important;
     pointer-events: none;
     border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Action Bar */
+.swarms-action-bar {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 60px;
+    background: var(--background);
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 16px;
+    gap: 16px;
+}
+
+.action-bar-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #888888;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-bar-btn:hover {
+    color: #ffffff;
+    background: #111111;
+}
+
+.action-bar-btn.active {
+    color: #ffffff;
+    background: #222222;
+}
+
+/* Kanban Panel */
+.swarms-kanban-panel {
+    position: absolute;
+    top: 0;
+    right: -520px; /* Hidden initially, pushes further right when closed */
+    width: 520px;
+    height: 100%;
+    background: var(--background);
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    z-index: 50;
+    transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.swarms-kanban-panel.open {
+    right: 60px; /* Docks right next to Action Bar */
+}
+
+/* Adjust Chat Panel to dock left of Action Bar */
+.swarms-chat-panel.open {
+    right: 60px; 
+}
+
+.swarms-kanban-container {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 24px;
+    display: flex;
+    gap: 20px;
+}
+
+.kanban-column {
+    flex-shrink: 0;
+    width: 280px;
+    background: #050505;
+    border: 1px solid #222222;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.kanban-column-header {
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffffff;
+    padding: 16px;
+    border-bottom: 1px solid #222222;
+    text-transform: uppercase;
+}
+
+.kanban-column-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.kanban-card {
+    background: #111111;
+    border: 1px solid #333333;
+    padding: 12px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.kanban-card-title {
+    font-size: 13px;
+    color: #ffffff;
+    line-height: 1.4;
+}
+
+.kanban-card-delete {
+    background: transparent;
+    border: none;
+    color: #888888;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+}
+
+.kanban-card-delete:hover {
+    color: #ff4444;
+}
+
+.kanban-add-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #888888;
+    background: transparent;
+    border: 1px dashed #333333;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.kanban-add-btn:hover {
+    background: #111111;
+    color: #ffffff;
+}
+
+.kanban-add-form textarea {
+    width: 100%;
+    background: #111111;
+    border: 1px solid #444444;
+    color: #ffffff;
+    padding: 12px;
+    font-size: 13px;
+    border-radius: 4px;
+    outline: none;
+    resize: vertical;
+    min-height: 60px;
 }

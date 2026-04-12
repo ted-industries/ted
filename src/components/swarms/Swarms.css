@@ -619,6 +619,12 @@
     color: #ffffff;
 }
 
+/* Mentions autocomplete — open upward */
+.swarms-mentions-input__suggestions {
+    top: auto !important;
+    bottom: calc(100% + 4px) !important;
+}
+
 .kanban-add-form textarea {
     width: 100%;
     background: #111111;

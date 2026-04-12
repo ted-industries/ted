@@ -69,7 +69,7 @@ interface Props {
 export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
     const activeSessionId = useEditorStore((s) => s.activeSwarmSessionId);
     const sessions = useEditorStore((s) => s.swarmSessions);
-    
+
     const activeSession = sessions.find(s => s.id === activeSessionId);
     const sessionHistory = activeSession?.history || [];
 
@@ -77,7 +77,7 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState("");
     const [liveTraces, setLiveTraces] = useState<Trace[]>([]);
-    
+
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const abortRef = useRef<AbortController | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -111,18 +111,18 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
     // Takes a message string, routes to an agent (targetAgentId or fallback lead), generates response.
     // If response contains @AgentName, dispatch the loop again automatically!
     const runInferenceIteration = async (
-        promptText: string, 
-        currentHistoryBase: any[], 
+        promptText: string,
+        currentHistoryBase: any[],
         targetAgentId: string | undefined
     ) => {
         if (!activeSession) return;
-        
+
         // Find routing agent
         let processingAgent = activeSession.agents.find(a => a.id === targetAgentId);
         if (!processingAgent && activeSession.agents.length > 0) {
             processingAgent = activeSession.agents[0]; // fallback Tech Lead
         }
-        
+
         if (!processingAgent) return; // No agents deployed
 
         editorStore.setAgentStatus(processingAgent.id, true, null);
@@ -162,7 +162,7 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
 
             // Fetch the final output the AI returned 
             const finalAiMessage = newHistory[newHistory.length - 1];
-            
+
             let resultData = {
                 role: "assistant" as const,
                 content: finalAiMessage.content,
@@ -173,7 +173,7 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
 
             const updatedHistory = [...currentHistoryBase, resultData];
             editorStore.updateSwarmHistory(updatedHistory);
-            
+
             // Check for collaboration request in AI's output
             // e.g. "I think you should look @Model2"
             activeSession.agents.forEach(collaborator => {
@@ -193,8 +193,8 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
 
         } catch (e: any) {
             if (e.message !== "Aborted") {
-                const errorHistory = [...currentHistoryBase, { 
-                    role: "assistant" as const, 
+                const errorHistory = [...currentHistoryBase, {
+                    role: "assistant" as const,
                     content: `Error: ${e.message}`,
                     traces: traces.length > 0 ? [...traces] : undefined,
                     authorId: processingAgent.id,
@@ -215,7 +215,7 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
         setLoading(true);
         setStatus("Thinking");
         setLiveTraces([]);
-        
+
         let routingAgentId: string | undefined = undefined;
         // Check local routing
         // Regex over the raw markup, e.g. @[GPT-4](agent-123)
@@ -265,18 +265,18 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
                     <RiCloseLine size={16} />
                 </button>
             </div>
-            
+
             <div className="swarms-chat-container" ref={chatContainerRef}>
                 {sessionHistory.length === 0 && !loading && (
                     <div className="agent-empty" style={{ opacity: 0.5, fontSize: 11, textAlign: 'center', marginTop: 40 }}>
-                        {activeSession?.agents?.length === 0 ? "NO AGENTS DEPLOYED" : "UNIFIED WORKSPACE CREATED. @MENTION AGENTS TO DELEGATE TASKS."}
+                        {activeSession?.agents?.length === 0 ? "NO AGENTS DEPLOYED" : "@MENTION AGENTS TO DELEGATE TASKS."}
                     </div>
                 )}
-                
+
                 {sessionHistory.filter((m: any) => m.role !== 'system').map((m: any, i: number) => (
                     <ChatMessage key={i} role={m.role} text={m.content} traces={m.traces} authorName={m.authorName} />
                 ))}
-                
+
                 {loading && (
                     <div className="swarms-status-area">
                         <div className="swarms-status-pill">{status}...</div>
@@ -285,9 +285,9 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
 
                 {loading && liveTraces.length > 0 && (
                     <div className="swarms-message-row">
-                         <div className="swarms-message-content" style={{ opacity: 0.5 }}>
+                        <div className="swarms-message-content" style={{ opacity: 0.5 }}>
                             <TraceGroup traces={liveTraces} />
-                         </div>
+                        </div>
                     </div>
                 )}
             </div>
@@ -304,20 +304,21 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
                         disabled={loading}
                         style={{
                             control: { fontSize: 13, fontWeight: 'normal' },
-                            highlighter: { padding: 12 },
-                            input: { padding: 12, border: 'none', outline: 'none', minHeight: 48, color: '#fff' },
-                            suggestions: { 
+                            highlighter: { padding: 12, color: 'transparent' },
+                            input: { padding: 12, border: 'none', outline: 'none', minHeight: 48, color: '#fff', background: 'transparent' },
+                            suggestions: {
+                                backgroundColor: 'transparent',
                                 list: { backgroundColor: '#111', border: '1px solid #333', fontSize: 12, borderRadius: 4 },
                                 item: { padding: '8px 12px', borderBottom: '1px solid #222' }
                             }
                         }}
                     >
-                        <Mention 
-                            trigger="@" 
+                        <Mention
+                            trigger="@"
                             markup="@[__display__](__id__)"
                             data={activeSession?.agents?.map(a => ({ id: a.id, display: a.name })) || []}
-                            displayTransform={(_, display) => `@${display}`}
-                            style={{ backgroundColor: 'rgba(100, 255, 218, 0.2)', color: '#64ffda', borderRadius: 2 }}
+                            displayTransform={(_, display) => ` @${display} `}
+                            style={{ backgroundColor: 'rgba(100, 255, 218, 0.2)', borderRadius: 5 }}
                         />
                     </MentionsInput>
                     <div className="swarms-input-footer">
@@ -331,9 +332,9 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
                                 <RiStopCircleLine size={20} />
                             </button>
                         ) : (
-                            <button 
-                                className="swarms-send-btn" 
-                                onClick={send} 
+                            <button
+                                className="swarms-send-btn"
+                                onClick={send}
                                 disabled={!input.trim()}
                             >
                                 <RiSendPlane2Line size={18} />

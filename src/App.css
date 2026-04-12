@@ -32,7 +32,8 @@ body {
     width: 100%;
 }
 
-.editor-view, .swarms-view-container {
+.editor-view,
+.swarms-view-container {
     position: absolute;
     top: 0;
     left: 0;

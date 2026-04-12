@@ -7,7 +7,7 @@ interface Props {
 
 export function SwarmsActionBar({ activePanel, setActivePanel }: Props) {
     return (
-        <div className="swarms-action-bar">
+        <div className={`swarms-action-bar ${activePanel ? 'active' : ''}`}>
             <button 
                 className={`action-bar-btn ${activePanel === "chat" ? "active" : ""}`}
                 onClick={() => setActivePanel(activePanel === "chat" ? null : "chat")}

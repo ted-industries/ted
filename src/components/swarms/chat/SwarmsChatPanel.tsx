@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useEditorStore, editorStore } from "../../../store/editor-store";
 import { runAgentLoop, AgentUpdate } from "../../../services/agent/agent-service";
-import { RiCloseLine, RiSendPlane2Line, RiAttachment2, RiStopCircleLine } from "@remixicon/react";
+import { RiCloseLine, RiSendPlane2Line, RiAttachment2, RiStopCircleLine, RiHashtag } from "@remixicon/react";
 import { Trace } from "../types";
 import { MentionsInput, Mention } from "react-mentions";
 
@@ -81,6 +81,25 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const abortRef = useRef<AbortController | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+
+    const [panelWidth, setPanelWidth] = useState(420);
+
+    const startResize = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        const startX = e.clientX;
+        const startWidth = panelRef.current?.getBoundingClientRect().width ?? panelWidth;
+        const onMouseMove = (ev: MouseEvent) => {
+            const delta = startX - ev.clientX;
+            setPanelWidth(Math.min(Math.max(startWidth + delta, 280), 800));
+        };
+        const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    }, [panelWidth]);
 
     // Auto-scroll
     useEffect(() => {
@@ -247,7 +266,12 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
 
     if (!activeSessionId) {
         return (
-            <div className={`swarms-chat-panel ${chatPanelOpen ? 'open' : ''}`}>
+            <div
+                ref={panelRef}
+                className={`swarms-chat-panel ${chatPanelOpen ? 'open' : ''}`}
+                style={{ width: panelWidth }}
+            >
+                <div className="panel-resize-handle" onMouseDown={startResize} />
                 <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.5, fontSize: 11 }}>
                     Create a Swarm Session to begin formatting.
                 </div>
@@ -256,20 +280,23 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
     }
 
     return (
-        <div className={`swarms-chat-panel ${chatPanelOpen ? 'open' : ''}`}>
-            <div className="swarms-sidebar-header">
-                <div style={{ flex: 1, fontSize: 12, fontWeight: 600, opacity: 0.8 }}>
-                    #{activeSession?.name?.replace(/\s+/g, '-').toLowerCase() || 'channel'}
-                </div>
-                <button className="swarms-close-sidebar-btn" onClick={() => setChatPanelOpen(false)}>
-                    <RiCloseLine size={16} />
-                </button>
+        <div
+            ref={panelRef}
+            className={`swarms-chat-panel ${chatPanelOpen ? 'open' : ''}`}
+            style={{ width: panelWidth }}
+        >
+            <div className="panel-resize-handle" onMouseDown={startResize} />
+            <div className="swarms-sidebar-header flex items-center gap-1.5">
+                <RiHashtag size={13} className="opacity-80 translate-y-[0.5px] text-white/40" />
+                <span className="text-[12px] font-semibold text-white/40 leading-none">
+                    {activeSession?.name?.replace(/\s+/g, '-').toLowerCase() || 'channel'}
+                </span>
             </div>
 
             <div className="swarms-chat-container" ref={chatContainerRef}>
                 {sessionHistory.length === 0 && !loading && (
                     <div className="agent-empty" style={{ opacity: 0.5, fontSize: 11, textAlign: 'center', marginTop: 40 }}>
-                        {activeSession?.agents?.length === 0 ? "NO AGENTS DEPLOYED" : "@MENTION AGENTS TO DELEGATE TASKS."}
+                        {activeSession?.agents?.length === 0 ? "NO AGENTS DEPLOYED" : "Describe the task"}
                     </div>
                 )}
 

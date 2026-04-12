@@ -8,17 +8,17 @@ interface Props {
 }
 
 export function SwarmsSidebar({ sidebarOpen, setSidebarOpen, setChatPanelOpen }: Props) {
-    const activeSessionId = useEditorStore((s) => s.activeAgentSessionId);
-    const sessions = useEditorStore((s) => s.agentSessions);
+    const activeSessionId = useEditorStore((s) => s.activeSwarmSessionId);
+    const sessions = useEditorStore((s) => s.swarmSessions);
 
     return (
         <>
             {/* Left Sidebar Overlay */}
             <div className={`swarms-flyout-sidebar ${sidebarOpen ? 'open' : ''}`}>
                 <div className="swarms-sidebar-header">
-                    <button className="swarms-new-btn" onClick={() => editorStore.createAgentSession("New Thread")}>
+                    <button className="swarms-new-btn" onClick={() => editorStore.createSwarmSession("New Session")}>
                         <RiAddLine size={14} />
-                        NEW THREAD
+                        NEW SESSION
                     </button>
                     <button className="swarms-close-sidebar-btn" onClick={() => setSidebarOpen(false)}>
                         <RiCloseLine size={16} />
@@ -30,14 +30,14 @@ export function SwarmsSidebar({ sidebarOpen, setSidebarOpen, setChatPanelOpen }:
                             key={s.id}
                             className={`swarms-session-item ${activeSessionId === s.id ? "active" : ""}`}
                             onClick={() => {
-                                editorStore.switchAgentSession(s.id);
-                                setChatPanelOpen(true);
+                                editorStore.switchSwarmSession(s.id);
+                                setChatPanelOpen(false); // Close chat when switching sessions, until an agent is clicked
                             }}
                         >
                             <span className="swarms-session-name">{s.name}</span>
                             <div className="swarms-session-delete" onClick={(e) => {
                                 e.stopPropagation();
-                                editorStore.deleteAgentSession(s.id);
+                                editorStore.deleteSwarmSession(s.id);
                             }}>
                                 <RiCloseLine size={12} />
                             </div>

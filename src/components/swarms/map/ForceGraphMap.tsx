@@ -4,10 +4,11 @@ import { NodeData, LinkData } from "../types";
 
 interface Props {
     graphData: { nodes: NodeData[]; links: LinkData[] };
+    onNodeClick?: (node: NodeData) => void;
 }
 
 export const ForceGraphMap = forwardRef<ForceGraphMethods, Props>(
-    ({ graphData }, ref) => {
+    ({ graphData, onNodeClick }, ref) => {
         const containerRef = useRef<HTMLDivElement>(null);
         const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
@@ -33,6 +34,7 @@ export const ForceGraphMap = forwardRef<ForceGraphMethods, Props>(
                     height={dimensions.height}
                     graphData={graphData}
                     nodeLabel="name"
+                    onNodeClick={onNodeClick as any}
                     nodeCanvasObject={(node: any, ctx: any) => {
                         // Custom Drawing for nodes
                         if (node.group === "agent") {
@@ -57,10 +59,44 @@ export const ForceGraphMap = forwardRef<ForceGraphMethods, Props>(
                             ctx.fill();
                         }
                     }}
-                    linkColor={(link: any) => link.isAgent ? "rgba(255, 215, 0, 0.5)" : "rgba(255, 255, 255, 0.1)"}
-                    linkWidth={(link: any) => link.isAgent ? 2 : 1}
+                    linkCanvasObjectMode={() => "after"}
+                    linkCanvasObject={(link: any, ctx: any) => {
+                        const start = link.source;
+                        const end = link.target;
+                        if (typeof start !== 'object' || typeof end !== 'object') return;
+                        
+                        if (link.isAgent) {
+                            // Torch Light Effect
+                            const grad = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
+                            grad.addColorStop(0, "rgba(255, 215, 0, 0.5)"); 
+                            grad.addColorStop(1, "rgba(255, 215, 0, 0.0)");
+
+                            ctx.beginPath();
+                            ctx.moveTo(start.x, start.y);
+                            ctx.lineTo(end.x, end.y);
+                            ctx.lineWidth = 12; 
+                            ctx.strokeStyle = grad;
+                            ctx.lineCap = "round";
+                            ctx.stroke();
+
+                            // Core beam
+                            ctx.beginPath();
+                            ctx.moveTo(start.x, start.y);
+                            ctx.lineTo(end.x, end.y);
+                            ctx.lineWidth = 1;
+                            ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+                            ctx.stroke();
+                        } else {
+                            ctx.beginPath();
+                            ctx.moveTo(start.x, start.y);
+                            ctx.lineTo(end.x, end.y);
+                            ctx.lineWidth = 1;
+                            ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+                            ctx.stroke();
+                        }
+                    }}
                     linkDirectionalParticles={(link: any) => link.isAgent ? 4 : 0}
-                    linkDirectionalParticleSpeed={0.01}
+                    linkDirectionalParticleSpeed={0.015}
                     backgroundColor="transparent"
                     d3AlphaDecay={0.02}
                     d3VelocityDecay={0.4}
@@ -70,3 +106,4 @@ export const ForceGraphMap = forwardRef<ForceGraphMethods, Props>(
         );
     }
 );
+

@@ -13,6 +13,7 @@ export interface NodeData {
     x?: number;
     y?: number;
     isThinking?: boolean;
+    targetNode?: string;
 }
 
 export interface LinkData {

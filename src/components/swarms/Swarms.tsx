@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { ForceGraphMethods } from "react-force-graph-2d";
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent } from "@dnd-kit/core";
@@ -6,20 +6,26 @@ import { useEditorStore, editorStore } from "../../store/editor-store";
 import { NodeData, LinkData, FileEntry } from "./types";
 import { MODELS } from "./constants";
 import { SwarmsSidebar } from "./sidebar/SwarmsSidebar";
+import { SwarmsActionBar } from "./sidebar/SwarmsActionBar";
 import { SwarmsChatPanel } from "./chat/SwarmsChatPanel";
+import { SwarmsKanbanPanel } from "./kanban/SwarmsKanbanPanel";
 import { ForceGraphMap } from "./map/ForceGraphMap";
 import { ModelsDeck } from "./deck/ModelsDeck";
 import "./Swarms.css";
 
 export default function Swarms() {
     const explorerPath = useEditorStore((s) => s.explorerPath);
+    const activeSessionId = useEditorStore((s) => s.activeSwarmSessionId);
+    const swarmSessions = useEditorStore((s) => s.swarmSessions);
     
     // UI states
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [chatPanelOpen, setChatPanelOpen] = useState(false);
+    const [activeRightPanel, setActiveRightPanel] = useState<"chat" | "kanban" | null>(null);
 
-    // Graph state
-    const [graphData, setGraphData] = useState<{ nodes: NodeData[]; links: LinkData[] }>({ nodes: [], links: [] });
+    // Graph base tree (FileSystem isolated)
+    const [fsNodes, setFsNodes] = useState<NodeData[]>([]);
+    const [fsLinks, setFsLinks] = useState<LinkData[]>([]);
+
     const graphRef = useRef<ForceGraphMethods>(null);
     const viewRef = useRef<HTMLDivElement>(null);
 
@@ -62,7 +68,7 @@ export default function Swarms() {
         }
     }, []);
 
-    // Initial map build
+    // Initial map build (Filesystem only)
     useEffect(() => {
         if (!explorerPath) return;
         let cancelled = false;
@@ -70,20 +76,58 @@ export default function Swarms() {
         const loadGraph = async () => {
             const rootName = explorerPath.split(/[\\/]/).pop() || "Root";
             const initNodes: NodeData[] = [{ id: explorerPath, name: rootName, group: "dir", val: 5 }];
-            setGraphData({ nodes: initNodes, links: [] });
 
             const tree = await fetchDirTree(explorerPath, 3);
             if (cancelled) return;
 
-            setGraphData({
-                nodes: [...initNodes, ...tree.nodes],
-                links: tree.links
-            });
+            setFsNodes([...initNodes, ...tree.nodes]);
+            setFsLinks(tree.links);
         };
 
         loadGraph();
         return () => { cancelled = true; };
     }, [explorerPath, fetchDirTree]);
+
+    // Merging actual layout graph = FileSystem Base + Current Session Agents
+    const graphData = useMemo(() => {
+        const activeSession = swarmSessions.find(s => s.id === activeSessionId);
+        
+        let sessionAgentNodes: NodeData[] = [];
+        let sessionAgentLinks: LinkData[] = []; 
+        
+        if (activeSession) {
+            sessionAgentNodes = activeSession.agents.map(a => ({
+                id: a.id,
+                name: a.name,
+                group: "agent",
+                val: 8,
+                color: MODELS.find(m => m.id === a.modelId)?.color || "#ffd700",
+                x: a.x,
+                y: a.y,
+                fx: a.x,
+                fy: a.y,
+                isThinking: a.isThinking, 
+                targetNode: a.activeTaskTarget
+            }));
+
+            // Torch light links hook here if targetNode exists
+            activeSession.agents.forEach(a => {
+                if (a.activeTaskTarget) {
+                    sessionAgentLinks.push({
+                        source: a.id,
+                        target: a.activeTaskTarget,
+                        isAgent: true
+                    });
+                }
+            });
+        }
+
+        return {
+            nodes: [...fsNodes, ...sessionAgentNodes],
+            links: [...fsLinks, ...sessionAgentLinks]
+        };
+    }, [fsNodes, fsLinks, activeSessionId, swarmSessions]);
+
 
     // Track pointer position during drag for drop coordinate calculation
     useEffect(() => {
@@ -106,13 +150,19 @@ export default function Swarms() {
         const modelId = event.active.id as string;
         setActiveModelId(null);
 
+        // Required session context to drop
+        if (!activeSessionId) {
+            if (swarmSessions.length === 0) {
+                editorStore.createSwarmSession("New Session");
+            }
+        }
+
         if (!graphRef.current || !viewRef.current || !dropCoordsRef.current) return;
 
         const rect = viewRef.current.getBoundingClientRect();
         const clientX = dropCoordsRef.current.x;
         const clientY = dropCoordsRef.current.y;
 
-        // Only deploy if dropped within the view bounds (not outside the window)
         if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return;
 
         const screenX = clientX - rect.left;
@@ -121,45 +171,26 @@ export default function Swarms() {
         
         const modelConf = MODELS.find(m => m.id === modelId);
         
-        // Find nearest node to attach to
-        let nearestNodeId = explorerPath || "root";
-        let minDistance = Infinity;
-        
-        graphData.nodes.forEach(n => {
-            if (n.x !== undefined && n.y !== undefined) {
-                const dist = Math.sqrt(Math.pow(n.x - coords.x, 2) + Math.pow(n.y - coords.y, 2));
-                if (dist < minDistance) {
-                    minDistance = dist;
-                    nearestNodeId = n.id;
-                }
-            }
-        });
-
         const agentId = `agent-${Date.now()}`;
-        const agentNode: NodeData = {
+        
+        // Push agent to Editor Store
+        editorStore.addAgentToSession({
             id: agentId,
+            modelId: modelId,
             name: `${modelConf?.name || "Agent"}`,
-            group: "agent",
-            val: 8,
-            color: modelConf?.color || "#ffd700",
             x: coords.x,
             y: coords.y
-        };
+        });
 
-        const agentLink: LinkData = {
-            source: agentId,
-            target: nearestNodeId,
-            isAgent: true
-        };
-
-        setGraphData(prev => ({
-            nodes: [...prev.nodes, agentNode],
-            links: [...prev.links, agentLink]
-        }));
-
-        editorStore.createAgentSession(`${modelConf?.name} Agent`);
-        setChatPanelOpen(true);
+        setActiveRightPanel("chat");
     };
+
+    const handleNodeClick = useCallback((node: NodeData) => {
+        if (node.group === "agent") {
+            window.dispatchEvent(new CustomEvent("agent-mention", { detail: `@[${node.name}](${node.name}) ` }));
+            setActiveRightPanel("chat");
+        }
+    }, []);
 
     const activeModel = activeModelId ? MODELS.find(m => m.id === activeModelId) : null;
 
@@ -169,18 +200,30 @@ export default function Swarms() {
                 <SwarmsSidebar 
                     sidebarOpen={sidebarOpen} 
                     setSidebarOpen={setSidebarOpen} 
-                    setChatPanelOpen={setChatPanelOpen} 
+                    setChatPanelOpen={() => setActiveRightPanel("chat")} 
+                />
+
+                <SwarmsActionBar 
+                    activePanel={activeRightPanel} 
+                    setActivePanel={setActiveRightPanel} 
                 />
 
                 <SwarmsChatPanel 
-                    chatPanelOpen={chatPanelOpen} 
-                    setChatPanelOpen={setChatPanelOpen} 
-                    graphData={graphData} 
-                    setGraphData={setGraphData} 
+                    chatPanelOpen={activeRightPanel === "chat"} 
+                    setChatPanelOpen={(open) => setActiveRightPanel(open ? "chat" : null)} 
+                />
+
+                <SwarmsKanbanPanel 
+                    panelOpen={activeRightPanel === "kanban"} 
+                    setPanelOpen={(open) => setActiveRightPanel(open ? "kanban" : null)} 
                 />
 
                 <div className="swarms-map-container">
-                    <ForceGraphMap graphData={graphData} ref={graphRef} />
+                    <ForceGraphMap 
+                        graphData={graphData} 
+                        ref={graphRef} 
+                        onNodeClick={handleNodeClick}
+                    />
                 </div>
 
                 <ModelsDeck />
@@ -198,3 +241,4 @@ export default function Swarms() {
         </DndContext>
     );
 }
+

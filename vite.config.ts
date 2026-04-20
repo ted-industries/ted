@@ -39,6 +39,7 @@ export default defineConfig(async () => ({
   },
   resolve: {
     alias: {
+      "@": path.resolve(__dirname, "src"),
       "fs/promises": path.resolve(__dirname, "src/mocks/empty.ts"),
       "path/promises": path.resolve(__dirname, "src/mocks/empty.ts"),
       fs: path.resolve(__dirname, "src/mocks/empty.ts"),

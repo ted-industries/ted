@@ -45,6 +45,9 @@ export interface AgentInstance {
 export interface KanbanTask {
   id: string;
   title: string;
+  description?: string;
+  priority?: "low" | "medium" | "high";
+  labels?: string[];
   columnId: string;
 }
 
@@ -979,6 +982,49 @@ export const editorStore = {
 
   setAgentActiveTask(task: { type: "read" | "edit" | "search" | "cmd"; payload: string } | null) {
     dispatch("SET_AGENT_ACTIVE_TASK", { agentActiveTask: task });
+  },
+  addColumn(title: string) {
+    if (!state.activeSwarmSessionId) return;
+    const id = `col-${Date.now()}`;
+    const nextSessions = state.swarmSessions.map(s => {
+      if (s.id === state.activeSwarmSessionId) {
+        return { 
+          ...s, 
+          kanbanColumns: [...s.kanbanColumns, { id, title }] 
+        };
+      }
+      return s;
+    });
+    dispatch("ADD_KANBAN_COLUMN", { swarmSessions: nextSessions });
+  },
+
+  deleteColumn(columnId: string) {
+    if (!state.activeSwarmSessionId) return;
+    const nextSessions = state.swarmSessions.map(s => {
+      if (s.id === state.activeSwarmSessionId) {
+        return { 
+          ...s, 
+          kanbanColumns: s.kanbanColumns.filter(c => c.id !== columnId),
+          kanbanTasks: s.kanbanTasks.filter(t => t.columnId !== columnId)
+        };
+      }
+      return s;
+    });
+    dispatch("DELETE_KANBAN_COLUMN", { swarmSessions: nextSessions });
+  },
+
+  updateTask(taskId: string, update: Partial<KanbanTask>) {
+    if (!state.activeSwarmSessionId) return;
+    const nextSessions = state.swarmSessions.map(s => {
+      if (s.id === state.activeSwarmSessionId) {
+        return { 
+          ...s, 
+          kanbanTasks: s.kanbanTasks.map(t => t.id === taskId ? { ...t, ...update } : t)
+        };
+      }
+      return s;
+    });
+    dispatch("UPDATE_KANBAN_TASK", { swarmSessions: nextSessions });
   },
 };
 

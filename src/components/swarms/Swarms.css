@@ -40,7 +40,8 @@
 .swarms-main-container {
     flex: 1;
     height: 100%;
-    background: var(--title-bar-bg); /* Matches sidebar and app-layout */
+    background: var(--title-bar-bg);
+    /* Matches sidebar and app-layout */
     display: flex;
     position: relative;
     overflow: hidden;
@@ -448,8 +449,26 @@
     border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.swarms-chat-panel:not(.open) .panel-resize-handle {
+.swarms-chat-panel:not(.open) .panel-resize-handle,
+.swarms-kanban-panel:not(.open) .panel-resize-handle {
     display: none;
+}
+
+.panel-resize-handle {
+    width: 4px;
+    height: 100%;
+    cursor: ew-resize;
+    background: transparent;
+    transition: background 0.2s;
+    flex-shrink: 0;
+    z-index: 100;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.panel-resize-handle:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .swarms-chat-container {
@@ -497,8 +516,8 @@
 }
 
 .swarms-input-section {
-    padding: 10px;
-    background: #111111;
+    padding: 5px;
+    background: #161616;
 }
 
 .swarms-input-box {

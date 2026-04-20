@@ -47,10 +47,12 @@ export const ForceGraphMap = memo(forwardRef<ForceGraphMethods, Props>(
                     graphData={graphData}
                     nodeLabel="name"
                     onNodeClick={onNodeClick as any}
-                    nodeCanvasObject={(node: any, ctx: any) => {
+                    nodeCanvasObject={(node: any, ctx: any, globalScale: number) => {
+                        const isAgent = node.group === "agent";
+                        const size = isAgent ? (node.isThinking ? 10 : 8) : (node.val || 2);
+
                         // Custom Drawing for nodes
-                        if (node.group === "agent") {
-                            const size = node.isThinking ? 10 : 8;
+                        if (isAgent) {
                             ctx.beginPath();
                             ctx.moveTo(node.x, node.y - size);
                             ctx.lineTo(node.x - size, node.y + size);
@@ -64,11 +66,39 @@ export const ForceGraphMap = memo(forwardRef<ForceGraphMethods, Props>(
                                 ctx.stroke();
                             }
                         } else {
-                            const size = node.val || 2;
                             ctx.beginPath();
                             ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
                             ctx.fillStyle = node.color ? node.color : (node.group === "dir" ? "rgba(100, 150, 255, 0.8)" : "rgba(200, 200, 200, 0.6)");
                             ctx.fill();
+                        }
+
+                        // Semantic Zoom for Labels
+                        let shouldShowLabel = isAgent; // Always show for agents
+                        
+                        if (!isAgent) {
+                            const isDir = node.group === "dir";
+                            if (isDir) {
+                                if (globalScale > 3.5) {
+                                    shouldShowLabel = true; // High zoom: all folders
+                                } else if (globalScale > 1.5) {
+                                    shouldShowLabel = node.depth <= 1; // Medium zoom: top folders
+                                } else {
+                                    shouldShowLabel = node.depth === 0; // Zoomed out: only root
+                                }
+                            } else {
+                                shouldShowLabel = false; // Files: hover only
+                            }
+                        }
+
+                        if (shouldShowLabel && node.name) {
+                            const fontSize = 11 / globalScale;
+                            ctx.font = `${fontSize}px Inter, sans-serif`;
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'top';
+                            ctx.fillStyle = isAgent ? (node.color || "#ffd700") : "rgba(255, 255, 255, 0.7)";
+                            
+                            // Offset label slightly below the node based on its size
+                            ctx.fillText(node.name, node.x, node.y + size + (2 / globalScale));
                         }
                     }}
                     linkCanvasObjectMode={() => "after"}

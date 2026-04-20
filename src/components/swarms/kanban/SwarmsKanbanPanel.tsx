@@ -14,8 +14,8 @@ import {
 import { TaskDetailModal } from "./TaskDetailModal";
 
 interface Props {
-    panelOpen: boolean;
-    setPanelOpen: (b: boolean) => void;
+    kanbanPanelOpen: boolean;
+    width: number;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -119,7 +119,7 @@ function TaskCard({
 
 // ─── Panel ───────────────────────────────────────────────────────────────────
 
-export function SwarmsKanbanPanel({ panelOpen, setPanelOpen }: Props) {
+export function SwarmsKanbanPanel({ kanbanPanelOpen, width }: Props) {
     const activeSessionId = useEditorStore((s) => s.activeSwarmSessionId);
     const sessions = useEditorStore((s) => s.swarmSessions);
     const activeSession = sessions.find((s) => s.id === activeSessionId);
@@ -129,29 +129,7 @@ export function SwarmsKanbanPanel({ panelOpen, setPanelOpen }: Props) {
     const [isAddingColumn, setIsAddingColumn] = useState(false);
     const [newColumnTitle, setNewColumnTitle] = useState("");
     const [editingTask, setEditingTask] = useState<KanbanTask | null>(null);
-    const [panelWidth, setPanelWidth] = useState(520);
     const panelRef = useRef<HTMLDivElement>(null);
-
-    // Resize handle
-    const startResize = useCallback(
-        (e: React.MouseEvent) => {
-            e.preventDefault();
-            const startX = e.clientX;
-            const startWidth =
-                panelRef.current?.getBoundingClientRect().width ?? panelWidth;
-            const onMouseMove = (ev: MouseEvent) => {
-                const delta = startX - ev.clientX;
-                setPanelWidth(Math.min(Math.max(startWidth + delta, 320), 1000));
-            };
-            const onMouseUp = () => {
-                document.removeEventListener("mousemove", onMouseMove);
-                document.removeEventListener("mouseup", onMouseUp);
-            };
-            document.addEventListener("mousemove", onMouseMove);
-            document.addEventListener("mouseup", onMouseUp);
-        },
-        [panelWidth]
-    );
 
     // ── Data ─────────────────────────────────────────────────────────────────
     const columns = useMemo(
@@ -203,10 +181,9 @@ export function SwarmsKanbanPanel({ panelOpen, setPanelOpen }: Props) {
         return (
             <div
                 ref={panelRef}
-                className={`swarms-kanban-panel ${panelOpen ? "open" : ""}`}
-                style={{ width: panelOpen ? panelWidth : 0 }}
+                className={`swarms-kanban-panel ${kanbanPanelOpen ? "open" : ""}`}
+                style={{ width: kanbanPanelOpen ? width : 0 }}
             >
-
                 <div className="flex flex-col items-center justify-center h-full gap-3 text-white/20">
                     <RiKanbanView size={28} />
                     <span className="text-[11px]">Create a Swarm Session to use the board.</span>
@@ -218,30 +195,30 @@ export function SwarmsKanbanPanel({ panelOpen, setPanelOpen }: Props) {
     return (
         <div
             ref={panelRef}
-            className={`swarms-kanban-panel ${panelOpen ? "open" : ""} border-l border-white/5 flex flex-col`}
-            style={{ width: panelOpen ? panelWidth : 0 }}
+            className={`swarms-kanban-panel ${kanbanPanelOpen ? "open" : ""} border-l border-white/5 flex flex-col`}
+            style={{ width: kanbanPanelOpen ? width : 0 }}
         >
 
 
             {/* Header */}
-            <div className="swarms-sidebar-header flex items-center justify-between px-4">
+            {/* <div className="swarms-sidebar-header flex items-center justify-between px-4">
                 <div className="flex items-center gap-2">
                     <RiKanbanView size={13} className="text-white/40" />
                     <span className="text-[11px] font-semibold tracking-wider text-white/40 uppercase">
                         Board
                     </span>
                 </div>
-            </div>
+            </div> */}
 
             {/* Board */}
-            <div className="flex-1 overflow-x-auto overflow-y-hidden p-4">
+            <div className="flex-1 overflow-x-auto overflow-y-hidden p-2">
                 <Kanban
                     value={columnMap}
                     onValueChange={handleValueChange}
                     getItemValue={(task: KanbanTask) => task.id}
-                    className="flex gap-4 h-full"
+                    className="flex gap-2 h-full"
                 >
-                    <KanbanBoard className="!grid-cols-none flex gap-4 h-full">
+                    <KanbanBoard className="!grid-cols-none flex gap-2 h-full">
                         {columns.map((col) => {
                             const colTasks = columnMap[col.id] || [];
                             return (
@@ -376,7 +353,7 @@ export function SwarmsKanbanPanel({ panelOpen, setPanelOpen }: Props) {
                             if (!task) return null;
                             return (
                                 <div className="rotate-2 scale-105 shadow-2xl cursor-grabbing">
-                                    <TaskCard task={task} onDelete={() => {}} onClick={() => {}} />
+                                    <TaskCard task={task} onDelete={() => { }} onClick={() => { }} />
                                 </div>
                             );
                         }}

@@ -63,10 +63,10 @@ const ChatMessage = memo(({ role, text, traces, authorName }: { role: string; te
 
 interface Props {
     chatPanelOpen: boolean;
-    setChatPanelOpen: (b: boolean) => void;
+    width: number;
 }
 
-export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
+export function SwarmsChatPanel({ chatPanelOpen, width }: Props) {
     const activeSessionId = useEditorStore((s) => s.activeSwarmSessionId);
     const sessions = useEditorStore((s) => s.swarmSessions);
 
@@ -83,23 +83,7 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
 
-    const [panelWidth, setPanelWidth] = useState(420);
-
-    const startResize = useCallback((e: React.MouseEvent) => {
-        e.preventDefault();
-        const startX = e.clientX;
-        const startWidth = panelRef.current?.getBoundingClientRect().width ?? panelWidth;
-        const onMouseMove = (ev: MouseEvent) => {
-            const delta = startX - ev.clientX;
-            setPanelWidth(Math.min(Math.max(startWidth + delta, 280), 800));
-        };
-        const onMouseUp = () => {
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-        };
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-    }, [panelWidth]);
+    // Auto-scroll
 
     // Auto-scroll
     useEffect(() => {
@@ -283,7 +267,7 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
         <div
             ref={panelRef}
             className={`swarms-chat-panel ${chatPanelOpen ? 'open' : ''}`}
-            style={{ width: chatPanelOpen ? panelWidth : 0 }}
+            style={{ width: chatPanelOpen ? width : 0 }}
         >
 
             {/* <div className="swarms-sidebar-header flex items-center gap-1.5">

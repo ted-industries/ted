@@ -14,6 +14,7 @@ export interface NodeData {
     y?: number;
     isThinking?: boolean;
     targetNode?: string;
+    depth?: number;
 }
 
 export interface LinkData {

@@ -26,13 +26,16 @@ function Swarms() {
     // Graph base tree (FileSystem isolated)
     const [fsNodes, setFsNodes] = useState<NodeData[]>([]);
     const [fsLinks, setFsLinks] = useState<LinkData[]>([]);
+    const [chatWidth, setChatWidth] = useState(400);
+    const [kanbanWidth, setKanbanWidth] = useState(650);
+    const isResizingRef = useRef(false);
 
     const graphRef = useRef<ForceGraphMethods>(null);
-    const viewRef = useRef<HTMLDivElement>(null);
+    const mapContainerRef = useRef<HTMLDivElement>(null);
+    const dropCoordsRef = useRef<{ x: number; y: number } | null>(null);
 
     // dnd-kit: active drag state
     const [activeModelId, setActiveModelId] = useState<string | null>(null);
-    const dropCoordsRef = useRef<{ x: number; y: number } | null>(null);
 
     // Use PointerSensor with a small activation distance to avoid accidental drags
     const sensors = useSensors(
@@ -40,8 +43,8 @@ function Swarms() {
     );
 
     // Fetch directory tree builder
-    const fetchDirTree = useCallback(async (path: string, depth: number): Promise<{ nodes: NodeData[], links: LinkData[] }> => {
-        if (depth === 0) return { nodes: [], links: [] };
+    const fetchDirTree = useCallback(async (path: string, maxDepth: number, currentLevel: number): Promise<{ nodes: NodeData[], links: LinkData[] }> => {
+        if (currentLevel >= maxDepth) return { nodes: [], links: [] };
         try {
             const children = await invoke<FileEntry[]>("list_dir", { path });
             let allNodes: NodeData[] = [];
@@ -53,12 +56,13 @@ function Swarms() {
                     id: child.path,
                     name: child.name,
                     group: child.is_dir ? "dir" : "file",
-                    val: child.is_dir ? 3 : 1
+                    val: child.is_dir ? 3 : 1,
+                    depth: currentLevel + 1
                 });
                 allLinks.push({ source: path, target: child.path });
 
                 if (child.is_dir) {
-                    const sub = await fetchDirTree(child.path, Math.max(0, depth - 1));
+                    const sub = await fetchDirTree(child.path, maxDepth, currentLevel + 1);
                     allNodes = allNodes.concat(sub.nodes);
                     allLinks = allLinks.concat(sub.links);
                 }
@@ -76,9 +80,9 @@ function Swarms() {
 
         const loadGraph = async () => {
             const rootName = explorerPath.split(/[\\/]/).pop() || "Root";
-            const initNodes: NodeData[] = [{ id: explorerPath, name: rootName, group: "dir", val: 5 }];
+            const initNodes: NodeData[] = [{ id: explorerPath, name: rootName, group: "dir", val: 5, depth: 0 }];
 
-            const tree = await fetchDirTree(explorerPath, 3);
+            const tree = await fetchDirTree(explorerPath, 3, 0);
             if (cancelled) return;
 
             setFsNodes([...initNodes, ...tree.nodes]);
@@ -132,6 +136,37 @@ function Swarms() {
 
     // Track pointer position during drag for drop coordinate calculation
     useEffect(() => {
+        const onMouseMove = (e: MouseEvent) => {
+            if (!isResizingRef.current) return;
+            const container = mapContainerRef.current?.parentElement;
+            if (!container) return;
+            const rect = container.getBoundingClientRect();
+            const newWidth = rect.right - e.clientX;
+            
+            if (activeRightPanel === "chat") {
+                setChatWidth(Math.max(300, Math.min(newWidth, 800)));
+            } else if (activeRightPanel === "kanban") {
+                setKanbanWidth(Math.max(400, Math.min(newWidth, 1200)));
+            }
+        };
+
+        const onMouseUp = () => {
+            isResizingRef.current = false;
+            document.body.classList.remove("is-resizing-h");
+        };
+
+        if (activeRightPanel) {
+            window.addEventListener("mousemove", onMouseMove);
+            window.addEventListener("mouseup", onMouseUp);
+        }
+
+        return () => {
+            window.removeEventListener("mousemove", onMouseMove);
+            window.removeEventListener("mouseup", onMouseUp);
+        };
+    }, [activeRightPanel]);
+
+    useEffect(() => {
         if (!activeModelId) {
             dropCoordsRef.current = null;
             return;
@@ -158,9 +193,9 @@ function Swarms() {
             }
         }
 
-        if (!graphRef.current || !viewRef.current || !dropCoordsRef.current) return;
+        if (!graphRef.current || !mapContainerRef.current || !dropCoordsRef.current) return;
 
-        const rect = viewRef.current.getBoundingClientRect();
+        const rect = mapContainerRef.current.getBoundingClientRect();
         const clientX = dropCoordsRef.current.x;
         const clientY = dropCoordsRef.current.y;
 
@@ -197,7 +232,7 @@ function Swarms() {
 
     return (
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-            <div className="swarms-view" ref={viewRef}>
+            <div className="swarms-view">
                 <SwarmsSidebar 
                     sidebarOpen={swarmsSidebarOpen} 
                     setSidebarOpen={(open) => editorStore.setSwarmsSidebarOpen(open)} 
@@ -221,7 +256,7 @@ function Swarms() {
                         </div>
 
                         <div className="swarms-main-body">
-                            <div className="swarms-map-container">
+                            <div className="swarms-map-container" ref={mapContainerRef}>
                                 <ForceGraphMap 
                                     graphData={graphData} 
                                     ref={graphRef} 
@@ -231,14 +266,24 @@ function Swarms() {
                                 <ModelsDeck />
                             </div>
 
+                            {activeRightPanel && (
+                                <div 
+                                    className="panel-resize-handle"
+                                    onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        isResizingRef.current = true;
+                                        document.body.classList.add("is-resizing-h");
+                                    }}
+                                />
+                            )}
+
                             <SwarmsChatPanel 
                                 chatPanelOpen={activeRightPanel === "chat"} 
-                                setChatPanelOpen={(open) => setActiveRightPanel(open ? "chat" : null)} 
+                                width={chatWidth}
                             />
-
                             <SwarmsKanbanPanel 
-                                panelOpen={activeRightPanel === "kanban"} 
-                                setPanelOpen={(open) => setActiveRightPanel(open ? "kanban" : null)} 
+                                kanbanPanelOpen={activeRightPanel === "kanban"} 
+                                width={kanbanWidth}
                             />
                         </div>
                     </div>

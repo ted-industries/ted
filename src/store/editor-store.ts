@@ -100,6 +100,7 @@ interface EditorStoreState {
   explorerPath: string | null;
   projectName: string | null;
   explorerCollapsed: boolean;
+  swarmsSidebarOpen: boolean;
 
   // UI State (Global)
   commandPaletteOpen: boolean;
@@ -216,6 +217,7 @@ let state: EditorStoreState = {
   explorerPath: null,
   projectName: null,
   explorerCollapsed: false,
+  swarmsSidebarOpen: true,
 
   commandPaletteOpen: false,
   settingsOpen: false,
@@ -730,6 +732,18 @@ export const editorStore = {
     });
   },
 
+  toggleSwarmsSidebar() {
+    dispatch("TOGGLE_SWARMS_SIDEBAR", {
+      swarmsSidebarOpen: !state.swarmsSidebarOpen,
+    });
+  },
+
+  setSwarmsSidebarOpen(open: boolean) {
+    dispatch("SET_SWARMS_SIDEBAR_OPEN", {
+      swarmsSidebarOpen: open,
+    });
+  },
+
   setCommandPaletteOpen(open: boolean) {
     dispatch("SET_COMMAND_PALETTE", { commandPaletteOpen: open });
   },
@@ -904,8 +918,8 @@ export const editorStore = {
       if (s.id === state.activeSwarmSessionId) {
         return {
           ...s,
-          agents: s.agents.map(a => a.id === agentId ? { 
-            ...a, 
+          agents: s.agents.map(a => a.id === agentId ? {
+            ...a,
             isThinking,
             activeTaskTarget: target !== undefined && target !== null ? target : undefined
           } : a)
@@ -918,7 +932,7 @@ export const editorStore = {
 
   updateSwarmHistory(history: AgentMessage[]) {
     if (!state.activeSwarmSessionId) return;
-    
+
     const nextSessions = state.swarmSessions.map(s => {
       if (s.id === state.activeSwarmSessionId) {
         return { ...s, history };
@@ -930,7 +944,7 @@ export const editorStore = {
 
   clearSwarmHistory() {
     if (!state.activeSwarmSessionId) return;
-    
+
     const nextSessions = state.swarmSessions.map(s => {
       if (s.id === state.activeSwarmSessionId) {
         return { ...s, history: [] };
@@ -988,9 +1002,9 @@ export const editorStore = {
     const id = `col-${Date.now()}`;
     const nextSessions = state.swarmSessions.map(s => {
       if (s.id === state.activeSwarmSessionId) {
-        return { 
-          ...s, 
-          kanbanColumns: [...s.kanbanColumns, { id, title }] 
+        return {
+          ...s,
+          kanbanColumns: [...s.kanbanColumns, { id, title }]
         };
       }
       return s;
@@ -1002,8 +1016,8 @@ export const editorStore = {
     if (!state.activeSwarmSessionId) return;
     const nextSessions = state.swarmSessions.map(s => {
       if (s.id === state.activeSwarmSessionId) {
-        return { 
-          ...s, 
+        return {
+          ...s,
           kanbanColumns: s.kanbanColumns.filter(c => c.id !== columnId),
           kanbanTasks: s.kanbanTasks.filter(t => t.columnId !== columnId)
         };
@@ -1017,8 +1031,8 @@ export const editorStore = {
     if (!state.activeSwarmSessionId) return;
     const nextSessions = state.swarmSessions.map(s => {
       if (s.id === state.activeSwarmSessionId) {
-        return { 
-          ...s, 
+        return {
+          ...s,
           kanbanTasks: s.kanbanTasks.map(t => t.id === taskId ? { ...t, ...update } : t)
         };
       }

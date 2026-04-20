@@ -21,6 +21,30 @@
   height: 100%;
 }
 
+.sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--title-bar-fg);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.sidebar-toggle:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.sidebar-toggle.active {
+  background: var(--accent);
+  opacity: 1;
+}
+
 .titlebar-icon {
   width: 14px;
   height: 14px;
@@ -152,7 +176,6 @@
   background: var(--accent);
   border-radius: 6px;
   padding: 2px;
-  margin-left: 8px;
   gap: 2px;
 }
 
@@ -179,4 +202,4 @@
   opacity: 1;
   background: var(--title-bar-bg);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
+}

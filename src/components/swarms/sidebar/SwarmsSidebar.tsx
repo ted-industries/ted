@@ -16,9 +16,6 @@ export function SwarmsSidebar({ sidebarOpen, setSidebarOpen, setChatPanelOpen }:
             {/* Left Sidebar Overlay */}
             <div className={`swarms-flyout-sidebar ${sidebarOpen ? 'open' : ''}`}>
                 <div className="swarms-sidebar-header">
-                    <button className="swarms-close-sidebar-btn" onClick={() => setSidebarOpen(false)}>
-                        <RiSidebarFoldLine size={16} />
-                    </button>
                     <button className="swarms-new-btn" onClick={() => editorStore.createSwarmSession("New Session")}>
                         <RiAddLine size={14} />
                         NEW SESSION
@@ -46,9 +43,9 @@ export function SwarmsSidebar({ sidebarOpen, setSidebarOpen, setChatPanelOpen }:
                 </div>
             </div>
 
-            <button className="swarms-sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-                <RiMenuLine size={16} /> Sessions
-            </button>
+            {/* <button className="swarms-sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                <RiMenuLine size={16} />
+            </button> */}
         </>
     );
 }

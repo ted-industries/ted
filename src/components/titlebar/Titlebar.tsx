@@ -1,5 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { RiCloseLine, RiSubtractLine, RiCheckboxMultipleBlankLine, RiCheckboxBlankLine, RiAddLine, RiCodeSSlashLine, RiRobotLine } from "@remixicon/react";
+import { RiCloseLine, RiSubtractLine, RiCheckboxMultipleBlankLine, RiCheckboxBlankLine, RiAddLine, RiCodeSSlashLine, RiRobotLine, RiSidebarFoldLine, RiSidebarUnfoldLine, RiLayoutLeft2Line, RiSideBarFill, RiSideBarLine } from "@remixicon/react";
 import { useState, useEffect } from "react";
 import "./Titlebar.css";
 import { editorStore, useEditorStore } from "../../store/editor-store";
@@ -24,6 +24,8 @@ export default function Titlebar() {
         };
     }, []);
 
+    const explorerCollapsed = useEditorStore((s) => s.explorerCollapsed);
+    const swarmsSidebarOpen = useEditorStore((s) => s.swarmsSidebarOpen);
     const workspaces = useEditorStore((s) => s.workspaces);
     const activeWorkspaceId = useEditorStore((s) => s.activeWorkspaceId);
     const viewMode = useEditorStore((s) => s.viewMode);
@@ -31,10 +33,26 @@ export default function Titlebar() {
     // Convert workspaces map to array for rendering
     const workspaceList = Object.values(workspaces);
 
+    const isSidebarOpen = viewMode === "editor" ? !explorerCollapsed : swarmsSidebarOpen;
+    
+    const toggleSidebar = () => {
+        if (viewMode === "editor") {
+            editorStore.toggleExplorer();
+        } else {
+            editorStore.toggleSwarmsSidebar();
+        }
+    };
+
     return (
         <div data-tauri-drag-region className="titlebar">
             <div data-tauri-drag-region className="titlebar-left">
-                <img data-tauri-drag-region src="/ted.svg" alt="ted" className="titlebar-icon" />
+                <button 
+                    className={`sidebar-toggle ${isSidebarOpen ? "active" : ""}`} 
+                    onClick={toggleSidebar} 
+                    title={isSidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
+                >
+                    {isSidebarOpen ? <RiSideBarLine size={16} /> : <RiLayoutLeft2Line size={16} />}
+                </button>
 
                 <div className="view-mode-tabs">
                     <div

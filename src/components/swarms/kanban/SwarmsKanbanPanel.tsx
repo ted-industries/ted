@@ -204,9 +204,9 @@ export function SwarmsKanbanPanel({ panelOpen, setPanelOpen }: Props) {
             <div
                 ref={panelRef}
                 className={`swarms-kanban-panel ${panelOpen ? "open" : ""}`}
-                style={{ width: panelWidth }}
+                style={{ width: panelOpen ? panelWidth : 0 }}
             >
-                <div className="panel-resize-handle" onMouseDown={startResize} />
+
                 <div className="flex flex-col items-center justify-center h-full gap-3 text-white/20">
                     <RiKanbanView size={28} />
                     <span className="text-[11px]">Create a Swarm Session to use the board.</span>
@@ -218,10 +218,10 @@ export function SwarmsKanbanPanel({ panelOpen, setPanelOpen }: Props) {
     return (
         <div
             ref={panelRef}
-            className={`swarms-kanban-panel ${panelOpen ? "open" : ""} border-l border-white/5 shadow-2xl flex flex-col`}
-            style={{ width: panelWidth }}
+            className={`swarms-kanban-panel ${panelOpen ? "open" : ""} border-l border-white/5 flex flex-col`}
+            style={{ width: panelOpen ? panelWidth : 0 }}
         >
-            <div className="panel-resize-handle" onMouseDown={startResize} />
+
 
             {/* Header */}
             <div className="swarms-sidebar-header flex items-center justify-between px-4">

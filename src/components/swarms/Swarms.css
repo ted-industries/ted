@@ -1,9 +1,9 @@
 .swarms-view {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     height: 100%;
     width: 100%;
-    background: var(--background);
+    background: var(--title-bar-bg);
     color: var(--foreground);
     user-select: none;
     position: relative;
@@ -20,124 +20,294 @@
     opacity: 0.3;
 }
 
-/* Flyout Sidebar */
+/* Persistent Sidebar */
 .swarms-flyout-sidebar {
-    position: absolute;
-    top: 0;
-    left: -260px;
-    width: 240px;
+    width: 0;
     height: 100%;
-    background: #111111;
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--title-bar-bg);
     z-index: 50;
-    transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: width 0.2s ease;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
 }
 
 .swarms-flyout-sidebar.open {
-    left: 0;
+    width: 260px;
+}
+
+.swarms-main-container {
+    flex: 1;
+    height: 100%;
+    background: var(--title-bar-bg);
+    display: flex;
+    position: relative;
+    overflow: hidden;
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.99);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.swarms-main-card {
+    flex: 1;
+    background: linear-gradient(145deg, #181818 0%, #111111 100%);
+    border-left: 1px solid rgba(255, 255, 255, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    border-right: none;
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+}
+
+.swarms-session-header {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 20;
+    background: transparent;
+    transition: border-bottom 0.2s ease;
+}
+
+.swarms-session-header.has-panel {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.session-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--foreground);
+    letter-spacing: -0.01em;
+    opacity: 0.8;
+}
+
+.swarms-main-body {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    background: transparent;
+}
+
+.swarms-map-container {
+    flex: 1;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
 }
 
 .swarms-sidebar-toggle {
-    position: absolute;
-    top: 16px;
-    left: 16px;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    background: #181818;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: var(--foreground);
-    padding: 6px 6px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
+    display: none;
+    /* We use the titlebar toggle now */
 }
 
 .swarms-sidebar-toggle:hover {
     background: rgba(45, 45, 45, 0.8);
 }
 
-.swarms-sidebar-header {
-    padding: 5px 8px;
+.swarms-sidebar-top-actions {
+    padding: 8px 8px 4px 8px;
     display: flex;
-    gap: 8px;
-    align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    flex-direction: column;
+    gap: 1px;
 }
 
-.swarms-close-sidebar-btn {
-    background: transparent;
-    border: none;
+.sidebar-action-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 13px;
     color: var(--foreground);
-    opacity: 0.5;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 4px;
+    transition: all 0.2s ease;
 }
 
-.swarms-close-sidebar-btn:hover {
-    opacity: 1;
+.sidebar-action-item span {
+    opacity: 0.9;
+    font-weight: 460;
 }
 
-.swarms-new-btn {
-    flex: 1;
+.sidebar-action-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-section {
+    margin-top: 8px;
     display: flex;
+    flex-direction: column;
+}
+
+.sidebar-section-header {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 8px;
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--foreground);
-    padding: 6px 12px;
-    border-radius: 4px;
+    padding: 6px 12px 4px 12px;
     font-size: 11px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    justify-content: center;
-    opacity: 0.6;
+    font-weight: 600;
+    color: var(--foreground);
+    opacity: 0.3;
 }
 
-.swarms-new-btn:hover {
-    background: var(--accent);
+.header-actions {
+    display: flex;
+    gap: 8px;
+    opacity: 0.5;
+}
+
+.header-actions svg {
+    cursor: pointer;
+}
+
+.header-actions svg:hover {
     opacity: 1;
+}
+
+.sidebar-placeholder {
+    padding: 12px 20px;
+    font-size: 12px;
+    opacity: 0.3;
 }
 
 .swarms-session-list {
     flex: 1;
     overflow-y: auto;
-    padding: 8px;
+    padding: 0 4px;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
 }
 
 .swarms-session-item {
-    padding: 8px 10px;
-    border-radius: 4px;
+    padding: 6px 8px;
+    border-radius: 6px;
     font-size: 12px;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    opacity: 0.6;
     transition: all 0.2s;
+    color: var(--foreground);
 }
 
 .swarms-session-item:hover {
-    background: var(--accent);
-    opacity: 0.9;
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .swarms-session-item.active {
-    background: var(--accent);
-    opacity: 1;
+    background: rgba(255, 255, 255, 0.04);
+    font-weight: 600;
+}
+
+.swarms-session-delete {
+    opacity: 0;
+    padding: 2px;
+    border-radius: 3px;
+    transition: all 0.2s;
+}
+
+.swarms-session-item:hover .swarms-session-delete {
+    opacity: 0.5;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--title-bar-bg);
+    backdrop-filter: blur(20px);
+}
+
+.directory-spinner {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 0;
+}
+
+.directory-spinner:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.directory-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.directory-info span {
+    font-size: 12px;
     font-weight: 500;
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.settings-footer-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--foreground);
+    opacity: 0.5;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    margin-left: 4px;
+}
+
+.settings-footer-btn:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.upgrade-btn {
+    padding: 6px 14px;
+    background: #1f1f1f;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--foreground);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.upgrade-btn:hover {
+    background: #2a2a2a;
 }
 
 .swarms-session-name {
@@ -258,22 +428,28 @@
     opacity: 1;
 }
 
-/* Right Chat Panel */
 .swarms-chat-panel {
-    position: absolute;
-    top: 0;
-    right: -9999px;
+    position: relative;
+    /* Ensure handle is relative to panel */
+    width: 0;
     height: 100%;
+    overflow: hidden;
     background: #111111;
-    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    border-left: none;
+    /* No border when closed */
     z-index: 50;
-    transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     flex-direction: column;
 }
 
 .swarms-chat-panel.open {
-    right: 0;
+    width: 400px;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.swarms-chat-panel:not(.open) .panel-resize-handle {
+    display: none;
 }
 
 .swarms-chat-container {
@@ -485,36 +661,22 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Action Bar */
+/* Action Bar (now in header) */
 .swarms-action-bar {
-    position: absolute;
-    right: 0;
-    top: 0;
-    height: 100%;
-    width: 45px;
-    background: var(--background);
-    border-left: 1px solid rgba(255, 255, 255, 0.05);
-    z-index: 60;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    padding-top: 5px;
-    gap: 5px;
-    transition: background 0.3s ease;
-}
-
-.swarms-action-bar.active {
-    background: #111111;
+    gap: 4px;
 }
 
 .action-bar-btn {
-    width: 35px;
-    height: 30px;
-    border-radius: 5px;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #888888;
+    color: var(--foreground);
+    opacity: 0.4;
     background: transparent;
     border: none;
     cursor: pointer;
@@ -522,100 +684,42 @@
 }
 
 .action-bar-btn:hover {
-    background: #22222265;
+    background: rgba(255, 255, 255, 0.05);
+    opacity: 0.8;
 }
 
 .action-bar-btn.active {
-    color: #ffffff;
-    background: #222222b2;
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.08);
 }
 
-/* Kanban Panel */
 .swarms-kanban-panel {
-    position: absolute;
-    top: 0;
-    right: -9999px;
-    /* Hidden initially */
-    height: 100%;
+    position: relative;
+    /* Ensure handle is relative to panel */
+    width: 0;
+    overflow: hidden;
     background: #111111;
-    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    border-left: none;
+    /* No border when closed */
     z-index: 50;
-    transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     flex-direction: column;
 }
 
 .swarms-kanban-panel.open {
-    right: 44px;
-    /* Docks right next to Action Bar */
+    width: 650px;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Adjust Chat Panel to dock left of Action Bar */
-.swarms-chat-panel.open {
-    right: 44px;
+.swarms-kanban-panel:not(.open) .panel-resize-handle {
+    display: none;
 }
 
+/* Panels are now part of flex flow, right: 0 no longer needed */
 
-/* Panel resize handle */
-.panel-resize-handle {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    cursor: col-resize;
-    z-index: 10;
-    transition: background 0.15s;
-}
 
-.panel-resize-handle:hover {
-    background: #222;
-}
 
-.panel-resize-handle::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    transform: translate(-50%, -50%);
-    width: 10px;
-    height: 30px;
-    background: #222;
-    border-radius: 4px;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 20;
-}
-
-/* Grip Dots */
-.panel-resize-handle::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: -1px;
-    /* Center it relative to the pill above */
-    transform: translate(-50%, -50%);
-    width: 5px;
-    height: 12px;
-    z-index: 30;
-    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.3) 1px, transparent 1px);
-    background-size: 100% 4px;
-    background-repeat: repeat-y;
-    transition: all 0.2s;
-}
-
-.panel-resize-handle:hover::after {
-    background: #333;
-    height: 30px;
-    width: 10px;
-}
-
-.panel-resize-handle:hover::before {
-    height: 12px;
-    width: 10px;
-}
 
 /* Mentions autocomplete — open upward */
 .swarms-mentions-input__suggestions {

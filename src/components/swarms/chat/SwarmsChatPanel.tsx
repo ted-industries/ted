@@ -269,9 +269,9 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
             <div
                 ref={panelRef}
                 className={`swarms-chat-panel ${chatPanelOpen ? 'open' : ''}`}
-                style={{ width: panelWidth }}
+                style={{ width: chatPanelOpen ? panelWidth : 0 }}
             >
-                <div className="panel-resize-handle" onMouseDown={startResize} />
+
                 <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.5, fontSize: 11 }}>
                     Create a Swarm Session to begin formatting.
                 </div>
@@ -283,15 +283,15 @@ export function SwarmsChatPanel({ chatPanelOpen, setChatPanelOpen }: Props) {
         <div
             ref={panelRef}
             className={`swarms-chat-panel ${chatPanelOpen ? 'open' : ''}`}
-            style={{ width: panelWidth }}
+            style={{ width: chatPanelOpen ? panelWidth : 0 }}
         >
-            <div className="panel-resize-handle" onMouseDown={startResize} />
-            <div className="swarms-sidebar-header flex items-center gap-1.5">
+
+            {/* <div className="swarms-sidebar-header flex items-center gap-1.5">
                 <RiHashtag size={13} className="opacity-80 translate-y-[0.5px] text-white/40" />
                 <span className="text-[12px] font-semibold text-white/40 leading-none">
                     {activeSession?.name?.replace(/\s+/g, '-').toLowerCase() || 'channel'}
                 </span>
-            </div>
+            </div> */}
 
             <div className="swarms-chat-container" ref={chatContainerRef}>
                 {sessionHistory.length === 0 && !loading && (

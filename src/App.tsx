@@ -26,8 +26,8 @@ function App() {
   const explorerCollapsed = useEditorStore((s) => s.explorerCollapsed);
   const activeTabPath = useEditorStore((s) => s.activeTabPath);
   const viewMode = useEditorStore((s) => s.viewMode);
-  const tabs = useEditorStore((s) => s.tabs);
-  const activeTab = tabs.find((t) => t.path === activeTabPath);
+  // Only listen to the type of the active tab, not the content, to avoid re-renders on keystroke.
+  const activeTabType = useEditorStore((s) => s.tabs.find(t => t.path === s.activeTabPath)?.type);
   const storeSidebarWidth = useEditorStore((s) => s.settings.sidebarWidth);
   const [sidebarWidth, setSidebarWidth] = useState(storeSidebarWidth);
   const isDraggingRef = useRef(false);
@@ -278,11 +278,11 @@ function App() {
                   <>
                     <TabBar />
                     <div className="app-editor">
-                      {activeTab?.type === "browser" ? (
+                      {activeTabType === "browser" ? (
                         <Browser />
-                      ) : activeTab?.type === "extensions" ? (
+                      ) : activeTabType === "extensions" ? (
                         <MarketplaceTab />
-                      ) : activeTabPath.startsWith("diff:") ? (
+                      ) : activeTabPath?.startsWith("diff:") ? (
                         <DiffEditor />
                       ) : (
                         <Editor />

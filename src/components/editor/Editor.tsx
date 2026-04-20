@@ -175,10 +175,18 @@ export default function Editor() {
   const prevPathRef = useRef<string | null>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const activeTabPath = useEditorStore((s) => s.activeTabPath);
-  const tabs = useEditorStore((s) => s.tabs);
   const settings = useEditorStore((s) => s.settings);
-  const activeTab = tabs.find((t) => t.path === activeTabPath) ?? null;
+  // Find active tab metadata without listening to the entire tabs array (content updates)
+  const activeTabMetadata = useEditorStore((s) => {
+    const t = s.tabs.find(t => t.path === s.activeTabPath);
+    if (!t) return null;
+    return { path: t.path, name: t.name, type: t.type, isDiff: !!t.isDiff };
+  }, (old, next) => JSON.stringify(old) === JSON.stringify(next));
+  
+  const activeTabPath = activeTabMetadata?.path ?? null;
+  const activeTabName = activeTabMetadata?.name ?? null;
+  const activeTabType = activeTabMetadata?.type ?? null;
+  const activeTabIsDiff = activeTabMetadata?.isDiff ?? false;
 
   const saveFile = useCallback((path: string, content: string) => {
     invoke("write_file", { path, content })
@@ -211,8 +219,12 @@ export default function Editor() {
       autoSaveTimerRef.current = null;
     }
 
-    prevPathRef.current = activeTab?.path ?? null;
+    prevPathRef.current = activeTabPath;
 
+    if (!activeTabPath) return;
+    
+    // Get the actual tab data from store (snapshot) for initialization
+    const activeTab = editorStore.getState().tabs.find(t => t.path === activeTabPath);
     if (!activeTab) return;
 
     // Load Tree-sitter language
@@ -279,7 +291,7 @@ export default function Editor() {
   // Git Gutter Update
   const explorerPath = useEditorStore((s) => s.explorerPath);
   useEffect(() => {
-    if (!viewRef.current || !activeTab || activeTab.isDiff || !explorerPath)
+    if (!viewRef.current || !activeTabPath || activeTabIsDiff || !explorerPath)
       return;
 
     let cancelled = false;
@@ -287,7 +299,7 @@ export default function Editor() {
       try {
         const diffs = await gitService.getLineDiff(
           explorerPath,
-          activeTab.path,
+          activeTabPath,
         );
         if (!cancelled && viewRef.current) {
           viewRef.current.dispatch({
@@ -303,9 +315,9 @@ export default function Editor() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [activeTab?.path, activeTab?.content, explorerPath]);
+  }, [activeTabPath, explorerPath, activeTabIsDiff]);
 
-  const hasActiveTab = activeTab !== null;
+  const hasActiveTab = activeTabPath !== null;
 
   return (
     <div className="editor-root" onContextMenu={(e) => e.preventDefault()}>

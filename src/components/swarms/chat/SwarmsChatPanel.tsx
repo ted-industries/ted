@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useEditorStore, editorStore } from "../../../store/editor-store";
 import { runAgentLoop, AgentUpdate } from "../../../services/agent/agent-service";
-import { RiCloseLine, RiSendPlane2Line, RiAttachment2, RiStopCircleLine, RiHashtag } from "@remixicon/react";
+import { RiSendPlane2Line, RiAttachment2, RiStopCircleLine } from "@remixicon/react";
 import { Trace } from "../types";
 import { MentionsInput, Mention } from "react-mentions";
 
@@ -253,7 +253,7 @@ export function SwarmsChatPanel({ chatPanelOpen, width }: Props) {
             <div
                 ref={panelRef}
                 className={`swarms-chat-panel ${chatPanelOpen ? 'open' : ''}`}
-                style={{ width: chatPanelOpen ? panelWidth : 0 }}
+                style={{ width: chatPanelOpen ? width : 0 }}
             >
 
                 <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.5, fontSize: 11 }}>

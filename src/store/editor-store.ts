@@ -40,6 +40,15 @@ export interface AgentInstance {
   y: number;
   isThinking?: boolean;
   activeTaskTarget?: string;
+  isLead?: boolean;
+  roleId?: string;
+}
+
+export interface SwarmRole {
+  id: string;
+  name: string;
+  color: string;
+  isDefault?: boolean;
 }
 
 export interface KanbanTask {
@@ -63,6 +72,7 @@ export interface SwarmSession {
   history: AgentMessage[];
   kanbanColumns: KanbanColumn[];
   kanbanTasks: KanbanTask[];
+  roles: SwarmRole[];
   timestamp: number;
 }
 
@@ -855,6 +865,9 @@ export const editorStore = {
         { id: "done", title: "DONE" }
       ],
       kanbanTasks: [],
+      roles: [
+        { id: "role-project-lead", name: "Project Lead", color: "#ffd700", isDefault: true }
+      ],
       timestamp: Date.now(),
     };
     dispatch("CREATE_SWARM_SESSION", {
@@ -892,13 +905,120 @@ export const editorStore = {
     if (!state.activeSwarmSessionId) return;
     const nextSessions = state.swarmSessions.map(s => {
       if (s.id === state.activeSwarmSessionId) {
-        return { ...s, agents: [...s.agents, agent] };
+        // First agent in a session automatically becomes the lead
+        const isFirst = s.agents.length === 0;
+        return { ...s, agents: [...s.agents, { ...agent, isLead: isFirst }] };
       }
       return s;
     });
     dispatch("ADD_AGENT", { swarmSessions: nextSessions });
     this.setActiveAgent(agent.id);
   },
+
+  removeAgentFromSession(agentId: string) {
+    if (!state.activeSwarmSessionId) return;
+    const nextSessions = state.swarmSessions.map(s => {
+      if (s.id === state.activeSwarmSessionId) {
+        const remaining = s.agents.filter(a => a.id !== agentId);
+        // If we removed the lead and there are remaining agents, promote the first one
+        const removedAgent = s.agents.find(a => a.id === agentId);
+        if (removedAgent?.isLead && remaining.length > 0) {
+          remaining[0] = { ...remaining[0], isLead: true };
+        }
+        return { ...s, agents: remaining };
+      }
+      return s;
+    });
+    dispatch("REMOVE_AGENT", { swarmSessions: nextSessions });
+  },
+
+  renameAgent(agentId: string, newName: string) {
+    if (!state.activeSwarmSessionId) return;
+    const nextSessions = state.swarmSessions.map(s => {
+      if (s.id === state.activeSwarmSessionId) {
+        return {
+          ...s,
+          agents: s.agents.map(a => a.id === agentId ? { ...a, name: newName } : a)
+        };
+      }
+      return s;
+    });
+    dispatch("RENAME_AGENT", { swarmSessions: nextSessions });
+  },
+
+  setAgentAsLead(agentId: string) {
+    if (!state.activeSwarmSessionId) return;
+    const nextSessions = state.swarmSessions.map(s => {
+      if (s.id === state.activeSwarmSessionId) {
+        return {
+          ...s,
+          agents: s.agents.map(a => ({ 
+            ...a, 
+            isLead: a.id === agentId,
+            roleId: a.id === agentId ? "role-project-lead" : (a.roleId === "role-project-lead" ? undefined : a.roleId)
+          }))
+        };
+      }
+      return s;
+    });
+    dispatch("SET_AGENT_LEAD", { swarmSessions: nextSessions });
+  },
+
+  addRole(name: string, color: string) {
+    if (!state.activeSwarmSessionId) return;
+    const id = `role-${crypto.randomUUID()}`;
+    const nextSessions = state.swarmSessions.map(s => {
+      if (s.id === state.activeSwarmSessionId) {
+        return { ...s, roles: [...s.roles, { id, name, color }] };
+      }
+      return s;
+    });
+    dispatch("ADD_ROLE", { swarmSessions: nextSessions });
+  },
+
+  deleteRole(roleId: string) {
+    if (!state.activeSwarmSessionId) return;
+    const nextSessions = state.swarmSessions.map(s => {
+      if (s.id === state.activeSwarmSessionId) {
+        const role = s.roles.find(r => r.id === roleId);
+        if (role?.isDefault) return s; // Protect default roles
+
+        return {
+          ...s,
+          roles: s.roles.filter(r => r.id !== roleId),
+          agents: s.agents.map(a => a.roleId === roleId ? { ...a, roleId: undefined } : a)
+        };
+      }
+      return s;
+    });
+    dispatch("DELETE_ROLE", { swarmSessions: nextSessions });
+  },
+
+  assignRoleToAgent(agentId: string, roleId: string | undefined) {
+    if (!state.activeSwarmSessionId) return;
+    const nextSessions = state.swarmSessions.map(s => {
+      if (s.id === state.activeSwarmSessionId) {
+        return {
+          ...s,
+          agents: s.agents.map(a => {
+            if (a.id === agentId) {
+              const isLead = roleId === "role-project-lead";
+              return { ...a, roleId, isLead };
+            }
+            // If another agent is assigned Lead, this one loses it
+            if (roleId === "role-project-lead" && a.roleId === "role-project-lead") {
+              return { ...a, roleId: undefined, isLead: false };
+            }
+            return a;
+          })
+        };
+      }
+      return s;
+    });
+    dispatch("ASSIGN_ROLE", { swarmSessions: nextSessions });
+  },
+
+
 
   setActiveAgent(agentId: string | null) {
     dispatch("SET_ACTIVE_AGENT", { activeAgentId: agentId });

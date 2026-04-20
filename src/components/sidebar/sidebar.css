@@ -4,7 +4,6 @@
     height: 100%;
     overflow: hidden;
     background-color: var(--sidebar-bg);
-    border-right: 1px solid var(--border);
 }
 
 .sidebar-content {

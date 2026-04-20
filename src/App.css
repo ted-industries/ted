@@ -25,10 +25,10 @@
 }
 
 :root {
-    --background: #1a1a1a;
+    --background: #131313;
     --foreground: #d4d4d4;
     --border: #252525;
-    --sidebar-bg: #181818;
+    --sidebar-bg: #1d1d1d;
     --accent: #ffffff10;
 }
 
@@ -49,6 +49,8 @@ body {
     width: 100vw;
     overflow: hidden;
     position: relative;
+    background-color: var(--sidebar-bg);
+    /* Match sidebar */
 }
 
 .view-viewport {
@@ -100,12 +102,13 @@ body {
     height: 100%;
     min-width: 180px;
     max-width: 500px;
-    border-right: 1px solid var(--border);
+    border-right: none;
 }
 
 .app-resize-handle {
-    width: 1px;
-    background-color: var(--border);
+    width: 2px;
+    /* Small gap */
+    background-color: transparent;
     cursor: ew-resize;
     flex-shrink: 0;
     z-index: 10;
@@ -113,7 +116,7 @@ body {
 }
 
 .app-resize-handle:hover {
-    background: var(--accent);
+    background: transparent;
 }
 
 .app-main {
@@ -121,6 +124,12 @@ body {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    background: linear-gradient(145deg, #202020 0%, #161616 100%);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    border-left: 1px solid rgba(255, 255, 255, 0.15);
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+    overflow: hidden;
 }
 
 .editor-area {

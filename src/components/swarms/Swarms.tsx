@@ -203,30 +203,45 @@ export default function Swarms() {
                     setChatPanelOpen={() => setActiveRightPanel("chat")} 
                 />
 
-                <SwarmsActionBar 
-                    activePanel={activeRightPanel} 
-                    setActivePanel={setActiveRightPanel} 
-                />
+                <div className="swarms-main-container">
+                    <div className="swarms-main-card">
+                        <div className={`swarms-session-header ${activeRightPanel ? 'has-panel' : ''}`}>
+                            <div className="session-info">
+                                <span className="session-name">
+                                    {swarmSessions.find(s => s.id === activeSessionId)?.name || "New Session"}
+                                </span>
+                            </div>
+                            <div className="session-actions">
+                                <SwarmsActionBar 
+                                    activePanel={activeRightPanel} 
+                                    setActivePanel={setActiveRightPanel} 
+                                />
+                            </div>
+                        </div>
 
-                <SwarmsChatPanel 
-                    chatPanelOpen={activeRightPanel === "chat"} 
-                    setChatPanelOpen={(open) => setActiveRightPanel(open ? "chat" : null)} 
-                />
+                        <div className="swarms-main-body">
+                            <div className="swarms-map-container">
+                                <ForceGraphMap 
+                                    graphData={graphData} 
+                                    ref={graphRef} 
+                                    onNodeClick={handleNodeClick}
+                                />
+                                <ModelsDeck />
+                            </div>
 
-                <SwarmsKanbanPanel 
-                    panelOpen={activeRightPanel === "kanban"} 
-                    setPanelOpen={(open) => setActiveRightPanel(open ? "kanban" : null)} 
-                />
+                            <SwarmsChatPanel 
+                                chatPanelOpen={activeRightPanel === "chat"} 
+                                setChatPanelOpen={(open) => setActiveRightPanel(open ? "chat" : null)} 
+                            />
 
-                <div className="swarms-map-container">
-                    <ForceGraphMap 
-                        graphData={graphData} 
-                        ref={graphRef} 
-                        onNodeClick={handleNodeClick}
-                    />
+                            <SwarmsKanbanPanel 
+                                panelOpen={activeRightPanel === "kanban"} 
+                                setPanelOpen={(open) => setActiveRightPanel(open ? "kanban" : null)} 
+                            />
+                        </div>
+                    </div>
                 </div>
 
-                <ModelsDeck />
 
                 {/* Drag overlay - the ghost card that follows the cursor */}
                 <DragOverlay dropAnimation={null}>

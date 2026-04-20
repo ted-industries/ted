@@ -40,7 +40,7 @@
 .swarms-main-container {
     flex: 1;
     height: 100%;
-    background: var(--title-bar-bg);
+    background: var(--title-bar-bg); /* Matches sidebar and app-layout */
     display: flex;
     position: relative;
     overflow: hidden;
@@ -61,7 +61,7 @@
 
 .swarms-main-card {
     flex: 1;
-    background: linear-gradient(145deg, #181818 0%, #111111 100%);
+    background: #161616;
     border-left: 1px solid rgba(255, 255, 255, 0.15);
     border-top: 1px solid rgba(255, 255, 255, 0.15);
     border-right: none;
@@ -71,7 +71,7 @@
     flex-direction: column;
     position: relative;
     overflow: hidden;
-    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+    height: 100%;
 }
 
 .swarms-session-header {
@@ -434,7 +434,7 @@
     width: 0;
     height: 100%;
     overflow: hidden;
-    background: #111111;
+    background: #161616;
     border-left: none;
     /* No border when closed */
     z-index: 50;
@@ -698,7 +698,7 @@
     /* Ensure handle is relative to panel */
     width: 0;
     overflow: hidden;
-    background: #111111;
+    background: #161616;
     border-left: none;
     /* No border when closed */
     z-index: 50;

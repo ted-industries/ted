@@ -51,7 +51,7 @@ const tedDark: Theme = {
     name: "ted",
     type: "dark",
     colors: {
-        background: "#1a1a1a",
+        background: "#161616",
         foreground: "#d4d4d4",
         sidebarBg: "#1d1d1d",
         sidebarFg: "#cccccc",

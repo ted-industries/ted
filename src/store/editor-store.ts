@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { telemetry } from "../services/telemetry-service";
 import { gitService } from "../services/git-service";
@@ -1042,8 +1042,24 @@ export const editorStore = {
   },
 };
 
-export function useEditorStore<T>(selector: (s: EditorStoreState) => T): T {
-  return useSyncExternalStore(editorStore.subscribe, () =>
-    selector(editorStore.getState()),
-  );
+export function useEditorStore<T>(
+  selector: (s: EditorStoreState) => T,
+  equalityFn: (a: T, b: T) => boolean = Object.is
+): T {
+  const lastStateRef = useRef<EditorStoreState | null>(null);
+  const lastSelectedRef = useRef<T | null>(null);
+
+  const getSnapshot = () => {
+    const currentState = editorStore.getState();
+    if (lastStateRef.current === null || lastStateRef.current !== currentState) {
+      const nextSelected = selector(currentState);
+      if (lastSelectedRef.current === null || !equalityFn(lastSelectedRef.current, nextSelected)) {
+        lastSelectedRef.current = nextSelected;
+      }
+      lastStateRef.current = currentState;
+    }
+    return lastSelectedRef.current as T;
+  };
+
+  return useSyncExternalStore(editorStore.subscribe, getSnapshot);
 }

@@ -1,14 +1,15 @@
-import { useState, useRef, useEffect, forwardRef } from "react";
+import React, { useState, useRef, useEffect, forwardRef, memo } from "react";
 import ForceGraph2D, { ForceGraphMethods } from "react-force-graph-2d";
 import { NodeData, LinkData } from "../types";
 
 interface Props {
     graphData: { nodes: NodeData[]; links: LinkData[] };
     onNodeClick?: (node: NodeData) => void;
+    viewMode: string;
 }
 
-export const ForceGraphMap = forwardRef<ForceGraphMethods, Props>(
-    ({ graphData, onNodeClick }, ref) => {
+export const ForceGraphMap = memo(forwardRef<ForceGraphMethods, Props>(
+    ({ graphData, onNodeClick, viewMode }, ref) => {
         const containerRef = useRef<HTMLDivElement>(null);
         const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
@@ -25,6 +26,17 @@ export const ForceGraphMap = forwardRef<ForceGraphMethods, Props>(
             resizeObserver.observe(containerRef.current);
             return () => resizeObserver.disconnect();
         }, []);
+
+        useEffect(() => {
+            const fg = (ref as any)?.current;
+            if (!fg) return;
+
+            if (viewMode === "swarms") {
+                fg.resumeAnimation();
+            } else {
+                fg.pauseAnimation();
+            }
+        }, [viewMode, ref]);
 
         return (
             <div className="force-graph-container" ref={containerRef}>
@@ -45,7 +57,7 @@ export const ForceGraphMap = forwardRef<ForceGraphMethods, Props>(
                             ctx.lineTo(node.x + size, node.y + size);
                             ctx.fillStyle = node.color || "#ffd700";
                             ctx.fill();
-                            
+
                             if (node.isThinking) {
                                 ctx.lineWidth = 1;
                                 ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
@@ -64,17 +76,17 @@ export const ForceGraphMap = forwardRef<ForceGraphMethods, Props>(
                         const start = link.source;
                         const end = link.target;
                         if (typeof start !== 'object' || typeof end !== 'object') return;
-                        
+
                         if (link.isAgent) {
                             // Torch Light Effect
                             const grad = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
-                            grad.addColorStop(0, "rgba(255, 215, 0, 0.5)"); 
+                            grad.addColorStop(0, "rgba(255, 215, 0, 0.5)");
                             grad.addColorStop(1, "rgba(255, 215, 0, 0.0)");
 
                             ctx.beginPath();
                             ctx.moveTo(start.x, start.y);
                             ctx.lineTo(end.x, end.y);
-                            ctx.lineWidth = 12; 
+                            ctx.lineWidth = 12;
                             ctx.strokeStyle = grad;
                             ctx.lineCap = "round";
                             ctx.stroke();
@@ -105,5 +117,5 @@ export const ForceGraphMap = forwardRef<ForceGraphMethods, Props>(
             </div>
         );
     }
-);
+));
 

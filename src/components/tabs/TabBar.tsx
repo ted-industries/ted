@@ -5,8 +5,16 @@ import { useExtensionHost } from "../../services/extensions/extension-host";
 import "./tabs.css";
 
 export default function TabBar() {
-  const tabs = useEditorStore((s) => s.tabs);
+  const settings = useEditorStore((s) => s.settings);
+  // Find active tab without listening to the entire tabs array
   const activeTabPath = useEditorStore((s) => s.activeTabPath);
+  const tabsInfo = useEditorStore((s) => s.tabs.map(t => ({ 
+    path: t.path, 
+    name: t.name, 
+    isDirty: t.isDirty,
+    type: t.type 
+  })), (old, next) => JSON.stringify(old) === JSON.stringify(next));
+  
   const getIcon = useExtensionHost((s) => s.getFileIconProvider());
 
   const handleMouseDown = useCallback((e: React.MouseEvent, path: string) => {
@@ -24,7 +32,7 @@ export default function TabBar() {
 
   return (
     <div className="tab-bar" onWheel={handleWheel}>
-      {tabs.map((tab) => {
+      {tabsInfo.map((tab) => {
         const isActive = tab.path === activeTabPath;
         return (
           <div

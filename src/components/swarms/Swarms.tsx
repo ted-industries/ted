@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { ForceGraphMethods } from "react-force-graph-2d";
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent } from "@dnd-kit/core";
@@ -13,13 +13,14 @@ import { ForceGraphMap } from "./map/ForceGraphMap";
 import { ModelsDeck } from "./deck/ModelsDeck";
 import "./Swarms.css";
 
-export default function Swarms() {
+function Swarms() {
     const explorerPath = useEditorStore((s) => s.explorerPath);
     const activeSessionId = useEditorStore((s) => s.activeSwarmSessionId);
     const swarmSessions = useEditorStore((s) => s.swarmSessions);
     
     // UI states
     const swarmsSidebarOpen = useEditorStore((s) => s.swarmsSidebarOpen);
+    const viewMode = useEditorStore((s) => s.viewMode);
     const [activeRightPanel, setActiveRightPanel] = useState<"chat" | "kanban" | null>(null);
 
     // Graph base tree (FileSystem isolated)
@@ -225,6 +226,7 @@ export default function Swarms() {
                                     graphData={graphData} 
                                     ref={graphRef} 
                                     onNodeClick={handleNodeClick}
+                                    viewMode={viewMode}
                                 />
                                 <ModelsDeck />
                             </div>
@@ -257,3 +259,4 @@ export default function Swarms() {
     );
 }
 
+export default React.memo(Swarms);

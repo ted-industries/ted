@@ -19,7 +19,7 @@ export default function Swarms() {
     const swarmSessions = useEditorStore((s) => s.swarmSessions);
     
     // UI states
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const swarmsSidebarOpen = useEditorStore((s) => s.swarmsSidebarOpen);
     const [activeRightPanel, setActiveRightPanel] = useState<"chat" | "kanban" | null>(null);
 
     // Graph base tree (FileSystem isolated)
@@ -198,8 +198,8 @@ export default function Swarms() {
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
             <div className="swarms-view" ref={viewRef}>
                 <SwarmsSidebar 
-                    sidebarOpen={sidebarOpen} 
-                    setSidebarOpen={setSidebarOpen} 
+                    sidebarOpen={swarmsSidebarOpen} 
+                    setSidebarOpen={(open) => editorStore.setSwarmsSidebarOpen(open)} 
                     setChatPanelOpen={() => setActiveRightPanel("chat")} 
                 />
 

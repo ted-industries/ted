@@ -5,7 +5,7 @@ import { useExtensionHost } from "../../services/extensions/extension-host";
 import "./tabs.css";
 
 export default function TabBar() {
-  const settings = useEditorStore((s) => s.settings);
+
   // Find active tab without listening to the entire tabs array
   const activeTabPath = useEditorStore((s) => s.activeTabPath);
   const tabsInfo = useEditorStore((s) => s.tabs.map(t => ({ 

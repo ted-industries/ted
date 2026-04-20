@@ -752,14 +752,21 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 10px;
     min-width: 210px;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.05);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
     overflow: hidden;
     animation: ctxFadeIn 0.1s ease;
 }
 
 @keyframes ctxFadeIn {
-    from { opacity: 0; transform: scale(0.96) translateY(-4px); }
-    to   { opacity: 1; transform: scale(1)   translateY(0); }
+    from {
+        opacity: 0;
+        transform: scale(0.96) translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 .agent-ctx-header {
@@ -798,7 +805,7 @@
 .agent-ctx-model {
     display: block;
     font-size: 10px;
-    color: rgba(255,255,255,0.35);
+    color: rgba(255, 255, 255, 0.35);
 }
 
 .agent-ctx-lead-badge {
@@ -818,18 +825,21 @@
 .agent-ctx-close {
     background: none;
     border: none;
-    color: rgba(255,255,255,0.3);
+    color: rgba(255, 255, 255, 0.3);
     cursor: pointer;
     padding: 2px;
     border-radius: 4px;
     display: flex;
     transition: color 0.15s;
 }
-.agent-ctx-close:hover { color: #fff; }
+
+.agent-ctx-close:hover {
+    color: #fff;
+}
 
 .agent-ctx-divider {
     height: 1px;
-    background: rgba(255,255,255,0.07);
+    background: rgba(255, 255, 255, 0.07);
     margin: 2px 0;
 }
 
@@ -846,17 +856,22 @@
     background: none;
     border: none;
     border-radius: 6px;
-    color: rgba(255,255,255,0.75);
+    color: rgba(255, 255, 255, 0.75);
     font-size: 12px;
     cursor: pointer;
     text-align: left;
     transition: background 0.12s, color 0.12s;
 }
+
 .agent-ctx-item:hover {
-    background: rgba(255,255,255,0.07);
+    background: rgba(255, 255, 255, 0.07);
     color: #fff;
 }
-.agent-ctx-item.danger { color: rgba(239, 68, 68, 0.7); }
+
+.agent-ctx-item.danger {
+    color: rgba(239, 68, 68, 0.7);
+}
+
 .agent-ctx-item.danger:hover {
     background: rgba(239, 68, 68, 0.12);
     color: rgb(248, 113, 113);
@@ -865,17 +880,21 @@
 .agent-ctx-rename {
     padding: 8px;
 }
+
 .agent-ctx-rename-input {
     width: 100%;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 6px;
     color: #fff;
     font-size: 12px;
     padding: 6px 8px;
     outline: none;
 }
-.agent-ctx-rename-input:focus { border-color: rgba(255,255,255,0.3); }
+
+.agent-ctx-rename-input:focus {
+    border-color: rgba(255, 255, 255, 0.3);
+}
 
 /* ── Agents Panel ────────────────────────────────────────────────────────── */
 .swarms-agents-panel {
@@ -893,23 +912,23 @@
 
 .swarms-agents-panel.open {
     width: 240px;
-    border-left: 1px solid rgba(255,255,255,0.08);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .agents-panel-section-label {
     padding: 8px 12px 2px 12px;
     font-size: 9px;
-    font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.2);
+    color: rgba(255, 255, 255, 0.2);
     flex-shrink: 0;
 }
 
 .agents-panel-list {
     flex: 1;
     overflow-y: auto;
-    padding: 2px 6px 100px 6px; /* Extra bottom padding to help with menu clipping */
+    padding: 2px 6px 100px 6px;
+    /* Extra bottom padding to help with menu clipping */
     display: flex;
     flex-direction: column;
     gap: 1px;
@@ -919,90 +938,158 @@
     padding: 20px 8px;
     text-align: center;
     font-size: 11px;
-    color: rgba(255,255,255,0.2);
+    color: rgba(255, 255, 255, 0.2);
     line-height: 1.6;
 }
 
-.agent-member-row {
+.agent-member-card {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 3px 6px;
-    border-radius: 4px;
+    align-items: stretch;
+    height: 40px;
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    position: relative;
+    transition: all 0.1s;
     cursor: default;
-    position: relative;
-    transition: background 0.12s;
 }
-.agent-member-row:hover { background: rgba(255,255,255,0.05); }
-.agent-member-row.thinking { background: rgba(255,255,255,0.03); }
 
-.agent-member-avatar {
-    width: 26px;
-    height: 26px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.agent-member-card:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.member-role-bar {
+    width: 2px;
     flex-shrink: 0;
-    color: #fff;
-    position: relative;
+    height: 100%;
 }
 
-.agent-member-status-dot {
-    position: absolute;
-    bottom: -2px;
-    right: -2px;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    border: 2px solid #161616;
-}
-.agent-member-status-dot.active {
-    background: #4ade80;
-    box-shadow: 0 0 6px rgba(74, 222, 128, 0.6);
-    animation: pulse 1.5s infinite;
-}
-.agent-member-status-dot.idle { background: rgba(255,255,255,0.2); }
-
-.agent-member-info {
+.member-card-main {
     flex: 1;
-    min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    justify-content: center;
+    padding: 0 10px;
+    min-width: 0;
 }
 
-.agent-member-name {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11px;
-    font-weight: 600;
-    color: rgba(255,255,255,0.8);
+.member-card-header {
+    margin-bottom: -1px;
+}
+
+.member-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: #fff;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.agent-lead-star {
-    color: #ffd700;
+.member-lead-badge {
+    font-size: 8px;
+    font-weight: 900;
+    padding: 1px 3px;
+    background: #ffd700;
+    color: #000;
+    border-radius: 1px;
+    letter-spacing: 0.03em;
     flex-shrink: 0;
 }
 
-.agent-member-model {
+.member-card-sub {
+    display: flex;
+    align-items: center;
+    gap: 5px;
     font-size: 9px;
-    color: rgba(255,255,255,0.25);
+    font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
 }
 
-.agent-member-status-text {
-    font-size: 10px;
-    color: #4ade80;
-    font-style: italic;
+.member-role-text {
+    font-weight: 600;
+}
+
+.member-meta-divider {
+    color: rgba(255, 255, 255, 0.06);
+    font-weight: 300;
+}
+
+.member-model-text {
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.member-card-actions {
+    display: flex;
+    align-items: center;
+    padding-right: 6px;
+    opacity: 0;
+    transition: opacity 0.1s;
+}
+
+.agent-member-card:hover .member-card-actions {
+    opacity: 1;
+}
+
+.member-action-trigger {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.member-action-trigger:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+}
+
+.agent-member-card.thinking .member-role-bar {
+    animation: barPulse 1.2s infinite ease-in-out;
+}
+
+@keyframes barPulse {
+    0% {
+        opacity: 0.25;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.25;
+    }
+}
+
+.role-group-section {
+    margin-bottom: 12px;
+}
+
+.role-group-header {
+    padding: 6px 10px;
+    font-size: 9px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.role-group-header.unassigned {
+    color: rgba(255, 255, 255, 0.25);
+}
+
+.role-group-members {
+    display: flex;
+    flex-direction: column;
 }
 
 .agent-member-rename-input {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 4px;
     color: #fff;
     font-size: 12px;
@@ -1019,7 +1106,7 @@
 .agent-member-more-btn {
     background: none;
     border: none;
-    color: rgba(255,255,255,0.2);
+    color: rgba(255, 255, 255, 0.2);
     cursor: pointer;
     padding: 3px;
     border-radius: 4px;
@@ -1027,21 +1114,27 @@
     opacity: 0;
     transition: opacity 0.12s, background 0.12s, color 0.12s;
 }
-.agent-member-row:hover .agent-member-more-btn { opacity: 1; }
+
+.agent-member-row:hover .agent-member-more-btn {
+    opacity: 1;
+}
+
 .agent-member-more-btn:hover {
-    background: rgba(255,255,255,0.08);
+    background: rgba(255, 255, 255, 0.08);
     color: #fff;
 }
 
 .agent-member-dropdown {
     position: absolute;
-    right: 28px; /* Move away from edge */
-    top: -4px; /* Align near the top of the button */
+    right: 28px;
+    /* Move away from edge */
+    top: -4px;
+    /* Align near the top of the button */
     background: #1e1e1e;
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 6px;
     min-width: 140px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     z-index: 9999;
     padding: 4px;
     animation: ctxFadeIn 0.1s ease;
@@ -1056,25 +1149,30 @@
     background: none;
     border: none;
     border-radius: 5px;
-    color: rgba(255,255,255,0.7);
+    color: rgba(255, 255, 255, 0.7);
     font-size: 11px;
     cursor: pointer;
     text-align: left;
     transition: background 0.1s, color 0.1s;
 }
+
 .agent-member-dropdown-item:hover {
-    background: rgba(255,255,255,0.07);
+    background: rgba(255, 255, 255, 0.07);
     color: #fff;
 }
-.agent-member-dropdown-item.danger { color: rgba(239,68,68,0.7); }
+
+.agent-member-dropdown-item.danger {
+    color: rgba(239, 68, 68, 0.7);
+}
+
 .agent-member-dropdown-item.danger:hover {
-    background: rgba(239,68,68,0.1);
-    color: rgb(248,113,113);
+    background: rgba(239, 68, 68, 0.1);
+    color: rgb(248, 113, 113);
 }
 
 .agent-member-dropdown-divider {
     height: 1px;
-    background: rgba(255,255,255,0.07);
+    background: rgba(255, 255, 255, 0.07);
     margin: 2px 0;
 }
 
@@ -1083,12 +1181,15 @@
     align-items: center;
     gap: 6px;
     padding: 10px 16px;
-    border-top: 1px solid rgba(255,255,255,0.06);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
     font-size: 11px;
     color: rgba(255, 215, 0, 0.5);
     flex-shrink: 0;
 }
-.agents-panel-lead-footer strong { color: rgba(255,215,0,0.85); }
+
+.agents-panel-lead-footer strong {
+    color: rgba(255, 215, 0, 0.85);
+}
 
 /* ── Agents Panel Tabs ───────────────────────────────────────────────────── */
 .agents-panel-tabs {
@@ -1150,10 +1251,10 @@
 
 /* ── Roles View UI ───────────────────────────────────────────────────────── */
 .add-role-btn {
-    background: rgba(255,255,255,0.06);
+    background: rgba(255, 255, 255, 0.06);
     border: none;
     border-radius: 4px;
-    color: rgba(255,255,255,0.4);
+    color: rgba(255, 255, 255, 0.4);
     width: 24px;
     height: 24px;
     display: flex;
@@ -1164,7 +1265,7 @@
 }
 
 .add-role-btn:hover {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
     color: #fff;
 }
 
@@ -1172,16 +1273,35 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 5px 8px;
-    background: rgba(255,255,255,0.01);
-    border: 1px solid rgba(255,255,255,0.02);
-    border-radius: 4px;
-    transition: all 0.15s;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    cursor: default;
+    transition: all 0.1s;
+}
+
+.role-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.15);
+    cursor: grab;
+    transition: color 0.1s;
+    padding: 2px;
+}
+
+.role-drag-handle:hover {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.role-drag-handle:active {
+    cursor: grabbing;
 }
 
 .role-item:hover {
-    background: rgba(255,255,255,0.04);
-    border-color: rgba(255,255,255,0.08);
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 .role-indicator {
@@ -1193,15 +1313,40 @@
 
 .role-name {
     flex: 1;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
-    color: rgba(255,255,255,0.8);
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+}
+
+.role-item:hover .role-name {
+    color: #fff;
+}
+
+.role-edit-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: all 0.15s;
+}
+
+.role-item:hover .role-edit-btn {
+    opacity: 1;
+}
+
+.role-edit-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
 }
 
 .role-delete-btn {
     background: transparent;
     border: none;
-    color: rgba(255,255,255,0.15);
+    color: rgba(255, 255, 255, 0.15);
     cursor: pointer;
     padding: 4px;
     border-radius: 4px;
@@ -1218,11 +1363,47 @@
     color: #ef4444;
 }
 
+/* ── Role Prompt Input ───────────────────────────────────────────────────── */
+.role-prompt-input {
+    width: 100%;
+    min-height: 50px;
+    max-height: 120px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+    padding: 6px 8px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 10px;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+    margin-bottom: 8px;
+}
+
+.role-prompt-input:focus {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.role-edit-card {
+    margin-top: 4px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    animation: ctxFadeIn 0.15s ease;
+}
+
+.role-item-container.editing .role-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
 /* ── Create Role Card ────────────────────────────────────────────────────── */
 .create-role-card {
     padding: 8px;
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 6px;
     margin-bottom: 4px;
 }
@@ -1231,7 +1412,7 @@
     width: 100%;
     background: transparent;
     border: none;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 0;
     padding: 4px 2px;
     color: #fff;
@@ -1241,7 +1422,7 @@
 }
 
 .role-input:focus {
-    border-color: rgba(255,255,255,0.3);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 .color-swatch {
@@ -1260,7 +1441,7 @@
 .color-swatch.active {
     border-color: #fff;
     transform: scale(1.2);
-    box-shadow: 0 0 8px rgba(255,255,255,0.2);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
 }
 
 .role-action-btn {
@@ -1273,18 +1454,18 @@
     align-items: center;
     justify-content: center;
     transition: all 0.15s;
-    background: rgba(255,255,255,0.06);
+    background: rgba(255, 255, 255, 0.06);
     border: none;
-    color: rgba(255,255,255,0.6);
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .role-action-btn:hover {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
     color: #fff;
 }
 
 .role-action-btn.primary {
-    background: rgba(255,255,255,0.9);
+    background: rgba(255, 255, 255, 0.9);
     color: #000;
 }
 
@@ -1304,8 +1485,35 @@
 .dropdown-header {
     padding: 6px 10px;
     font-size: 9px;
-    font-weight: 800;
-    color: rgba(255,255,255,0.2);
+    color: rgba(255, 255, 255, 0.2);
     text-transform: uppercase;
     letter-spacing: 0.1em;
+}
+
+.add-role-dashed {
+    width: 100%;
+    margin-top: 4px;
+    padding: 8px;
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.25);
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.add-role-dashed:hover {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.add-role-dashed svg {
+    opacity: 0.5;
 }

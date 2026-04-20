@@ -1,5 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { RiCloseLine, RiSubtractLine, RiCheckboxMultipleBlankLine, RiCheckboxBlankLine, RiAddLine, RiCodeSSlashLine, RiRobotLine, RiSidebarFoldLine, RiSidebarUnfoldLine, RiLayoutLeft2Line, RiSideBarFill, RiSideBarLine } from "@remixicon/react";
+import { RiCloseLine, RiSubtractLine, RiCheckboxMultipleBlankLine, RiCheckboxBlankLine, RiAddLine, RiCodeSSlashLine, RiRobotLine, RiLayoutLeft2Line, RiSideBarLine } from "@remixicon/react";
 import { useState, useEffect } from "react";
 import "./Titlebar.css";
 import { editorStore, useEditorStore } from "../../store/editor-store";

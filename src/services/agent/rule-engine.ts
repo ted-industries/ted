@@ -1,7 +1,5 @@
 import { Rule } from "./types";
-import { RapidUndoRedoRule } from "./rules/behavior-rule";
-import { LargeFunctionRule } from "./rules/ast-rule";
-import { GitChurnRule } from "./rules/git-rule";
+
 import { suggestionDispatcher } from "./suggestion-dispatcher";
 import { TelemetryEvent, telemetry } from "../telemetry-service";
 

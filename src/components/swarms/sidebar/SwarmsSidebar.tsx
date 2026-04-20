@@ -7,7 +7,7 @@ interface Props {
     setChatPanelOpen: (b: boolean) => void;
 }
 
-export function SwarmsSidebar({ sidebarOpen, setSidebarOpen, setChatPanelOpen }: Props) {
+export function SwarmsSidebar({ sidebarOpen, setChatPanelOpen }: Props) {
     const activeSessionId = useEditorStore((s) => s.activeSwarmSessionId);
     const sessions = useEditorStore((s) => s.swarmSessions);
     const projectName = useEditorStore((s) => s.projectName);

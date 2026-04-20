@@ -49,6 +49,7 @@ export interface SwarmRole {
   name: string;
   color: string;
   isDefault?: boolean;
+  systemPrompt?: string;
 }
 
 export interface KanbanTask {
@@ -866,7 +867,13 @@ export const editorStore = {
       ],
       kanbanTasks: [],
       roles: [
-        { id: "role-project-lead", name: "Project Lead", color: "#ffd700", isDefault: true }
+        { 
+          id: "role-project-lead", 
+          name: "Project Lead", 
+          color: "#ffd700", 
+          isDefault: true,
+          systemPrompt: "You are the Project Lead and Orchestrator. Your role is to coordinate the swarm, delegate tasks to other agents based on their strengths, and maintain the project's high-level vision. You break down complex goals into actionable tasks, resolve blockers, and ensure every agent is working towards the same objective. Be concise, strategic, and authoritative."
+        }
       ],
       timestamp: Date.now(),
     };
@@ -905,9 +912,12 @@ export const editorStore = {
     if (!state.activeSwarmSessionId) return;
     const nextSessions = state.swarmSessions.map(s => {
       if (s.id === state.activeSwarmSessionId) {
-        // First agent in a session automatically becomes the lead
-        const isFirst = s.agents.length === 0;
-        return { ...s, agents: [...s.agents, { ...agent, isLead: isFirst }] };
+        // Find if someone is already lead
+        const hasLead = s.agents.some(a => a.isLead);
+        // If first agent or no lead exists, promote this one
+        const isLead = !hasLead;
+        const roleId = isLead ? "role-project-lead" : undefined;
+        return { ...s, agents: [...s.agents, { ...agent, isLead, roleId }] };
       }
       return s;
     });
@@ -919,11 +929,11 @@ export const editorStore = {
     if (!state.activeSwarmSessionId) return;
     const nextSessions = state.swarmSessions.map(s => {
       if (s.id === state.activeSwarmSessionId) {
-        const remaining = s.agents.filter(a => a.id !== agentId);
+        let remaining = s.agents.filter(a => a.id !== agentId);
         // If we removed the lead and there are remaining agents, promote the first one
         const removedAgent = s.agents.find(a => a.id === agentId);
         if (removedAgent?.isLead && remaining.length > 0) {
-          remaining[0] = { ...remaining[0], isLead: true };
+          remaining = remaining.map((a, i) => i === 0 ? { ...a, isLead: true, roleId: "role-project-lead" } : a);
         }
         return { ...s, agents: remaining };
       }
@@ -964,16 +974,40 @@ export const editorStore = {
     dispatch("SET_AGENT_LEAD", { swarmSessions: nextSessions });
   },
 
-  addRole(name: string, color: string) {
+  addRole(name: string, color: string, systemPrompt?: string) {
     if (!state.activeSwarmSessionId) return;
     const id = `role-${crypto.randomUUID()}`;
     const nextSessions = state.swarmSessions.map(s => {
       if (s.id === state.activeSwarmSessionId) {
-        return { ...s, roles: [...s.roles, { id, name, color }] };
+        return { ...s, roles: [...s.roles, { id, name, color, systemPrompt }] };
       }
       return s;
     });
     dispatch("ADD_ROLE", { swarmSessions: nextSessions });
+  },
+
+  updateRole(roleId: string, updates: Partial<Omit<SwarmRole, 'id' | 'isDefault'>>) {
+    if (!state.activeSwarmSessionId) return;
+    const nextSessions = state.swarmSessions.map(s => {
+      if (s.id === state.activeSwarmSessionId) {
+        return {
+          ...s,
+          roles: s.roles.map(r => r.id === roleId ? { ...r, ...updates } : r)
+        };
+      }
+      return s;
+    });
+    dispatch("UPDATE_ROLE", { swarmSessions: nextSessions });
+  },
+  reorderRoles(newRoles: SwarmRole[]) {
+    if (!state.activeSwarmSessionId) return;
+    const nextSessions = state.swarmSessions.map(s => {
+      if (s.id === state.activeSwarmSessionId) {
+        return { ...s, roles: newRoles };
+      }
+      return s;
+    });
+    dispatch("REORDER_ROLES", { swarmSessions: nextSessions });
   },
 
   deleteRole(roleId: string) {
@@ -998,20 +1032,25 @@ export const editorStore = {
     if (!state.activeSwarmSessionId) return;
     const nextSessions = state.swarmSessions.map(s => {
       if (s.id === state.activeSwarmSessionId) {
-        return {
-          ...s,
-          agents: s.agents.map(a => {
-            if (a.id === agentId) {
-              const isLead = roleId === "role-project-lead";
-              return { ...a, roleId, isLead };
-            }
-            // If another agent is assigned Lead, this one loses it
-            if (roleId === "role-project-lead" && a.roleId === "role-project-lead") {
-              return { ...a, roleId: undefined, isLead: false };
-            }
-            return a;
-          })
-        };
+        let nextAgents = s.agents.map(a => {
+          if (a.id === agentId) {
+            const isLead = roleId === "role-project-lead";
+            return { ...a, roleId, isLead };
+          }
+          // If another agent is assigned Lead, this one loses it
+          if (roleId === "role-project-lead" && a.roleId === "role-project-lead") {
+            return { ...a, roleId: undefined, isLead: false };
+          }
+          return a;
+        });
+
+        // Ensure we still have a lead if agents exist
+        const hasLead = nextAgents.some(a => a.isLead);
+        if (!hasLead && nextAgents.length > 0) {
+          nextAgents = nextAgents.map((a, i) => i === 0 ? { ...a, isLead: true, roleId: "role-project-lead" } : a);
+        }
+
+        return { ...s, agents: nextAgents };
       }
       return s;
     });

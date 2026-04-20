@@ -15,6 +15,7 @@ export interface NodeData {
     isThinking?: boolean;
     targetNode?: string;
     depth?: number;
+    isLead?: boolean;
 }
 
 export interface LinkData {

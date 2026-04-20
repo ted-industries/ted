@@ -184,8 +184,6 @@ export default function Editor() {
   }, (old, next) => JSON.stringify(old) === JSON.stringify(next));
   
   const activeTabPath = activeTabMetadata?.path ?? null;
-  const activeTabName = activeTabMetadata?.name ?? null;
-  const activeTabType = activeTabMetadata?.type ?? null;
   const activeTabIsDiff = activeTabMetadata?.isDiff ?? false;
 
   const saveFile = useCallback((path: string, content: string) => {

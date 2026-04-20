@@ -1,15 +1,16 @@
-import React, { useState, useRef, useEffect, forwardRef, memo } from "react";
+import { useState, useRef, useEffect, forwardRef, memo } from "react";
 import ForceGraph2D, { ForceGraphMethods } from "react-force-graph-2d";
 import { NodeData, LinkData } from "../types";
 
 interface Props {
     graphData: { nodes: NodeData[]; links: LinkData[] };
     onNodeClick?: (node: NodeData) => void;
+    onNodeRightClick?: (node: NodeData, event: MouseEvent) => void;
     viewMode: string;
 }
 
 export const ForceGraphMap = memo(forwardRef<ForceGraphMethods, Props>(
-    ({ graphData, onNodeClick, viewMode }, ref) => {
+    ({ graphData, onNodeClick, onNodeRightClick, viewMode }, ref) => {
         const containerRef = useRef<HTMLDivElement>(null);
         const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
@@ -45,24 +46,42 @@ export const ForceGraphMap = memo(forwardRef<ForceGraphMethods, Props>(
                     width={dimensions.width}
                     height={dimensions.height}
                     graphData={graphData}
-                    nodeLabel="name"
+                    nodeLabel={(node: any) => node.group === "file" ? node.name : ""}
                     onNodeClick={onNodeClick as any}
+                    onNodeRightClick={(node: any, event: MouseEvent) => {
+                        event.preventDefault();
+                        if (onNodeRightClick && node.group === "agent") {
+                            onNodeRightClick(node as NodeData, event);
+                        }
+                    }}
                     nodeCanvasObject={(node: any, ctx: any, globalScale: number) => {
                         const isAgent = node.group === "agent";
                         const size = isAgent ? (node.isThinking ? 10 : 8) : (node.val || 2);
 
                         // Custom Drawing for nodes
                         if (isAgent) {
+                            // Lead ring (drawn behind the triangle)
+                            if (node.isLead) {
+                                ctx.beginPath();
+                                ctx.arc(node.x, node.y, size + 4, 0, 2 * Math.PI);
+                                ctx.lineWidth = 1.5;
+                                ctx.strokeStyle = "rgba(255, 215, 0, 0.5)";
+                                ctx.setLineDash([3, 3]);
+                                ctx.stroke();
+                                ctx.setLineDash([]);
+                            }
+
                             ctx.beginPath();
                             ctx.moveTo(node.x, node.y - size);
                             ctx.lineTo(node.x - size, node.y + size);
                             ctx.lineTo(node.x + size, node.y + size);
+                            ctx.closePath();
                             ctx.fillStyle = node.color || "#ffd700";
                             ctx.fill();
 
                             if (node.isThinking) {
-                                ctx.lineWidth = 1;
-                                ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+                                ctx.lineWidth = 1.5;
+                                ctx.strokeStyle = "rgba(255, 255, 255, 0.7)";
                                 ctx.stroke();
                             }
                         } else {

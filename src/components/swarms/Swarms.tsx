@@ -9,6 +9,8 @@ import { SwarmsSidebar } from "./sidebar/SwarmsSidebar";
 import { SwarmsActionBar } from "./sidebar/SwarmsActionBar";
 import { SwarmsChatPanel } from "./chat/SwarmsChatPanel";
 import { SwarmsKanbanPanel } from "./kanban/SwarmsKanbanPanel";
+import { SwarmsAgentsPanel } from "./agents/SwarmsAgentsPanel";
+import { AgentContextMenu } from "./map/AgentContextMenu";
 import { ForceGraphMap } from "./map/ForceGraphMap";
 import { ModelsDeck } from "./deck/ModelsDeck";
 import "./Swarms.css";
@@ -21,7 +23,11 @@ function Swarms() {
     // UI states
     const swarmsSidebarOpen = useEditorStore((s) => s.swarmsSidebarOpen);
     const viewMode = useEditorStore((s) => s.viewMode);
-    const [activeRightPanel, setActiveRightPanel] = useState<"chat" | "kanban" | null>(null);
+    const [activeRightPanel, setActiveRightPanel] = useState<"chat" | "kanban" | "agents" | null>(null);
+    const [agentsWidth] = useState(260);
+
+    // Context menu state
+    const [ctxMenu, setCtxMenu] = useState<{ node: NodeData; x: number; y: number } | null>(null);
 
     // Graph base tree (FileSystem isolated)
     const [fsNodes, setFsNodes] = useState<NodeData[]>([]);
@@ -104,14 +110,15 @@ function Swarms() {
             sessionAgentNodes = activeSession.agents.map(a => ({
                 id: a.id,
                 name: a.name,
-                group: "agent",
+                group: "agent" as const,
                 val: 8,
                 color: MODELS.find(m => m.id === a.modelId)?.color || "#ffd700",
                 x: a.x,
                 y: a.y,
                 fx: a.x,
                 fy: a.y,
-                isThinking: a.isThinking, 
+                isThinking: a.isThinking,
+                isLead: a.isLead,
                 targetNode: a.activeTaskTarget
             }));
 
@@ -134,7 +141,7 @@ function Swarms() {
     }, [fsNodes, fsLinks, activeSessionId, swarmSessions]);
 
 
-    // Track pointer position during drag for drop coordinate calculation
+
     useEffect(() => {
         const onMouseMove = (e: MouseEvent) => {
             if (!isResizingRef.current) return;
@@ -142,7 +149,6 @@ function Swarms() {
             if (!container) return;
             const rect = container.getBoundingClientRect();
             const newWidth = rect.right - e.clientX;
-            
             if (activeRightPanel === "chat") {
                 setChatWidth(Math.max(300, Math.min(newWidth, 800)));
             } else if (activeRightPanel === "kanban") {
@@ -155,7 +161,7 @@ function Swarms() {
             document.body.classList.remove("is-resizing-h");
         };
 
-        if (activeRightPanel) {
+        if (activeRightPanel && activeRightPanel !== "agents") {
             window.addEventListener("mousemove", onMouseMove);
             window.addEventListener("mouseup", onMouseUp);
         }
@@ -165,6 +171,7 @@ function Swarms() {
             window.removeEventListener("mouseup", onMouseUp);
         };
     }, [activeRightPanel]);
+
 
     useEffect(() => {
         if (!activeModelId) {
@@ -228,6 +235,11 @@ function Swarms() {
         }
     }, []);
 
+    const handleNodeRightClick = useCallback((node: NodeData, event: MouseEvent) => {
+        event.preventDefault();
+        setCtxMenu({ node, x: event.clientX, y: event.clientY });
+    }, []);
+
     const activeModel = activeModelId ? MODELS.find(m => m.id === activeModelId) : null;
 
     return (
@@ -257,17 +269,18 @@ function Swarms() {
 
                         <div className="swarms-main-body">
                             <div className="swarms-map-container" ref={mapContainerRef}>
-                                <ForceGraphMap 
-                                    graphData={graphData} 
-                                    ref={graphRef} 
+                                <ForceGraphMap
+                                    graphData={graphData}
+                                    ref={graphRef}
                                     onNodeClick={handleNodeClick}
+                                    onNodeRightClick={handleNodeRightClick}
                                     viewMode={viewMode}
                                 />
                                 <ModelsDeck />
                             </div>
 
-                            {activeRightPanel && (
-                                <div 
+                            {activeRightPanel && activeRightPanel !== "agents" && (
+                                <div
                                     className="panel-resize-handle"
                                     onMouseDown={(e) => {
                                         e.preventDefault();
@@ -277,13 +290,17 @@ function Swarms() {
                                 />
                             )}
 
-                            <SwarmsChatPanel 
-                                chatPanelOpen={activeRightPanel === "chat"} 
+                            <SwarmsChatPanel
+                                chatPanelOpen={activeRightPanel === "chat"}
                                 width={chatWidth}
                             />
-                            <SwarmsKanbanPanel 
-                                kanbanPanelOpen={activeRightPanel === "kanban"} 
+                            <SwarmsKanbanPanel
+                                kanbanPanelOpen={activeRightPanel === "kanban"}
                                 width={kanbanWidth}
+                            />
+                            <SwarmsAgentsPanel
+                                agentsPanelOpen={activeRightPanel === "agents"}
+                                width={agentsWidth}
                             />
                         </div>
                     </div>
@@ -300,6 +317,17 @@ function Swarms() {
                     ) : null}
                 </DragOverlay>
             </div>
+
+            {/* Agent Context Menu portal */}
+            {ctxMenu && (
+                <AgentContextMenu
+                    node={ctxMenu.node}
+                    x={ctxMenu.x}
+                    y={ctxMenu.y}
+                    onClose={() => setCtxMenu(null)}
+                    onOpenChat={() => setActiveRightPanel("chat")}
+                />
+            )}
         </DndContext>
     );
 }

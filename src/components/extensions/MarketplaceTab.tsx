@@ -1,12 +1,19 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { RiSearchLine, RiPlug2Fill, RiAddFill, RiFolderLine, RiArrowLeftLine } from "@remixicon/react";
-import { revealItemInDir } from "@tauri-apps/plugin-opener";
-import { open } from "@tauri-apps/plugin-dialog";
+import {
+    RiSearchLine, RiAddFill, RiArrowRightSLine,
+    RiExternalLinkLine, RiArrowLeftLine, RiCheckboxCircleFill,
+    RiCommandLine, RiGlobalLine, RiDownloadLine, RiUserLine, RiGithubLine
+} from "@remixicon/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { open } from "@tauri-apps/plugin-dialog";
 import { extensionHost, useExtensionHost } from "../../services/extensions/extension-host";
 import { extensionRegistryService, RegistryExtension } from "../../services/extensions/extension-registry-service";
 import "./MarketplaceTab.css";
+
+// Assets
+const BANNER_IMG = "/marketplace_banner.png";
 
 export default function MarketplaceTab() {
     const [view, setView] = useState<"browse" | "installed">("browse");
@@ -55,20 +62,14 @@ export default function MarketplaceTab() {
     const handleInstall = async (ext: RegistryExtension) => {
         if (installing) return;
         setInstalling(ext.name);
-
-        window.dispatchEvent(new CustomEvent("ted:notification", {
-            detail: { message: `Installing ${ext.displayName}...`, type: "info" }
-        }));
-
         try {
             await extensionRegistryService.installExtension(ext);
-
             window.dispatchEvent(new CustomEvent("ted:notification", {
-                detail: { message: `${ext.displayName} installed and activated.`, type: "info" }
+                detail: { message: `${ext.displayName} added to Ted.`, type: "info" }
             }));
         } catch (err) {
             window.dispatchEvent(new CustomEvent("ted:notification", {
-                detail: { message: `Failed to install ${ext.displayName}: ${err}`, type: "error" }
+                detail: { message: `Failed to add ${ext.displayName}: ${err}`, type: "error" }
             }));
         } finally {
             setInstalling(null);
@@ -86,10 +87,9 @@ export default function MarketplaceTab() {
                 ext.displayName.toLowerCase().includes(s) ||
                 ext.name.toLowerCase().includes(s) ||
                 ext.description.toLowerCase().includes(s) ||
-                ext.tags.some((t: string) => t.toLowerCase().includes(s))
+                (ext.tags || []).some((t: string) => t.toLowerCase().includes(s))
             );
         } else {
-            // Filter installed instances
             return instances.filter(inst =>
                 (inst.manifest.displayName || inst.manifest.name).toLowerCase().includes(s) ||
                 inst.id.toLowerCase().includes(s)
@@ -97,292 +97,285 @@ export default function MarketplaceTab() {
         }
     }, [registry, instances, search, view]);
 
+    if (detailExt) {
+        return (
+            <div className="marketplace-tab">
+                <ExtensionDetailView
+                    ext={detailExt}
+                    onBack={() => setDetailExt(null)}
+                    isInstalled={instances.some(i => i.id === (detailExt.name || detailExt.id))}
+                    isInstalling={installing === detailExt.name}
+                    onInstall={() => handleInstall(detailExt)}
+                    onToggle={() => handleToggle(detailExt.id || detailExt.name)}
+                />
+            </div>
+        );
+    }
+
     return (
         <div className="marketplace-tab">
-            {!detailExt && (
-                <div className="marketplace-header">
-                    <div className="marketplace-title">
-                        <RiPlug2Fill size={15} />
-                        <div className="marketplace-nav">
-                            <div
-                                className={`marketplace-nav-item ${view === "browse" ? "active" : ""}`}
-                                onClick={() => setView("browse")}
-                            >
-                                browse
-                            </div>
-                            <div
-                                className={`marketplace-nav-item ${view === "installed" ? "active" : ""}`}
-                                onClick={() => setView("installed")}
-                            >
-                                installed ({instances.length})
+            <div className="marketplace-top-nav">
+                <div className="nav-toggles">
+                    <div
+                        className={`nav-toggle-item ${view === "browse" ? "active" : ""}`}
+                        onClick={() => setView("browse")}
+                    >
+                        Browse
+                    </div>
+                    <div
+                        className={`nav-toggle-item ${view === "installed" ? "active" : ""}`}
+                        onClick={() => setView("installed")}
+                    >
+                        Installed ({instances.length})
+                    </div>
+                </div>
+                <div className="nav-actions">
+                    {view === "installed" && (
+                        <button className="nav-btn" onClick={handleLoadLocal}>
+                            <RiAddFill size={16} /> Load Local
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            <div className="browse-container">
+                <h1 className="browse-hero-text">Make Ted work your way</h1>
+
+                <div className="browse-search-wrapper">
+                    <div className="search-box">
+                        <RiSearchLine size={18} />
+                        <input
+                            type="text"
+                            placeholder={`Search ${view}...`}
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                        />
+                    </div>
+                </div>
+
+                {view === "browse" && (
+                    <div className="hero-banner" style={{ backgroundImage: `url(${BANNER_IMG})`, backgroundSize: 'cover' }}>
+                        <div className="banner-content">
+                            <div className="banner-pill">
+                                <RiCommandLine size={14} />
+                                <div className="banner-pill-text">
+                                    Expand Ted's capabilities with community extensions
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div className="marketplace-search">
-                        <RiSearchLine size={15} />
-                        <input
-                            type="text"
-                            placeholder={`search ${view}...`}
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
-                    {view === "installed" && (
-                        <button className="item-install-btn" onClick={handleLoadLocal}>
-                            <RiAddFill size={15} style={{ marginRight: 4 }} />
-                            load local
-                        </button>
-                    )}
-                </div>
-            )}
+                )}
 
-            <div className={`marketplace-content ${detailExt ? 'detail-mode' : ''}`}>
-                {detailExt ? (
-                    <ExtensionDetailView
-                        ext={detailExt}
-                        onBack={() => setDetailExt(null)}
-                        isInstalled={instances.some(i => i.id === (detailExt.name || detailExt.id))}
-                        isInstalling={installing === detailExt.name}
-                        onInstall={() => handleInstall(detailExt)}
-                        onToggle={() => handleToggle(detailExt.id)}
-                    />
-                ) : view === "browse" && loading ? (
-                    <div className="marketplace-loading">fetching registry...</div>
-                ) : view === "browse" && error ? (
-                    <div className="marketplace-error">{error}</div>
-                ) : (
-                    <div className="marketplace-grid">
-                        {view === "browse" ? (
-                            (filtered as RegistryExtension[]).map(ext => (
-                                <RegistryItem
-                                    key={ext.name}
-                                    ext={ext}
-                                    isInstalled={instances.some(i => i.id === ext.name)}
-                                    isInstalling={installing === ext.name}
-                                    onInstall={() => handleInstall(ext)}
-                                    onClick={() => setDetailExt(ext)}
+                <div className="marketplace-section">
+                    <div className="section-header">
+                        {view === "browse" ? "Marketplace" : "Your Extensions"}
+                    </div>
+                    <div className="section-grid">
+                        {loading && view === "browse" ? (
+                            <div style={{ color: 'var(--market-text-muted)', textAlign: 'center', gridColumn: '1/-1', padding: '40px' }}>
+                                Fetching extensions...
+                            </div>
+                        ) : filtered.length > 0 ? (
+                            filtered.map((item: any) => (
+                                <PluginCard
+                                    key={item.id || item.name}
+                                    item={item}
+                                    isInstalled={instances.some(i => i.id === (item.name || item.id))}
+                                    isInstalling={installing === item.name}
+                                    onInstall={() => handleInstall(item)}
+                                    onClick={() => setDetailExt(item)}
+                                    view={view}
+                                    onToggle={() => handleToggle(item.id)}
                                 />
                             ))
                         ) : (
-                            (filtered as any[]).map(inst => (
-                                <InstalledItem
-                                    key={inst.id}
-                                    inst={inst}
-                                    onToggle={() => handleToggle(inst.id)}
-                                    onClick={() => setDetailExt(inst)}
-                                />
-                            ))
-                        )}
-                        {filtered.length === 0 && (
-                            <div className="marketplace-empty">no extensions found.</div>
+                            <div style={{ color: 'var(--market-text-muted)', textAlign: 'center', gridColumn: '1/-1', padding: '40px' }}>
+                                No extensions found.
+                            </div>
                         )}
                     </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
-function RegistryItem({ ext, isInstalled, isInstalling, onInstall, onClick }: {
-    ext: RegistryExtension,
-    isInstalled: boolean,
-    isInstalling: boolean,
-    onInstall: () => void,
-    onClick: () => void
-}) {
-    return (
-        <div className={`marketplace-item ${isInstalled ? 'installed' : ''}`} onClick={onClick} style={{ cursor: 'pointer' }}>
-            <div className="item-header">
-                <span className="item-name">{ext.displayName}</span>
-                <span className="item-version">v{ext.version}</span>
-            </div>
-
-            <div className="item-desc">{ext.description}</div>
-
-            <div className="item-footer">
-                <div className="item-tags">
-                    {ext.tags.map(t => <span key={t} className="item-tag">{t}</span>)}
-                </div>
-                <div className="item-actions" onClick={e => e.stopPropagation()}>
-                    {isInstalled ? (
-                        <div className="item-status">installed</div>
-                    ) : (
-                        <button
-                            className="item-install-btn"
-                            onClick={onInstall}
-                            disabled={isInstalling}
-                        >
-                            {isInstalling ? "..." : "install"}
-                        </button>
-                    )}
                 </div>
             </div>
         </div>
     );
 }
 
-function InstalledItem({ inst, onToggle, onClick }: {
-    inst: any,
-    onToggle: () => void,
-    onClick: () => void
-}) {
-    const isActive = inst.status === "active";
-    const isError = inst.status === "error";
+function PluginCard({ item, isInstalled, isInstalling, onInstall, onClick, view, onToggle }: any) {
+    const name = item.displayName || item.manifest?.displayName || item.name || item.id;
+    const description = item.description || item.manifest?.description;
+    const version = item.version || item.manifest?.version;
+    const isActive = item.status === "active";
 
     return (
-        <div className={`marketplace-item ${isActive ? '' : 'disabled'}`} onClick={onClick} style={{ cursor: 'pointer' }}>
-            <div className="item-header">
-                <span className="item-name">{inst.manifest.displayName || inst.manifest.name}</span>
-                <span className="item-version">v{inst.manifest.version}</span>
+        <div className="plugin-card" onClick={onClick}>
+            <div className="plugin-icon">
+                <RiCommandLine size={20} color="#8e8e8e" />
             </div>
-
-            <div className="item-desc">
-                {isError ? (
-                    <span style={{ color: "var(--syntax-variable)" }}>{inst.error || "error loading extension"}</span>
+            <div className="plugin-info">
+                <div className="plugin-name">
+                    {name}
+                    <span style={{ fontSize: '10px', color: 'var(--market-text-muted)', marginLeft: '8px' }}>v{version}</span>
+                </div>
+                <div className="plugin-desc">{description}</div>
+            </div>
+            <div className="plugin-actions" onClick={e => e.stopPropagation()}>
+                {view === "browse" ? (
+                    <div className="plugin-add-btn" onClick={onInstall}>
+                        {isInstalled ? <RiCheckboxCircleFill size={18} color="#4CAF50" /> : isInstalling ? "..." : <RiAddFill size={18} />}
+                    </div>
                 ) : (
-                    inst.manifest.description
-                )}
-            </div>
-
-            <div className="item-footer">
-                <div className="item-tags">
-                    <span className="item-tag">{inst.status}</span>
-                </div>
-                <div className="item-actions" onClick={e => e.stopPropagation()}>
                     <button
-                        className="item-path-btn"
-                        onClick={() => revealItemInDir(inst.path)}
-                        title={inst.path}
+                        className={`plugin-toggle-btn ${isActive ? 'active' : ''}`}
+                        onClick={onToggle}
+                        style={{
+                            width: '32px', height: '16px', borderRadius: '10px',
+                            background: isActive ? '#ffffff' : 'rgba(255,255,255,0.1)',
+                            border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+                            position: 'relative'
+                        }}
                     >
-                        <RiFolderLine size={13} />
+                        <div style={{
+                            width: '12px', height: '12px', borderRadius: '50%',
+                            background: isActive ? '#000000' : '#8e8e8e',
+                            position: 'absolute', top: '2px', left: isActive ? '18px' : '2px',
+                            transition: 'all 0.2s'
+                        }} />
                     </button>
-                    <div className="item-status" title={isActive ? "active" : "disabled"}>
-                        <button
-                            className={`item-toggle-btn ${isActive ? 'active' : ''}`}
-                            onClick={onToggle}
-                        />
-                    </div>
-                </div>
+                )}
             </div>
         </div>
     );
 }
 
-function ExtensionDetailView({ ext, onBack, isInstalled, isInstalling, onInstall, onToggle }: {
-    ext: any,
-    onBack: () => void,
-    isInstalled: boolean,
-    isInstalling: boolean,
-    onInstall: () => void,
-    onToggle: () => void
-}) {
-
+function ExtensionDetailView({ ext, onBack, isInstalled, isInstalling, onInstall, onToggle }: any) {
     const [readme, setReadme] = useState<string | null>(null);
     const [loadingReadme, setLoadingReadme] = useState(false);
 
     useEffect(() => {
         const load = async () => {
             setLoadingReadme(true);
-            const content = await extensionRegistryService.fetchReadme(ext);
-            setReadme(content);
-            setLoadingReadme(false);
+            try {
+                const content = await extensionRegistryService.fetchReadme(ext);
+                setReadme(content);
+            } catch (err) {
+                console.error("Failed to fetch readme:", err);
+            } finally {
+                setLoadingReadme(false);
+            }
         };
         load();
     }, [ext]);
 
     // Normalize data
+    const instance = useExtensionHost(h => h.getExtensions().find(i => i.id === (ext.name || ext.id)));
+    
     const name = ext.displayName || ext.manifest?.displayName || ext.name || ext.id;
     const version = ext.version || ext.manifest?.version;
     const description = ext.description || ext.manifest?.description;
-    const author = ext.author || ext.manifest?.author || "Unknown";
+    const author = ext.author || ext.manifest?.author || "Unknown Author";
     const repository = ext.repository || ext.manifest?.repository;
     const tags = ext.tags || (ext.manifest?.keywords || []);
-    const status = ext.status || (isInstalled ? "installed" : "available");
+    const status = instance?.status || ext.status || (isInstalled ? "installed" : "available");
     const downloads = ext.downloads || 0;
 
     return (
-        <div className="marketplace-detail">
-            <div className="detail-back" onClick={onBack}>
-                <RiArrowLeftLine size={14} />
-                back to browse
+        <div className="marketplace-tab">
+            <div className="marketplace-top-nav">
+                <div className="detail-nav" onClick={onBack} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <RiArrowLeftLine size={16} /> Marketplace <span className="breadcrumb-sep">/</span> {name}
+                </div>
+                <div className="nav-actions">
+                    {!isInstalled ? (
+                        <button className="nav-btn primary" onClick={onInstall} disabled={isInstalling}>
+                            {isInstalling ? "Adding..." : "Add to Ted"}
+                        </button>
+                    ) : (
+                        <button className="nav-btn primary" onClick={onToggle}>
+                            {status === 'active' ? "Disable" : "Enable"}
+                        </button>
+                    )}
+                </div>
             </div>
 
-            <div className="detail-main">
-                <div className="detail-info">
-                    <div className="detail-header">
-                        <div className="detail-name">{name}</div>
-                        <div className="detail-version">version {version}</div>
+            <div className="detail-container">
+                <div className="detail-layout">
+                    <div className="detail-main-info">
+                        <div className="detail-header-row">
+                            <div className="detail-large-icon">
+                                <RiCommandLine size={32} color="#8e8e8e" />
+                            </div>
+                            <div className="detail-title-block">
+                                <h1>{name}</h1>
+                                <div className="detail-short-desc">{description}</div>
+                            </div>
+                        </div>
+
+                        <div className="detail-long-desc">
+                            {loadingReadme ? (
+                                <div style={{ color: 'var(--market-text-muted)', padding: '20px 0' }}>Fetching documentation...</div>
+                            ) : (
+                                <div className="markdown-body">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {readme || "No documentation provided."}
+                                    </ReactMarkdown>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    {description && <div className="detail-desc">{description}</div>}
-
-
-                    <div className="detail-markdown">
-                        {loadingReadme ? (
-                            <div className="marketplace-loading" style={{ padding: "40px 0", textAlign: "left" }}>
-                                Fetching documentation...
+                    <div className="detail-info-sidebar">
+                        <h3>Information</h3>
+                        <div className="info-table">
+                            <div className="info-row">
+                                <div className="info-label">Version</div>
+                                <div className="info-value">{version}</div>
                             </div>
-                        ) : (
-                            <div className="markdown-body">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                    {readme || "No documentation provided."}
-                                </ReactMarkdown>
+                            <div className="info-row">
+                                <div className="info-label">Author</div>
+                                <div className="info-value" style={{ gap: '4px' }}>
+                                    <RiUserLine size={14} /> {author}
+                                </div>
+                            </div>
+                            {downloads > 0 && (
+                                <div className="info-row">
+                                    <div className="info-label">Downloads</div>
+                                    <div className="info-value" style={{ gap: '4px' }}>
+                                        <RiDownloadLine size={14} /> {downloads.toLocaleString()}
+                                    </div>
+                                </div>
+                            )}
+                            {repository && (
+                                <div className="info-row">
+                                    <div className="info-label">Repository</div>
+                                    <div className="info-value">
+                                        <a href={repository} target="_blank" rel="noopener noreferrer" className="info-link">
+                                            <RiGithubLine size={14} /> GitHub
+                                        </a>
+                                    </div>
+                                </div>
+                            )}
+                            <div className="info-row">
+                                <div className="info-label">Status</div>
+                                <div className="info-value">{status}</div>
+                            </div>
+                        </div>
+
+                        {tags.length > 0 && (
+                            <div style={{ marginTop: '24px' }}>
+                                <h3 style={{ fontSize: '13px', marginBottom: '12px' }}>Tags</h3>
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                    {tags.map((tag: string) => (
+                                        <span key={tag} style={{
+                                            fontSize: '11px', padding: '4px 8px', borderRadius: '4px',
+                                            background: 'rgba(255,255,255,0.05)', color: 'var(--market-text-muted)'
+                                        }}>
+                                            {tag}
+                                        </span>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </div>
-                </div>
-
-                <div className="detail-meta">
-                    <div className="detail-actions" style={{ marginBottom: 32 }}>
-                        {!isInstalled ? (
-                            <button className="detail-btn primary" onClick={onInstall} disabled={isInstalling} style={{ width: '100%' }}>
-                                {isInstalling ? "Installing..." : "Install"}
-                            </button>
-                        ) : (
-                            <button className={`detail-btn ${status === 'active' ? 'secondary' : 'primary'}`} onClick={onToggle} style={{ width: '100%' }}>
-                                {status === 'active' ? "Disable" : "Enable"}
-                            </button>
-                        )}
-                    </div>
-
-                    <div className="meta-section">
-                        <div className="meta-label">Statistics</div>
-                        <div className="stats-grid">
-                            <div className="stat-item">
-                                <div className="stat-value">{downloads.toLocaleString()}</div>
-                                <div className="stat-label">downloads</div>
-                            </div>
-                            <div className="stat-item">
-                                <div className="stat-value">{status}</div>
-                                <div className="stat-label">status</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="meta-section">
-                        <div className="meta-label">Author</div>
-                        <div className="meta-value">{author}</div>
-                    </div>
-
-                    {repository && (
-                        <div className="meta-section">
-                            <div className="meta-label">Repository</div>
-                            <div className="meta-value">
-                                <a href={repository} target="_blank" rel="noopener noreferrer" className="meta-link">
-                                    View Source
-                                </a>
-                            </div>
-                        </div>
-                    )}
-
-                    {tags.length > 0 && (
-                        <div className="meta-section">
-                            <div className="meta-label">Tags</div>
-                            <div className="item-tags">
-                                {tags.map((t: string) => <span key={t} className="item-tag">{t}</span>)}
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
         </div>

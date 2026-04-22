@@ -37,7 +37,7 @@ export default function Welcome() {
                         <img src="/ted.svg" alt="ted" />
                     </div>
                     <div className="welcome-title-group">
-                        <h1>Welcome to ted</h1>
+                        <h1>Welcome to Ted</h1>
                         <p>a minimal code editor for agents</p>
                     </div>
                 </div>

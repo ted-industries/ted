@@ -5,14 +5,15 @@
     min-height: 36px;
     flex-shrink: 0;
     overflow-x: auto;
-    overflow-y: hidden;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    border-bottom: 1px solid var(--border);
+    position: relative;
+    z-index: 0;
+    /* No border-bottom here anymore */
 }
 
 .tab-bar:empty {
-    border-bottom-color: transparent;
+    display: none;
 }
 
 .tab-bar::-webkit-scrollbar {
@@ -34,6 +35,7 @@
     user-select: none;
     flex-shrink: 0;
     border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border); /* Borders on the tab instead of bar */
     box-sizing: border-box;
 }
 
@@ -42,10 +44,18 @@
 }
 
 .tab-active {
-    background-color: var(--active-tab-bg);
+    background-color: var(--background);
     color: var(--active-tab-fg);
-    border-bottom: 1px solid var(--active-tab-bg);
-    margin-bottom: -1px;
+    border-bottom: 1px solid var(--background); /* Same color as background hides the border */
+    position: relative;
+    z-index: 1;
+}
+
+.tab-spacer {
+    flex: 1;
+    border-bottom: 1px solid var(--border);
+    height: 100%;
+    background-color: var(--sidebar-bg);
 }
 
 .tab-label {

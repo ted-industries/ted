@@ -79,6 +79,7 @@ export default function TabBar() {
           </div>
         );
       })}
+      <div className="tab-spacer" />
     </div>
   );
 }

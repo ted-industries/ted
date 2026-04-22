@@ -51,6 +51,9 @@ class ExtensionHost {
     private fileIconProvider: ((path: string, is_dir: boolean, is_expanded: boolean) => string | undefined) | null = null;
     private fileIconProviderExtensionId: string | null = null;
 
+    private disabledExtensions: Set<string> = new Set();
+    private configPath: string | null = null;
+
     // Snapshot caches — stable references for useSyncExternalStore
     private _extSnap: ExtensionInstance[] = [];
     private _cmdSnap: RegisteredCommand[] = [];
@@ -63,8 +66,39 @@ class ExtensionHost {
         if (this.initialized) return;
         this.initialized = true;
         console.log("[ExtensionHost] Initializing...");
+        
+        await this.loadConfig();
         await this.scanAndLoadAll();
-        console.log(`[ExtensionHost] ${this.extensions.size} extension(s) loaded`);
+        console.log(`[ExtensionHost] ${this.extensions.size} extension(s) discovered`);
+    }
+
+    private async loadConfig() {
+        try {
+            const userConfigDir: string = await invoke("get_user_config_dir");
+            const parent = userConfigDir.replace(/[\\/][^\\/]+$/, "");
+            this.configPath = `${parent}\\disabled-extensions.json`;
+            
+            const raw: string = await invoke("read_file", { path: this.configPath });
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+                this.disabledExtensions = new Set(list);
+            }
+        } catch {
+            // No config yet, use defaults (all enabled)
+        }
+    }
+
+    private async saveConfig() {
+        if (!this.configPath) return;
+        try {
+            const list = Array.from(this.disabledExtensions);
+            await invoke("write_file", {
+                path: this.configPath,
+                content: JSON.stringify(list, null, 2)
+            });
+        } catch (err) {
+            console.error("[ExtensionHost] Failed to save extension config:", err);
+        }
     }
 
     dispose() {
@@ -157,6 +191,14 @@ class ExtensionHost {
         };
 
         this.extensions.set(manifest.name, instance);
+        
+        // Only activate if not disabled
+        if (this.disabledExtensions.has(manifest.name)) {
+            console.log(`[ExtensionHost] Skipping disabled extension: ${manifest.name}`);
+            this.emit();
+            return;
+        }
+
         this.emit();
 
         try {
@@ -217,7 +259,7 @@ class ExtensionHost {
         if (!instance) return;
 
         if (instance.status === "active") {
-            // Deactivate but keep in list
+            // Deactivate
             try {
                 if (instance.module?.deactivate) {
                     await instance.module.deactivate();
@@ -236,11 +278,15 @@ class ExtensionHost {
 
             instance.status = "inactive";
             instance.module = undefined;
+            
+            this.disabledExtensions.add(id);
         } else {
             // Re-activate
+            this.disabledExtensions.delete(id);
             await this.reloadExtension(id);
         }
 
+        await this.saveConfig();
         this.emit();
     }
 
